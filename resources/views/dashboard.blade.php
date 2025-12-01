@@ -119,7 +119,7 @@
                 <a href="" class="btn btn-primary border border-light">LOGOUT</a>
             </div>
             <div class="col-auto px-0">
-                <a href="" class="btn btn-primary border border-light ms-auto">MAIN MENU</a>
+                <a href="{{ route('main-menu') }}" class="btn btn-primary border border-light ms-auto">MAIN MENU</a>
             </div>
         </div>
     </div>
