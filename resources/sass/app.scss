@@ -28,7 +28,7 @@ $table-bg-scale: 50%;
 @import "@selectize/selectize/dist/css/selectize.bootstrap5.css";
 
 // 1) Tokens
-$font-sans: "Montserrat", sans-serif;
+$font-sans: "Cambria", sans-serif;
 $breakpoints: (
     "md": 1080px
 );
@@ -46,18 +46,9 @@ $breakpoints: (
     }
 }
 
-// 3) Fonts
-@font-face {
-    font-family: "Montserrat";
-    src: url("/fonts/Montserrat-VariableFont_wght.ttf") format("truetype");
-    font-weight: 100 900;
-    font-style: normal;
-    font-display: swap;
-}
-
 // 4) Base
 body {
-    font-family: $font-sans !important;
+    font-family: $font-sans;
 }
 
 .main-title {
@@ -125,13 +116,12 @@ img.icon {
     }
 
     .main-title {
-        font-size: 44pt;
+        font-size: 60pt;
         transform: translateY(-10px);
     }
 
     .company-name {
-        font-size: 2rem;
-        transform: translateY(-30px);
+        font-size: 18pt;
     }
 
     .logo,

@@ -23,9 +23,10 @@
 
 @section('content')
     <div class="container">
-        <div class="row justify-content-center">
+        <div class="row justify-content-center align-items-center">
             <div class="col-auto">
-                <div class="card bg-primary bg-opacity-50 shadow-sm border-0 rounded-4">
+                <div
+                    class="card bg-primary bg-opacity-50 shadow-sm border-0 rounded-4 position-absolute bottom-0 start-50 translate-middle">
                     <div class="card-body p-4">
                         <form action="{{ route('login') }}" method="POST" id="loginForm">
                             @csrf

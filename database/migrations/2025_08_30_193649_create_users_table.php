@@ -15,7 +15,9 @@ return new class extends Migration
             $table->char('employeeID', 5)->primary();
             $table->string('name');
             $table->string('password');
-            $table->rememberToken();
+            $table->enum('department', ['marketing', 'engineer', 'guest'])->default('guest');
+            $table->boolean('approved')->default(false);
+            $table->boolean('checked')->default(false);
             $table->timestamps();
         });
 

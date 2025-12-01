@@ -15,49 +15,35 @@
     @yield('styles')
     @if (!request()->is('login'))
         <style>
-            #navbar-kalibrasi {
-                border-bottom-left-radius: 180px;
-                border-bottom-right-radius: 180px;
-            }
-
-            #title-section {
-                height: 10rem
+            #navbar-new-project {
+                height: 6.5rem;
             }
         </style>
     @endif
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light text-light {{ request()->is('login') ? 'bg-transparent px-3' : 'mx-5 px-5 pb-3 bg-primary' }}"
-        id="navbar-kalibrasi">
-        <div class="container-fluid justify-content-center">
+    <nav class="navbar navbar-expand-lg navbar-light text-light py-0 my-0 {{ request()->is('login') ? 'bg-transparent px-3' : 'bg-primary' }}"
+        id="navbar-new-project">
+        <div class="container-fluid justify-content-between my-0 py-0">
             <a class="navbar-brand mx-0 mx-md-4" href="/">
                 <img src="{{ asset('image/logo-pt.png') }}" alt="Logo" class="mt-0 logo">
             </a>
-            <div class="row text-center justify-content-center {{ request()->is('login') ? 'text-light' : 'text-bg-primary' }}"
+            <div class="row text-center justify-content-end align-items-center w-75 {{ request()->is('login') ? 'text-light' : 'bg-none' }}"
                 id="title-section">
-                @if (request()->is('login'))
-                    <p id="main-title" class="align-self-center main-title p-0 m-0 text-uppercase">
+                <div class="col-md-9">
+                    <p class="align-self-center company-name py-0 my-0 lh-lg">PT. CATURINDO AGUNGJAYA RUBBER</p>
+                    <p id="main-title" class="align-self-center main-title py-0 my-0 text-uppercase lh-1 shadow-sm">
                         @yield('title')</p>
-                @else
-                    <div class="row justify-content-md-end align-self-center mx-0 px-0">
-                        <div class="col-10 mx-0 px-0">
-                            <p id="main-title" class="align-self-center main-title p-0 m-0 text-uppercase">
-                                @yield('title')
-                            </p>
+                </div>
+                <div class="col-md-auto">
+                    <div class="card my-0 py-0">
+                        <div class="card-body my-0 py-0 bg-secondary-subtle border-3 rounded-3 text-center">
+                            <p class="py-0 my-0">{{ auth()->id() }}</p>
+                            <p class="py-0 my-0">{{ auth()->user()->name }}</p>
                         </div>
-                        {{-- <div
-                            class="col-2 text-center border border-1 p-0 mt-2 mb-0 h-50 text-uppercase justify-content-center">
-                            <div class="fs-6 fw-semibold row-cols-auto m-0">
-                                {{ \Illuminate\Support\Str::limit(auth()->guard('web_control_leader')->user()->name, 10, '') }}
-                            </div>
-                            <div class="fs-6 row-cols-auto my-0 mx-auto text-center w-100">
-                                {{ auth()->guard('web_control_leader')->user()->role }}
-                            </div>
-                        </div> --}}
                     </div>
-                @endif
-                <p class="align-self-center company-name p-0 m-0">PT. CATURINDO AGUNGJAYA RUBBER</p>
+                </div>
                 @stack('subtitle')
             </div>
             <a class="navbar-brand mx-0 mx-md-4" href="/">
