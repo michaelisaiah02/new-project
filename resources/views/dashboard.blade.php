@@ -7,7 +7,7 @@
                 <span class="badge bg-none text-dark shadow fs-5 border-2 border-secondary-subtle mb-1">New Project</span>
                 <div class="table-responsive overflow-y-auto" style="max-height: 135px;">
                     <table class="table table-sm table-bordered table-hover m-0">
-                        <thead class="table-secondary">
+                        <thead class="table-secondary sticky-top">
                             <tr>
                                 <th scope="col">NO</th>
                                 <th scope="col">Costumer</th>
@@ -116,10 +116,14 @@
         </div>
         <div class="row justify-content-between align-items-center mx-0 px-0">
             <div class="col-auto px-0">
-                <a href="" class="btn btn-primary border border-light">LOGOUT</a>
+                <form action="{{ route('logout') }}" method="post">
+                    @csrf
+                    <button type="submit" class="btn btn-primary border-3 border-light-subtle">LOGOUT</button>
+                </form>
             </div>
             <div class="col-auto px-0">
-                <a href="{{ route('main-menu') }}" class="btn btn-primary border border-light ms-auto">MAIN MENU</a>
+                <a href="{{ route('main-menu') }}" class="btn btn-primary border-3 border-light-subtle ms-auto">MAIN
+                    MENU</a>
             </div>
         </div>
     </div>

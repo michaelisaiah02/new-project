@@ -24,11 +24,10 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'employeeID' => 'required|string',
+            'id' => 'required|string|size:5',
             'password' => 'required|string'
         ]);
-
-        $credentials = $request->only('employeeID', 'password');
+        $credentials = $request->only('id', 'password');
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 

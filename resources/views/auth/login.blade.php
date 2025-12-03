@@ -32,8 +32,8 @@
                             @csrf
                             <div class="form-floating mb-3 mx-auto">
                                 <input type="text" class="form-control text-center bg-light" placeholder="Employee ID"
-                                    id="employeeID" name="employeeID" value="{{ old('employeeID') }}" required autofocus>
-                                <label for="employeeID">Employee ID</label>
+                                    id="id" name="id" value="{{ old('id') }}" required autofocus>
+                                <label for="id">Employee ID</label>
                             </div>
                             <div class="form-floating mb-3 mx-auto">
                                 <input type="password" class="form-control text-center bg-light" placeholder="Password"

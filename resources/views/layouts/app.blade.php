@@ -31,20 +31,28 @@
             </a>
             <div class="row text-center justify-content-end align-items-center w-75 {{ request()->is('login') ? 'text-light' : 'bg-none' }}"
                 id="title-section">
-                <div class="col-md-9">
+                <div class="{{ request()->is('login') ? 'col-12' : 'col-md-9' }}">
                     <p class="align-self-center company-name py-0 my-0 lh-lg">PT. CATURINDO AGUNGJAYA RUBBER</p>
-                    <p id="main-title" class="align-self-center main-title py-0 my-0 text-uppercase lh-1 shadow-sm">
-                        @yield('title')</p>
+                    @if (request()->is('login') || request()->is('/') || request()->is('main-menu'))
+                        <p id="main-title" class="align-self-center main-title py-0 my-0 text-uppercase lh-1 shadow-sm">
+                            @yield('title')</p>
+                    @else
+                        <p id="sub-title"
+                            class="p-0 my-auto sub-judul border-3 border-light-subtle border-dotted rounded-2 text-uppercase bg-secondary-subtle text-dark">
+                            @yield('title')</p>
+                    @endif
                 </div>
-                <div class="col-md-auto">
-                    <div class="card my-0 py-0">
-                        <div class="card-body my-0 py-0 bg-secondary-subtle border-3 rounded-3 text-center">
-                            <p class="py-0 my-0">{{ auth()->id() }}</p>
-                            <p class="py-0 my-0">{{ auth()->user()->name }}</p>
+                @if (!request()->is('login'))
+                    <div class="col-md-auto">
+                        <div class="card my-0 py-0">
+                            <div
+                                class="card-body my-0 py-0 bg-secondary-subtle border-3 border-light-subtle rounded-3 text-center">
+                                <p class="py-0 my-0">{{ auth()->id() }}</p>
+                                <p class="py-0 my-0">{{ auth()->user()->name }}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                @stack('subtitle')
+                @endif
             </div>
             <a class="navbar-brand mx-0 mx-md-4" href="/">
                 <img src="{{ asset('image/logo-rice.png') }}" alt="Logo" class="mt-0 logo">

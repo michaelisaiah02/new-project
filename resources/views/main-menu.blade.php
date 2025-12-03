@@ -2,9 +2,26 @@
 @section('title', 'NEW PROJECT')
 @section('content')
     <div class="container">
-        <div class="row justify-content-center align-items-center" style="height: 70vh;">
-            <div class="col-auto">
-                <a href="" class="btn btn-primary">INPUT NEW PROJECT</a>
+        <div class="row justify-content-center align-items-center my-3">
+            <div class="col-4">
+                <a href="" class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100">INPUT NEW PROJECT</a>
             </div>
         </div>
-    @endsection
+        <div class="row justify-content-center align-items-center">
+            <div class="col-4">
+                <a href="{{ route('marketing.users.index') }}"
+                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100">MANAGEMENT USER</a>
+            </div>
+            <div class="col-4">
+                <a href="{{ route('marketing.customers.index') }}"
+                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100">MANAGEMENT CUSTOMER</a>
+            </div>
+        </div>
+        <div
+            class="text-center row justify-content-start align-items-center position-absolute bottom-0 start-0 end-0 mb-3 px-3">
+            <div class="col-auto">
+                <a href="{{ route('dashboard') }}" class="btn btn-primary fs-5">Back</a>
+            </div>
+        </div>
+    </div>
+@endsection

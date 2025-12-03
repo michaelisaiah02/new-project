@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->char('employeeID', 5)->primary();
+            $table->char('id', 5)->primary();
             $table->string('name');
             $table->string('password');
-            $table->enum('department', ['marketing', 'engineer', 'guest'])->default('guest');
+            $table->foreignId('department_id')->constrained('departments')->onDelete('cascade');
             $table->boolean('approved')->default(false);
             $table->boolean('checked')->default(false);
             $table->timestamps();

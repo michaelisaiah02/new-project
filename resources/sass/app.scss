@@ -110,14 +110,21 @@ img.icon {
 
 @include up("md") {
     .sub-judul {
-        width: 75% !important;
-        font-size: 1.6rem !important;
-        transform: translateY(-20px);
+        font-size: 28pt !important;
+        transform: translateY(-10px);
+        -webkit-transform: translateY(-10px);
+        -moz-transform: translateY(-10px);
+        -ms-transform: translateY(-10px);
+        -o-transform: translateY(-10px);
     }
 
     .main-title {
         font-size: 60pt;
-        transform: translateY(-10px);
+        transform: translateY(-20px);
+        -webkit-transform: translateY(-20px);
+        -moz-transform: translateY(-20px);
+        -ms-transform: translateY(-20px);
+        -o-transform: translateY(-20px);
     }
 
     .company-name {

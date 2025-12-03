@@ -18,16 +18,16 @@ class UserSeeder extends Seeder
 
         User::factory()->create([
             'name' => 'Michael',
-            'employeeID' => '12025',
+            'id' => '12025',
             'password' => Hash::make($password),
-            'department' => 1,
+            'department_id' => 1,
             'approved' => true,
         ]);
         User::factory()->create([
             'name' => 'Freddy',
-            'employeeID' => '12345',
+            'id' => '10009',
             'password' => Hash::make($password),
-            'department' => 2,
+            'department_id' => 2,
             'checked' => true,
         ]);
     }

@@ -12,7 +12,9 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    protected $primaryKey = 'employeeID';
+    protected $primaryKey = 'id';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     /**
      * The attributes that are mass assignable.
@@ -20,10 +22,10 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'employeeID',
+        'id',
         'name',
         'password',
-        'department',
+        'department_id',
         'approved',
         'checked',
     ];
@@ -47,11 +49,13 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'approved' => 'boolean',
+            'checked' => 'boolean',
         ];
     }
 
     public function department()
     {
-        return $this->belongsTo(Department::class, 'department');
+        return $this->belongsTo(Department::class, 'department_id');
     }
 }
