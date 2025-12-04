@@ -59,8 +59,8 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
             'id' => ['required', 'size:5', Rule::unique('users', 'id')->ignore($user->id)],
+            'name' => 'required|string|max:255',
             'department_id' => 'required|exists:departments,id',
             'password' => 'nullable|string|min:6',
             // no need to validate approved/checked here

@@ -34,7 +34,8 @@
                 <div class="{{ request()->is('login') ? 'col-12' : 'col-md-9' }}">
                     <p class="align-self-center company-name py-0 my-0 lh-lg">PT. CATURINDO AGUNGJAYA RUBBER</p>
                     @if (request()->is('login') || request()->is('/') || request()->is('main-menu'))
-                        <p id="main-title" class="align-self-center main-title py-0 my-0 text-uppercase lh-1 shadow-sm">
+                        <p id="main-title"
+                            class="align-self-center main-title py-0 my-0 text-uppercase lh-1 {{ request()->is('login') ? 'shadow-none' : 'shadow-sm' }}">
                             @yield('title')</p>
                     @else
                         <p id="sub-title"

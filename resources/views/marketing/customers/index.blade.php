@@ -55,7 +55,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="customer_id" id="customer-id">
                     <div class="row">
                         <label for="code" class="form-label">Customer Code</label>
                         <input type="text" class="form-control" id="code" name="code" minlength="5"
@@ -86,17 +85,18 @@
         </div>
     </div>
     <!-- Modal Delete Customer -->
-    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-labelledby="deleteCustomerModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
-            <form method="POST" id="deleteUserForm" class="modal-content">
+            <form method="POST" id="deleteCustomerForm" class="modal-content">
                 @csrf
                 @method('DELETE')
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteUserModalLabel">Delete Customer</h5>
+                    <h5 class="modal-title" id="deleteCustomerModalLabel">Delete Customer</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete the customer named <strong id="deleteUserName"></strong>?</p>
+                    <p>Are you sure you want to delete the customer named <strong id="deleteCustomerName"></strong>?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -110,7 +110,7 @@
 
 @section('scripts')
     <script type="module">
-        function fetchUsers(keyword = '', page = 1, role = '') {
+        function fetchCustomers(keyword = '', page = 1, role = '') {
             $('#loading').show();
             $.ajax({
                 url: `{{ route('marketing.customers.search') }}`,
@@ -148,21 +148,9 @@
             // Delegasi tombol Edit
             $(document).on('click', '.btn-edit-customer', function() {
                 const id = $(this).data('id');
-                $('#customer-id').val(id);
+                $('#code').val(id);
                 $('#name').val($(this).data('name'));
-                $('#id').val($(this).data('id'));
-                $('#role').val($(this).data('role'));
-                $('#password').val('');
-                if ($(this).data('approved') === 1) {
-                    $('#approved').attr('checked', true);
-                } else {
-                    $('#approved').attr('checked', false);
-                }
-                if ($(this).data('checked') === 1) {
-                    $('#checked').attr('checked', true);
-                } else {
-                    $('#checked').attr('checked', false);
-                }
+                $('#department').val($(this).data('department'));
                 $('#customerModalLabel').text('Edit Customer');
                 $('#customerForm').attr('action',
                     `{{ url('marketing/customers/update-customer') }}/${id}`);
@@ -173,9 +161,9 @@
             $(document).on('click', '.btn-delete-customer', function() {
                 const id = $(this).data('id');
                 const name = $(this).data('name');
-                $('#deleteUserForm').attr('action',
+                $('#deleteCustomerForm').attr('action',
                     `{{ url('marketing/customers/delete-customer') }}/${id}`);
-                $('#deleteUserName').text(name);
+                $('#deleteCustomerName').text(name);
             });
 
             const $superiorGroup = $('#superiorForm');
@@ -210,12 +198,12 @@
                 clearTimeout(debounceTimer);
                 const keyword = $(this).val();
                 debounceTimer = setTimeout(() => {
-                    fetchUsers(keyword);
+                    fetchCustomers(keyword);
                 }, 400);
             });
 
             // Initial fetch
-            fetchUsers();
+            fetchCustomers();
         });
     </script>
 @endsection

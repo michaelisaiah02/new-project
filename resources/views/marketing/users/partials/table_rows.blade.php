@@ -16,7 +16,7 @@
         </td>
         <td>
             <button class="btn btn-sm btn-primary btn-edit-user" data-id="{{ $user->id }}"
-                data-name="{{ $user->name }}" data-id="{{ $user->id }}" data-department="{{ $user->department_id }}"
+                data-name="{{ $user->name }}" data-department="{{ $user->department_id }}"
                 data-approved="{{ $user->approved }}" data-checked="{{ $user->checked }}">
                 Edit
             </button>

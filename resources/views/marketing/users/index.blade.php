@@ -56,17 +56,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="user_id" id="user-id">
                     <div class="row">
                         <label for="id" class="form-label">ID User</label>
-                        <input type="text" class="form-control" id="id" name="id" minlength="5"
-                            maxlength="5" required>
-                        <div class="invalid-feedback">ID User must be 5 characters.</div>
+                        <input type="text" class="form-control" id="id" name="id" pattern="^\d{5}$"
+                            inputmode="numeric" minlength="5" maxlength="5" required>
+                        <div class="invalid-feedback">ID User must consist of exactly 5 digits.</div>
                     </div>
                     <div class="row">
                         <label for="name" class="form-label">User Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                        <div class="invalid-feedback">Name is required.</div>
+                        <input type="text" class="form-control" id="name" name="name" pattern="^[A-Za-z\s]+$"
+                            required>
+                        <div class="invalid-feedback">Name must contain letters only.</div>
                     </div>
                     <div class="row">
                         <label for="department" class="form-label">Department</label>
@@ -171,10 +171,9 @@
             // Delegasi tombol Edit
             $(document).on('click', '.btn-edit-user', function() {
                 const id = $(this).data('id');
-                $('#user-id').val(id);
+                $('#id').val(id);
                 $('#password').val('');
                 $('#name').val($(this).data('name'));
-                $('#id').val($(this).data('id'));
                 $('#department').val($(this).data('department'));
                 if ($(this).data('approved') === 1) {
                     $('#approved').attr('checked', true);

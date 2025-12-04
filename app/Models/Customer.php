@@ -17,5 +17,11 @@ class Customer extends Model
     protected $fillable = [
         'code',
         'name',
+        'department_id',
     ];
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
 }

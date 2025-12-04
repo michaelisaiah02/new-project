@@ -13,8 +13,8 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::with('department')->get();
-        $departments = Department::all();
+        $customers = Customer::with('department')->orderBy('name')->get();
+        $departments = Department::where('name', 'LIKE', '%Engineering%')->get();
 
         return view('marketing.customers.index', compact('customers', 'departments'));
     }
@@ -24,7 +24,7 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'unique:customers,code'],
             'name' => ['required', 'string', 'max:255'],
-            'department' => ['required', 'exists:departments,id']
+            'department_id' => ['required', 'exists:departments,id']
         ]);
 
         Customer::create($validated);
@@ -37,9 +37,9 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($code);
 
         $validated = $request->validate([
-            'code' => ['required', Rule::unique('customers', 'code')->ignore($customer->code)],
+            'code' => ['required', Rule::unique('customers', 'code')->ignore($customer->code, 'code')],
             'name' => 'required|string|max:255',
-            'department' => 'required|exists:departments,id',
+            'department_id' => 'required|exists:departments,id',
             // no need to validate approved/checked here
         ]);
 
@@ -74,34 +74,10 @@ class CustomerController extends Controller
                 });
             });
 
-        $customers = $query->orderBy('created_at', 'desc')->get();
+        $customers = $query->orderBy('name')->get();
 
         return response()->json([
             'html' => view('marketing.customers.partials.table_rows', compact('customers'))->render(),
         ]);
-    }
-
-    public function getSuperiors(Request $request)
-    {
-        $role = $request->query('role');
-        $departmentId = $request->query('department_id');
-
-        switch ($role) {
-            case 'leader':
-                $rolesToFetch = ['supervisor'];
-                break;
-            case 'supervisor':
-                $rolesToFetch = ['ypq'];
-                break;
-            case 'ypq':
-                $rolesToFetch = ['management'];
-                break;
-            default:
-                return response()->json([]);
-        }
-
-        $superiors = Customer::whereIn('role', $rolesToFetch)->where('department_id', '=', $departmentId)->get();
-
-        return response()->json($superiors);
     }
 }
