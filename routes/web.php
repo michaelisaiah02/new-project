@@ -4,8 +4,9 @@ use App\Http\Middleware\CheckLogin;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Marketing\UserController;
+use App\Http\Controllers\Marketing\CustomerController;
+use App\Http\Controllers\Marketing\NewProjectController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true]);
@@ -37,5 +38,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/update-customer/{code}', 'update')->name('marketing.customers.update');
         Route::delete('/delete-customer/{code}', 'destroy');
         Route::get('/search', 'search')->name('marketing.customers.search');
+    });
+
+    Route::prefix('marketing/new-report')->controller(NewProjectController::class)->group(function () {
+        Route::get('/', 'index')->name('marketing.new_projects.index');
+        Route::get('/create', 'create')->name('marketing.new_projects.create');
+        Route::post('/store', 'store')->name('marketing.new_projects.store');
+        Route::get('/{newProject}', 'show')->name('marketing.new_projects.show');
+        Route::get('/{newProject}/edit', 'edit')->name('marketing.new_projects.edit');
+        Route::put('/{newProject}', 'update')->name('marketing.new_projects.update');
+        Route::delete('/{newProject}', 'destroy')->name('marketing.new_projects.destroy');
     });
 });

@@ -33,7 +33,7 @@
             </table>
         </div>
         <div
-            class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 px-3">
+            class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
             <div class="col-auto">
                 <a href="{{ route('main-menu') }}" class="btn btn-primary fs-5">Back</a>
             </div>
