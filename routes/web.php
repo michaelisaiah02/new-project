@@ -40,8 +40,12 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('marketing/customers')->controller(CustomerController::class)->group(function () {
         Route::get('/', 'index')->name('marketing.customers.index');
+        Route::get('/create', 'create')->name('marketing.customers.create');
+        Route::get('/customers/{customer}/stages/create', [CustomerController::class, 'createStage'])
+            ->name('marketing.customers.createStage');
+        Route::post('/customers/{customer}/stages', [CustomerController::class, 'storeStage'])
+            ->name('marketing.customers.storeStage');
         Route::post('/store', 'store')->name('marketing.customers.store');
-        Route::post('/update-customer/{code}', 'update')->name('marketing.customers.update');
         Route::delete('/delete-customer/{code}', 'destroy');
         Route::get('/search', 'search')->name('marketing.customers.search');
     });

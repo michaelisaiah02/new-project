@@ -24,4 +24,16 @@ class Customer extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function stages()
+    {
+        return $this->hasMany(CustomerStage::class, 'customer_code', 'code');
+    }
+
+    public function documentTypes()
+    {
+        return DocumentType::whereHas('stages', function ($q) {
+            $q->where('customer_code', $this->code);
+        });
+    }
 }

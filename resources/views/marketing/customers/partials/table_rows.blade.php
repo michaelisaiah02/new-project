@@ -5,9 +5,7 @@
         <td class="text-start">{{ $customer->name }}</td>
         <td>{{ $customer->department?->name ?? '-' }}</td>
         <td>
-            <button class="btn btn-sm btn-primary btn-edit-customer" data-id="{{ $customer->code }}"
-                data-name="{{ $customer->name }}" data-department="{{ $customer->department_id }}"
-                data-approved="{{ $customer->approved }}" data-checked="{{ $customer->checked }}">
+            <button class="btn btn-sm btn-primary" data-id="{{ $customer->code }}">
                 Edit
             </button>
             <button class="btn btn-sm btn-danger btn-delete-customer" data-id="{{ $customer->code }}"

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Marketing;
 
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use App\Models\Customer;
+use App\Models\Department;
+use App\Models\DocumentType;
+use Illuminate\Http\Request;
+use App\Models\CustomerStage;
+use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Department;
 
 class CustomerController extends Controller
 {
@@ -17,6 +19,13 @@ class CustomerController extends Controller
         $departments = Department::where('name', 'LIKE', '%Engineering%')->get();
 
         return view('marketing.customers.index', compact('customers', 'departments'));
+    }
+
+    public function create()
+    {
+        $departments = Department::where('name', 'LIKE', '%Engineering%')->get();
+
+        return view('marketing.customers.create', compact('departments'));
     }
 
     public function store(Request $request)
@@ -29,8 +38,64 @@ class CustomerController extends Controller
 
         Customer::create($validated);
 
-        return redirect()->route('marketing.customers.index')->with('success', 'Customer added successfully.');
+        return redirect()
+            ->route('marketing.customers.createStage', $validated['code'])
+            ->with('success', 'Customer added successfully. Now define document stages.');
     }
+
+    public function createStage(Customer $customer)
+    {
+        $lastStage = $customer->stages()->max('stage_number') ?? 0;
+        $nextStageNumber = $lastStage + 1;
+        $stageNumber = $nextStageNumber;
+
+        $usedDocs = $customer->stages()
+            ->with('documents:id')   // load docs
+            ->get()
+            ->pluck('documents')
+            ->flatten()
+            ->pluck('id');
+
+        $availableDocuments = DocumentType::whereNotIn('id', $usedDocs)->get();
+
+        return view('marketing.customers.create-stages', compact(
+            'customer',
+            'stageNumber',
+            'availableDocuments'
+        ));
+    }
+
+    public function storeStage(Request $request, Customer $customer)
+    {
+        $validated = $request->validate([
+            'stage_number' => 'required|integer',
+            'stage_name'   => 'string|nullable',
+            'document_type_ids' => 'required|array',
+            'qr_position' => 'required|array',
+        ]);
+
+        $stage = CustomerStage::create([
+            'stage_number' => $validated['stage_number'],
+            'stage_name'   => $validated['stage_name'],
+            'customer_code' => $customer->code,
+            'document_type_id' => null, // gak dipakai lagi
+        ]);
+
+        foreach ($validated['document_type_ids'] as $docId) {
+            $stage->documents()->attach($docId, [
+                'qr_position' => $validated['qr_position'][$docId]
+            ]);
+        }
+
+        if ($request->decision === 'finish') {
+            return redirect()->route('marketing.customers.index')
+                ->with('success', 'Customer stages completed!');
+        }
+
+        return redirect()->route('marketing.customers.createStage', $customer->code)
+            ->with('success', 'Stage added! Next stage ready.');
+    }
+
 
     public function update(Request $request, $code)
     {
