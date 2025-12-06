@@ -12,6 +12,10 @@ Route::get('/ping', function () {
     return response()->json(['pong' => true]);
 })->name('ping');
 
+Route::get('/', function () {
+    return redirect()->route('marketing');
+});
+
 Route::middleware('guest')->group(function () {
     Route::controller(LoginController::class)->group(function () {
         Route::get('/login', 'showLoginForm')->name('login');
@@ -21,7 +25,9 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/marketing', [DashboardController::class, 'marketing'])->name('marketing');
+    Route::get('/engineering', [DashboardController::class, 'engineering'])->name('engineering');
+    Route::get('/management', [DashboardController::class, 'management'])->name('management');
     Route::get('/main-menu', [DashboardController::class, 'mainMenu'])->name('main-menu');
 
     Route::prefix('marketing/users')->controller(UserController::class)->group(function () {

@@ -6,13 +6,18 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function marketing()
     {
-        return view('dashboard');
+        return view('marketing');
     }
 
-    public function mainMenu()
+    public function engineering()
     {
-        return view('main-menu');
+        return view('engineering');
+    }
+
+    public function management()
+    {
+        return view('management');
     }
 }

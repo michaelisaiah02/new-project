@@ -22,7 +22,10 @@
         <div
             class="text-center row justify-content-start align-items-center position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
             <div class="col-auto">
-                <a href="{{ route('dashboard') }}" class="btn btn-primary fs-5">Back</a>
+                <form action="{{ route('logout') }}" method="post">
+                    @csrf
+                    <button type="submit" class="btn btn-primary border-3 border-light-subtle">LOGOUT</button>
+                </form>
             </div>
         </div>
     </div>

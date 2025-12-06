@@ -31,7 +31,22 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->intended('/');
+            // Redirect sesuai dengan departemen pengguna
+            switch (Auth::user()->department->name) {
+                case str_starts_with(Auth::user()->department->name, 'Marketing') ? Auth::user()->department->name : null:
+                    return redirect()->intended('/marketing');
+                case str_starts_with(Auth::user()->department->name, 'Engineering') ? Auth::user()->department->name : null:
+                    return redirect()->intended('/engineering');
+                case str_starts_with(Auth::user()->department->name, 'Management') ? Auth::user()->department->name : null:
+                    return redirect()->intended('/management');
+                default:
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    throw ValidationException::withMessages([
+                        'error' => 'Departemen tidak dikenali untuk aplikasi ini.',
+                    ]);
+            }
         }
 
         throw ValidationException::withMessages([

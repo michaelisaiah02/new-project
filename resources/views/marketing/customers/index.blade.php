@@ -33,7 +33,7 @@
         <div
             class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
             <div class="col-auto">
-                <a href="{{ route('main-menu') }}" class="btn btn-primary fs-5">Back</a>
+                <a href="{{ route('marketing') }}" class="btn btn-primary fs-5">Back</a>
             </div>
             <div class="col-auto">
                 <button class="btn btn-primary btn-lg text-white rounded-pill m-0 py-2" data-bs-toggle="modal"

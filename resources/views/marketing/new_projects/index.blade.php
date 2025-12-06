@@ -198,7 +198,7 @@
             <div
                 class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-2 mx-4">
                 <div class="col-auto">
-                    <a href="{{ route('main-menu') }}" class="btn btn-primary">Back</a>
+                    <a href="{{ route('marketing') }}" class="btn btn-primary">Back</a>
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-primary" type="submit">
