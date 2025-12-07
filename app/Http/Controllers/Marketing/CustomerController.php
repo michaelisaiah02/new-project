@@ -8,8 +8,10 @@ use App\Models\DocumentType;
 use Illuminate\Http\Request;
 use App\Models\CustomerStage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Pest\ArchPresets\Custom;
 
 class CustomerController extends Controller
 {
@@ -41,6 +43,37 @@ class CustomerController extends Controller
         return redirect()
             ->route('marketing.customers.createStage', $validated['code'])
             ->with('success', 'Customer added successfully. Now define document stages.');
+    }
+
+    public function edit(Customer $customer)
+    {
+        $departments = Department::where('name', 'LIKE', '%Engineering%')->get();
+
+        return view('marketing.customers.edit', compact('customer', 'departments'));
+    }
+
+    public function update(Request $request, string $code)
+    {
+        $customer = Customer::where('code', $code)->firstOrFail();
+
+        $validated = $request->validate([
+            'code' => ['required', Rule::unique('customers', 'code')->ignore($customer->code, 'code')],
+            'name' => 'required|string|max:255',
+            'department_id' => 'required|exists:departments,id',
+        ]);
+
+        $customer->update($validated);
+
+        return redirect()->route('marketing.customers.index')
+            ->with('success', 'Customer updated successfully.');
+    }
+
+    public function destroy($code)
+    {
+        $customer = Customer::findOrFail($code);
+        $customer->delete();
+
+        return redirect()->route('marketing.customers.index')->with('success', 'Customer has been successfully deleted.');
     }
 
     public function createStage(Customer $customer)
@@ -96,32 +129,181 @@ class CustomerController extends Controller
             ->with('success', 'Stage added! Next stage ready.');
     }
 
-
-    public function update(Request $request, $code)
+    public function editStage(Customer $customer, $stageNumber)
     {
-        $customer = Customer::findOrFail($code);
+        // cek kalau stage belum ada → create dummy instance
+        $stage = $customer->stages()
+            ->where('stage_number', $stageNumber)
+            ->first();
 
-        $validated = $request->validate([
-            'code' => ['required', Rule::unique('customers', 'code')->ignore($customer->code, 'code')],
-            'name' => 'required|string|max:255',
-            'department_id' => 'required|exists:departments,id',
-            // no need to validate approved/checked here
-        ]);
+        // kalau belum ada stage ini → buat model dummy
+        if (!$stage) {
+            $stage = new CustomerStage([
+                'customer_code' => $customer->code,
+                'stage_number'  => $stageNumber,
+                'stage_name'    => null,
+            ]);
+        }
 
-        $data = $validated;
+        // documents used in other stages
+        $usedDocs = DB::table('customer_stage_documents')
+            ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
+            ->where('customer_stages.customer_code', $customer->code)
+            ->where('customer_stages.stage_number', '!=', $stageNumber)
+            ->pluck('document_type_id');
 
-        $customer->update($data);
+        // available docs
+        $availableDocuments = DocumentType::whereNotIn('id', $usedDocs)->get();
 
-        return redirect()->route('marketing.customers.index')
-            ->with('success', 'Customer updated successfully.');
+        // current stage docs
+        $currentDocs = $stage->exists
+            ? $stage->documents()->pluck('document_type_id')
+            : collect();
+
+        $maxStage = $customer->stages()->max('stage_number') ?? 0;
+
+        $usedDocs = DB::table('customer_stage_documents')
+            ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
+            ->where('customer_stages.customer_code', $customer->code)
+            ->pluck('document_type_id');
+
+        $remainingDocs = DocumentType::whereNotIn('id', $usedDocs)->count();
+
+        $canAddStage = $remainingDocs > 0;
+
+        return view('marketing.customers.edit-stages', compact(
+            'customer',
+            'stageNumber',
+            'stage',
+            'availableDocuments',
+            'currentDocs',
+            'maxStage',
+            'canAddStage'
+        ));
     }
 
-    public function destroy($code)
+    public function saveStage(Request $request, Customer $customer, int $stageNumber)
     {
-        $customer = Customer::findOrFail($code);
-        $customer->delete();
+        $stage = CustomerStage::where('customer_code', $customer->code)
+            ->where('stage_number', $stageNumber)
+            ->first();
 
-        return redirect()->route('marketing.customers.index')->with('success', 'Customer has been successfully deleted.');
+        $docIds = $request->input('document_type_ids', []);
+
+        // 1️⃣ Cegah stage baru tanpa dokumen
+        if (!$stage && count($docIds) === 0) {
+            return back()
+                ->withErrors(['document_type_ids' => 'Minimal pilih 1 dokumen untuk stage baru.'])
+                ->withInput();
+        }
+
+        // 2️⃣ (opsional) Kalau mau juga cegah edit stage jadi kosong:
+        if ($stage && count($docIds) === 0) {
+            return back()
+                ->withErrors(['document_type_ids' => 'Stage tidak boleh kosong dokumen. Gunakan fitur delete stage kalau mau menghapus.'])
+                ->withInput();
+        }
+
+        $validated = $request->validate([
+            'stage_name'        => 'nullable|string',
+            'document_type_ids' => 'nullable|array',
+            'qr_position'       => 'nullable|array',
+        ]);
+
+        // --- SAVE / UPDATE STAGE ---
+        $stage = CustomerStage::firstOrCreate(
+            ['customer_code' => $customer->code, 'stage_number' => $stageNumber],
+            ['stage_name' => $validated['stage_name']]
+        );
+
+        $stage->update(['stage_name' => $validated['stage_name']]);
+
+        // pastikan setiap dokumen yang dipilih punya qr_position
+        $errors = [];
+
+        $syncData = [];
+        foreach ($validated['document_type_ids'] ?? [] as $docId) {
+            if (empty($validated['qr_position'][$docId] ?? null)) {
+                $errors["qr_position.$docId"] = "Dokumen yang dipilih harus punya posisi QR.";
+            }
+            $syncData[$docId] = [
+                'qr_position' => $validated['qr_position'][$docId] ?? null,
+            ];
+        }
+        if (!empty($errors)) {
+            return back()->withErrors($errors)->withInput();
+        }
+        $stage->documents()->sync($syncData);
+
+        // --- HANDLE ACTION ---
+        $action = $request->input('action');
+
+        if ($action === 'save') {
+            return back()->with('success', 'Stage saved.');
+        }
+
+        if ($action === 'navigate') {
+            $target = (int) $request->input('target_stage', $stageNumber);
+
+            return redirect()->route('marketing.customers.editStage', [
+                'customer'    => $customer->code,
+                'stageNumber' => $target,
+            ]);
+        }
+
+        if ($action === 'add_stage') {
+            // hitung sisa dokumen
+            $usedDocs = DB::table('customer_stage_documents')
+                ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
+                ->where('customer_stages.customer_code', $customer->code)
+                ->pluck('document_type_id');
+            $remainingDocs = DocumentType::whereNotIn('id', $usedDocs)->count();
+
+            if ($remainingDocs === 0) {
+                return back()->with('error', 'Semua dokumen sudah dipakai, tidak bisa tambah stage baru.');
+            }
+
+            $maxStage = $customer->stages()->max('stage_number') ?? 0;
+            $newStageNumber = $maxStage + 1;
+
+            return redirect()->route('marketing.customers.editStage', [
+                'customer'    => $customer->code,
+                'stageNumber' => $newStageNumber,
+            ]);
+        }
+
+        if ($action === 'finish') {
+            return redirect()->route('marketing.customers.index')
+                ->with('success', 'Customer stages updated.');
+        }
+
+        // fallback
+        return back();
+    }
+
+    public function destroyStage(Customer $customer, int $stageNumber)
+    {
+        $stage = $customer->stages()
+            ->where('stage_number', $stageNumber)
+            ->firstOrFail();
+
+        $stage->delete();
+        $this->reorderStages($customer);
+
+        return redirect()->route('marketing.customers.editStage', [
+            'customer'    => $customer->code,
+            'stageNumber' => max(1, $stageNumber - 1),
+        ])->with('success', 'Stage deleted successfully.');
+    }
+
+    protected function reorderStages(Customer $customer)
+    {
+        CustomerStage::where('customer_code', $customer->code)
+            ->orderBy('stage_number')
+            ->get()
+            ->each(function ($stage, $index) {
+                $stage->update(['stage_number' => $index + 1]);
+            });
     }
 
     public function search(Request $request)

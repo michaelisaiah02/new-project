@@ -5,9 +5,14 @@
         <td class="text-start">{{ $customer->name }}</td>
         <td>{{ $customer->department?->name ?? '-' }}</td>
         <td>
-            <button class="btn btn-sm btn-primary" data-id="{{ $customer->code }}">
+            <a href="{{ route('marketing.customers.edit', ['customer' => $customer->code]) }}"
+                class="btn btn-sm btn-primary">
                 Edit
-            </button>
+            </a>
+            <a href="{{ route('marketing.customers.editStage', ['customer' => $customer->code, 'stageNumber' => 1]) }}"
+                class="btn btn-sm btn-primary">
+                Edit Stages
+            </a>
             <button class="btn btn-sm btn-danger btn-delete-customer" data-id="{{ $customer->code }}"
                 data-name="{{ $customer->name }}" data-bs-toggle="modal" data-bs-target="#deleteCustomerModal">
                 Delete

@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\CheckLogin;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
@@ -30,33 +29,42 @@ Route::middleware('auth')->group(function () {
     Route::get('/management', [DashboardController::class, 'management'])->name('management');
     Route::get('/main-menu', [DashboardController::class, 'mainMenu'])->name('main-menu');
 
-    Route::prefix('marketing/users')->controller(UserController::class)->group(function () {
-        Route::get('/', 'index')->name('marketing.users.index');
-        Route::post('/store', 'store')->name('marketing.users.store');
-        Route::post('/update-user/{id}', 'update')->name('marketing.users.update');
-        Route::delete('/delete-user/{id}', 'destroy');
-        Route::get('/search', 'search')->name('marketing.users.search');
-    });
+    Route::prefix('marketing')->as('marketing.')->group(function () {
+        Route::prefix('users')->as('users.')->controller(UserController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/store', 'store')->name('store');
+            Route::post('/update-user/{id}', 'update')->name('update');
+            Route::delete('/delete-user/{id}', 'destroy');
+            Route::get('/search', 'search')->name('search');
+        });
 
-    Route::prefix('marketing/customers')->controller(CustomerController::class)->group(function () {
-        Route::get('/', 'index')->name('marketing.customers.index');
-        Route::get('/create', 'create')->name('marketing.customers.create');
-        Route::get('/customers/{customer}/stages/create', [CustomerController::class, 'createStage'])
-            ->name('marketing.customers.createStage');
-        Route::post('/customers/{customer}/stages', [CustomerController::class, 'storeStage'])
-            ->name('marketing.customers.storeStage');
-        Route::post('/store', 'store')->name('marketing.customers.store');
-        Route::delete('/delete-customer/{code}', 'destroy');
-        Route::get('/search', 'search')->name('marketing.customers.search');
-    });
+        Route::prefix('customers')->as('customers.')->controller(CustomerController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/store', 'store')->name('store');
+            Route::get('/{customer}/edit', 'edit')->name('edit');
+            Route::put('/{customer}', 'update')->name('update');
+            Route::delete('/delete-customer/{code}', 'destroy');
+            Route::get('/{customer}/stages/create', 'createStage')
+                ->name('createStage');
+            Route::post('/{customer}/stages', 'storeStage')
+                ->name('storeStage');
+            Route::get('/{customer}/stages/{stageNumber}', 'editStage')
+                ->name('editStage');
+            Route::put('/{customer}/stages/{stageNumber}', 'saveStage')
+                ->name('saveStage');
+            Route::delete('/delete-stage/{customer}/{stageNumber}', 'destroyStage')->name('destroyStage');
+            Route::get('/search', 'search')->name('search');
+        });
 
-    Route::prefix('marketing/new-report')->controller(NewProjectController::class)->group(function () {
-        Route::get('/', 'index')->name('marketing.new_projects.index');
-        Route::get('/create', 'create')->name('marketing.new_projects.create');
-        Route::post('/store', 'store')->name('marketing.new_projects.store');
-        Route::get('/{newProject}', 'show')->name('marketing.new_projects.show');
-        Route::get('/{newProject}/edit', 'edit')->name('marketing.new_projects.edit');
-        Route::put('/{newProject}', 'update')->name('marketing.new_projects.update');
-        Route::delete('/{newProject}', 'destroy')->name('marketing.new_projects.destroy');
+        Route::prefix('new-projects')->as('new-projects.')->controller(NewProjectController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/store', 'store')->name('store');
+            Route::get('/{newProject}', 'show')->name('show');
+            Route::get('/{newProject}/edit', 'edit')->name('edit');
+            Route::put('/{newProject}', 'update')->name('update');
+            Route::delete('/{newProject}', 'destroy')->name('destroy');
+        });
     });
 });
