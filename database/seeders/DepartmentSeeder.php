@@ -12,9 +12,9 @@ class DepartmentSeeder extends Seeder
         $departmentNames = [
             'Marketing',
             'Management',
-            'Engineering 2',
-            'Engineering 3',
-            'Engineering 9',
+            'Engineering 2 - Roda 4',
+            'Engineering 3 - Roda 2',
+            'Engineering 9 - Roda 2 & Heavy Duty',
         ];
         foreach ($departmentNames as $name) {
             Department::updateOrCreate(['name' => $name]);

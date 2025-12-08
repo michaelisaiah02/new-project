@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Marketing;
 use App\Models\User;
 use App\Models\Department;
 use Illuminate\Http\Request;
-use App\Helpers\CountryHelper;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -190,31 +189,7 @@ class UserController extends Controller
         $users = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
-            'html' => view('marketing.users.partials.table_rows', compact('users'))->render(),
+            'html' => view('marketing.users.partials.table-rows', compact('users'))->render(),
         ]);
-    }
-
-    public function getSuperiors(Request $request)
-    {
-        $role = $request->query('role');
-        $departmentId = $request->query('department_id');
-
-        switch ($role) {
-            case 'leader':
-                $rolesToFetch = ['supervisor'];
-                break;
-            case 'supervisor':
-                $rolesToFetch = ['ypq'];
-                break;
-            case 'ypq':
-                $rolesToFetch = ['management'];
-                break;
-            default:
-                return response()->json([]);
-        }
-
-        $superiors = User::whereIn('role', $rolesToFetch)->where('department_id', '=', $departmentId)->get();
-
-        return response()->json($superiors);
     }
 }

@@ -322,7 +322,7 @@ class CustomerController extends Controller
         $customers = $query->orderBy('name')->get();
 
         return response()->json([
-            'html' => view('marketing.customers.partials.table_rows', compact('customers'))->render(),
+            'html' => view('marketing.customers.partials.table-rows', compact('customers'))->render(),
         ]);
     }
 }

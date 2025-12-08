@@ -14,7 +14,7 @@ class NewProjectController extends Controller
      */
     public function index()
     {
-        return view('marketing.new_projects.index');
+        return view('marketing.new-projects.index');
     }
 
     /**

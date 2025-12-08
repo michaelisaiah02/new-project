@@ -3,17 +3,24 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Marketing\CustomerController;
+use App\Http\Controllers\DocumentTypeController;
 use App\Http\Controllers\Marketing\NewProjectController;
 use App\Http\Controllers\Marketing\UserController;
+use App\Http\Middleware\CheckDepartmentAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true]);
 })->name('ping');
 
-Route::get('/', function () {
-    return redirect()->route('marketing');
+Route::prefix('document-type')->as('document-type.')->controller(DocumentTypeController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('/store', 'store')->name('store');
+    Route::post('/update-document-type/{id}', 'update')->name('update');
+    Route::delete('/delete-document-type/{id}', 'destroy');
+    Route::get('/search', 'search')->name('search');
 });
+
 
 Route::middleware('guest')->group(function () {
     Route::controller(LoginController::class)->group(function () {
@@ -22,12 +29,12 @@ Route::middleware('guest')->group(function () {
     });
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth')->middleware(CheckDepartmentAccess::class)->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::get('/', [DashboardController::class, 'index'])->name('index');
     Route::get('/marketing', [DashboardController::class, 'marketing'])->name('marketing');
     Route::get('/engineering', [DashboardController::class, 'engineering'])->name('engineering');
     Route::get('/management', [DashboardController::class, 'management'])->name('management');
-    Route::get('/main-menu', [DashboardController::class, 'mainMenu'])->name('main-menu');
 
     Route::prefix('marketing')->as('marketing.')->group(function () {
         Route::prefix('users')->as('users.')->controller(UserController::class)->group(function () {
