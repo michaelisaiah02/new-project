@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\ControlLeader\ChecksheetDraft;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -25,7 +24,7 @@ class LoginController extends Controller
     {
         $request->validate([
             'id' => 'required|string|size:5',
-            'password' => 'required|string'
+            'password' => 'required|string',
         ]);
         $credentials = $request->only('id', 'password');
         if (Auth::attempt($credentials)) {

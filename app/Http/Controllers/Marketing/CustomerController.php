@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\Marketing;
 
+use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\CustomerStage;
 use App\Models\Department;
 use App\Models\DocumentType;
 use Illuminate\Http\Request;
-use App\Models\CustomerStage;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Hash;
-use Pest\ArchPresets\Custom;
+use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -35,7 +33,7 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'unique:customers,code'],
             'name' => ['required', 'string', 'max:255'],
-            'department_id' => ['required', 'exists:departments,id']
+            'department_id' => ['required', 'exists:departments,id'],
         ]);
 
         Customer::create($validated);
@@ -102,21 +100,21 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'stage_number' => 'required|integer',
-            'stage_name'   => 'string|nullable',
+            'stage_name' => 'string|nullable',
             'document_type_ids' => 'required|array',
             'qr_position' => 'required|array',
         ]);
 
         $stage = CustomerStage::create([
             'stage_number' => $validated['stage_number'],
-            'stage_name'   => $validated['stage_name'],
+            'stage_name' => $validated['stage_name'],
             'customer_code' => $customer->code,
             'document_type_id' => null, // gak dipakai lagi
         ]);
 
         foreach ($validated['document_type_ids'] as $docId) {
             $stage->documents()->attach($docId, [
-                'qr_position' => $validated['qr_position'][$docId]
+                'qr_position' => $validated['qr_position'][$docId],
             ]);
         }
 
@@ -137,11 +135,11 @@ class CustomerController extends Controller
             ->first();
 
         // kalau belum ada stage ini → buat model dummy
-        if (!$stage) {
+        if (! $stage) {
             $stage = new CustomerStage([
                 'customer_code' => $customer->code,
-                'stage_number'  => $stageNumber,
-                'stage_name'    => null,
+                'stage_number' => $stageNumber,
+                'stage_name' => null,
             ]);
         }
 
@@ -191,7 +189,7 @@ class CustomerController extends Controller
         $docIds = $request->input('document_type_ids', []);
 
         // 1️⃣ Cegah stage baru tanpa dokumen
-        if (!$stage && count($docIds) === 0) {
+        if (! $stage && count($docIds) === 0) {
             return back()
                 ->withErrors(['document_type_ids' => 'Minimal pilih 1 dokumen untuk stage baru.'])
                 ->withInput();
@@ -205,9 +203,9 @@ class CustomerController extends Controller
         }
 
         $validated = $request->validate([
-            'stage_name'        => 'nullable|string',
+            'stage_name' => 'nullable|string',
             'document_type_ids' => 'nullable|array',
-            'qr_position'       => 'nullable|array',
+            'qr_position' => 'nullable|array',
         ]);
 
         // --- SAVE / UPDATE STAGE ---
@@ -224,13 +222,13 @@ class CustomerController extends Controller
         $syncData = [];
         foreach ($validated['document_type_ids'] ?? [] as $docId) {
             if (empty($validated['qr_position'][$docId] ?? null)) {
-                $errors["qr_position.$docId"] = "Dokumen yang dipilih harus punya posisi QR.";
+                $errors["qr_position.$docId"] = 'Dokumen yang dipilih harus punya posisi QR.';
             }
             $syncData[$docId] = [
                 'qr_position' => $validated['qr_position'][$docId] ?? null,
             ];
         }
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             return back()->withErrors($errors)->withInput();
         }
         $stage->documents()->sync($syncData);
@@ -246,7 +244,7 @@ class CustomerController extends Controller
             $target = (int) $request->input('target_stage', $stageNumber);
 
             return redirect()->route('marketing.customers.editStage', [
-                'customer'    => $customer->code,
+                'customer' => $customer->code,
                 'stageNumber' => $target,
             ]);
         }
@@ -267,7 +265,7 @@ class CustomerController extends Controller
             $newStageNumber = $maxStage + 1;
 
             return redirect()->route('marketing.customers.editStage', [
-                'customer'    => $customer->code,
+                'customer' => $customer->code,
                 'stageNumber' => $newStageNumber,
             ]);
         }
@@ -291,7 +289,7 @@ class CustomerController extends Controller
         $this->reorderStages($customer);
 
         return redirect()->route('marketing.customers.editStage', [
-            'customer'    => $customer->code,
+            'customer' => $customer->code,
             'stageNumber' => max(1, $stageNumber - 1),
         ])->with('success', 'Stage deleted successfully.');
     }

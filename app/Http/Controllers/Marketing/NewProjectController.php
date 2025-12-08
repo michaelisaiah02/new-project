@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Marketing;
 
-use App\Models\NewProject;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewProjectRequest;
 use App\Http\Requests\UpdateNewProjectRequest;
+use App\Models\NewProject;
 
 class NewProjectController extends Controller
 {

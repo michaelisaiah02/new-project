@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Marketing\UserController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Marketing\NewProjectController;
+use App\Http\Controllers\Marketing\UserController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true]);
