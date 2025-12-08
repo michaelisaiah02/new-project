@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Marketing;
 
-use App\Http\Controllers\Controller;
-use App\Models\Department;
 use App\Models\User;
+use App\Models\Department;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Helpers\CountryHelper;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -22,79 +23,95 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
             'id' => ['required', 'size:5', 'unique:users,id'],
+            'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
+            'whatsapp' => ['required', 'string', 'max:13'],  // validasi custom nanti
             'password' => ['required', 'string', 'min:6'],
             'approved' => ['boolean'],
             'checked' => ['boolean'],
         ]);
 
-        // if ($validated['role'] !== 'admin' && $validated['approved']) {
-        //     return back()->withErrors(['approved' => 'Approved can only be true if the role is admin.']);
-        // }
+        // Clean number → remove non-digits
+        $number = preg_replace('/\D/', '', $validated['whatsapp']);
 
-        // if ($validated['role'] === 'guest' && $validated['checked']) {
-        //     return back()->withErrors(['checked' => 'Checked can only be true if the role is not guest.']);
-        // }
+        // Remove leading 0 (089 → 89)
+        $validated['whatsapp'] = ltrim($number, '0');
 
-        // approved dan checked dari semua user hanya satu yang boleh true, jadi jika ada yang true, maka yang lain otomatis di ubah jadi false
-        // if ($validated['approved']) {
-        //     User::where('approved', true)->update(['approved' => false]);
-        // }
-        // if ($validated['checked']) {
-        //     User::where('checked', true)->update(['checked' => false]);
-        // }
+        // kalau sudah 62 di depannya, hapus 62
+        if (str_starts_with($validated['whatsapp'], '62')) {
+            $validated['whatsapp'] = substr($validated['whatsapp'], 2);
+        }
 
-        // Hash password
+        // Password hash
         $validated['password'] = Hash::make($validated['password']);
+
+        $validated['approved'] = $request->boolean('approved');
+        $validated['checked'] = $request->boolean('checked');
+
+        $dept = Department::find($validated['department_id']);
+        $deptType = $dept->type();
+
+        if ($deptType === 'engineering' && $validated['checked'] && $validated['approved']) {
+            return back()->withErrors(['checked' => 'Checked & Approved tidak boleh aktif bersamaan']);
+        }
+
+        // apply department rules
+        switch ($deptType) {
+            case 'marketing':
+                $validated['approved'] = false;
+                $validated['checked'] = false;
+                break;
+
+            case 'management':
+                $validated['approved'] = true;
+                $validated['checked'] = false;
+                break;
+
+            case 'engineering':
+                if ($validated['approved']) {
+                    User::where('department_id', $validated['department_id'])
+                        ->update(['approved' => false]);
+                }
+
+                if ($validated['approved'] && $validated['checked']) {
+                    $validated['checked'] = false;
+                }
+                break;
+        }
 
         User::create($validated);
 
         return redirect()->route('marketing.users.index')->with('success', 'User added successfully.');
     }
-
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
         $validated = $request->validate([
             'id' => ['required', 'size:5', Rule::unique('users', 'id')->ignore($user->id)],
-            'name' => 'required|string|max:255',
-            'department_id' => 'required|exists:departments,id',
-            'password' => 'nullable|string|min:6',
-            // no need to validate approved/checked here
+            'name' => ['required', 'string', 'max:255'],
+            'department_id' => ['required', 'exists:departments,id'],
+            'whatsapp' => ['required', 'string'],  // validasi custom nanti
+            'password' => ['nullable', 'string', 'min:6'],
+            'approved' => ['boolean'],
+            'checked' => ['boolean'],
         ]);
+
+        // Clean number → remove non-digits
+        $number = preg_replace('/\D/', '', $validated['whatsapp']);
+
+        // Remove leading 0 (089 → 89)
+        $validated['whatsapp'] = ltrim($number, '0');
+
+        // kalau sudah 62 di depannya, hapus 62
+        if (str_starts_with($validated['whatsapp'], '62')) {
+            $validated['whatsapp'] = substr($validated['whatsapp'], 2);
+        }
 
         // read them as booleans
         $approved = $request->boolean('approved');
         $checked = $request->boolean('checked');
-
-        // role-based rules
-        // if ($validated['role'] !== 'admin' && $approved) {
-        //     return back()->withErrors(['approved' => 'Only admin can be approved']);
-        // }
-        // if ($validated['role'] === 'guest' && $checked) {
-        //     return back()->withErrors(['checked' => 'Guest cannot be checked']);
-        // }
-
-        // enforce uniqueness: only one approved & one checked
-        // if ($approved) {
-        //     User::where('approved', true)->update(['approved' => false]);
-        // }
-        // if ($checked) {
-        //     User::where('checked', true)->update(['checked' => false]);
-        // }
-
-        // Jika tidak ada user lain yang approved dan user ini tidak ingin di-approve, tolak
-        // if (!User::where('approved', true)->where('id', '!=', $user->id)->exists() && $approved === false) {
-        //     return back()->withErrors(['approved' => 'At least one user must be approved.']);
-        // }
-
-        // Jika tidak ada user lain yang checked dan user ini tidak ingin di-check, tolak
-        // if (!User::where('checked', true)->where('id', '!=', $user->id)->exists() && $checked === false) {
-        //     return back()->withErrors(['checked' => 'At least one user must be checked.']);
-        // }
 
         // put everything into $data for update
         $data = $validated;
@@ -109,6 +126,36 @@ class UserController extends Controller
         // if password is null, remove it from $data to avoid updating it
         if (is_null($request->password)) {
             unset($data['password']);
+        }
+
+        $dept = Department::find($data['department_id']);
+        $deptType = $dept->type();
+
+        if ($deptType === 'engineering' && $data['checked'] && $data['approved']) {
+            return back()->withErrors(['checked' => 'Checked & Approved tidak boleh aktif bersamaan']);
+        }
+
+        switch ($deptType) {
+            case 'marketing':
+                $data['approved'] = false;
+                $data['checked'] = false;
+                break;
+
+            case 'management':
+                $data['approved'] = true;
+                $data['checked'] = false;
+                break;
+
+            case 'engineering':
+                if (!empty($data['approved']))
+                    User::where('department_id', $data['department_id'])
+                        ->where('id', '!=', $user->id)
+                        ->update(['approved' => false]);
+
+                if (!empty($data['approved']) && !empty($data['checked'])) {
+                    $data['checked'] = false;
+                }
+                break;
         }
 
         $user->update($data);

@@ -26,6 +26,7 @@ $table-bg-scale: 50%;
 // 4) Terakhir: seluruh komponen
 @import "bootstrap/scss/bootstrap";
 @import "@selectize/selectize/dist/css/selectize.bootstrap5.css";
+@import "bootstrap-icons/font/bootstrap-icons.css";
 
 // 1) Tokens
 $font-sans: "Cambria", sans-serif;

@@ -28,6 +28,7 @@ class User extends Authenticatable
         'name',
         'password',
         'department_id',
+        'whatsapp',
         'approved',
         'checked',
     ];

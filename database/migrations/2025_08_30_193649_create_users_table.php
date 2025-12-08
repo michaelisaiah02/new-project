@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('password');
             $table->foreignId('department_id')->constrained('departments')->onDelete('cascade');
+            $table->string('whatsapp', 15);
             $table->boolean('approved')->default(false);
             $table->boolean('checked')->default(false);
             $table->timestamps();

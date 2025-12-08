@@ -22,4 +22,16 @@ class Department extends Model
     {
         return $this->hasMany(Customer::class);
     }
+
+    public function type()
+    {
+        $name = strtolower($this->name);
+
+        return match (true) {
+            str_contains($name, 'marketing') => 'marketing',
+            str_contains($name, 'management') => 'management',
+            str_contains($name, 'engineering') => 'engineering',
+            default => 'other',
+        };
+    }
 }

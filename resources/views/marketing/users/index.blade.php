@@ -22,6 +22,7 @@
                         <th>ID User</th>
                         <th>User Name</th>
                         <th>Departement</th>
+                        <th>No WA</th>
                         <th>Checked</th>
                         <th>Approved</th>
                         <th>Action</th>
@@ -77,6 +78,15 @@
                             @endforeach
                         </select>
                         <div class="invalid-feedback">Department must be selected.</div>
+                    </div>
+                    <div class="row">
+                        <label for="whatsapp" class="form-label">WhatsApp Number</label>
+                        <div class="col-8 px-0 mx-0">
+                            <input type="tel" id="whatsapp" name="whatsapp" class="form-control"
+                                placeholder="Contoh: 081234567890 atau 81234567890" inputmode="numeric"
+                                pattern="^(?:\+62|62)?0?[0-9]{9,13}$" required>
+                            <div class="invalid-feedback">Enter a valid phone number.</div>
+                        </div>
                     </div>
                     <div class="row mb-3">
                         <label for="password" class="form-label">Password</label>
@@ -160,12 +170,59 @@
             });
         }
 
+        function checkDepartment(departmentId, approved = false, checked = false) {
+            const $checked = $('#checked');
+            const $approved = $('#approved');
+            const $checkedWrapper = $checked.closest('.form-check');
+            const $approvedWrapper = $approved.closest('.form-check');
+
+            const optionText = $('#department option[value="' + departmentId + '"]').text().trim().toLowerCase();
+            const normalized = (optionText || String(departmentId || '')).toLowerCase();
+
+            const resetState = () => {
+                $checkedWrapper.removeClass('d-none');
+                $approvedWrapper.removeClass('d-none');
+                $checked.prop({
+                    checked: false,
+                    disabled: false
+                });
+                $approved.prop({
+                    checked: false,
+                    disabled: false
+                });
+            };
+
+            resetState();
+
+            if (normalized.includes('marketing')) {
+                $checked.prop('checked', true).prop('disabled', true);
+                $approved.prop('checked', true).prop('disabled', true);
+
+                $checkedWrapper.addClass('d-none');
+                $approvedWrapper.addClass('d-none');
+
+            } else if (normalized.includes('management')) {
+                $checked.prop('checked', true).prop('disabled', true);
+                $checkedWrapper.addClass('d-none');
+
+                $approved.prop('checked', true).prop('disabled', true);
+            }
+
+            $checked.prop('checked', checked);
+            $approved.prop('checked', approved);
+        }
+
         $(document).ready(function() {
             // Add User
             $('#btn-add-user').click(function() {
                 $('#userForm').trigger('reset');
                 $('#userModalLabel').text('Add User');
                 $('#userForm').attr('action', "{{ route('marketing.users.store') }}");
+            });
+
+            $('#department').change(function() {
+                const departmentId = $(this).val();
+                checkDepartment(departmentId);
             });
 
             // Delegasi tombol Edit
@@ -175,16 +232,15 @@
                 $('#password').val('');
                 $('#name').val($(this).data('name'));
                 $('#department').val($(this).data('department'));
-                if ($(this).data('approved') === 1) {
-                    $('#approved').attr('checked', true);
-                } else {
-                    $('#approved').attr('checked', false);
-                }
-                if ($(this).data('checked') === 1) {
-                    $('#checked').attr('checked', true);
-                } else {
-                    $('#checked').attr('checked', false);
-                }
+                checkDepartment($(this).data('department'), $(this).data('approved'), $(this).data(
+                    'checked'));
+
+                // Parsing nomor WhatsApp
+                const rawWhatsapp = $(this).data('whatsapp') || '';
+                const fullPhone = String(rawWhatsapp).replace(/\D/g, ''); // e.g. +6281222459778
+                $('#whatsapp').val(fullPhone.replace(/^62/, ''));
+                // End parsing nomor WhatsApp
+
                 $('#userModalLabel').text('Edit User');
                 $('#userForm').attr('action', `{{ url('marketing/users/update-user') }}/${id}`);
                 new bootstrap.Modal(document.getElementById('userModal')).show();
@@ -198,24 +254,6 @@
                 $('#deleteUserName').text(name);
             });
 
-            const $superiorGroup = $('#superiorForm');
-            $superiorGroup.hide();
-
-            function toggleSuperior() {
-                const roleFilled = $('#role').val();
-                const departmentFilled = $('#department').val();
-
-                if (roleFilled && departmentFilled) {
-                    $superiorGroup.show();
-                    fetchSuperiors();
-                } else {
-                    $superiorGroup.hide();
-                    $('#superior').val('');
-                }
-            }
-
-            $('#role, #department').on('change', toggleSuperior);
-
             // Form Validation
             $('.needs-validation').on('submit', function(e) {
                 if (!this.checkValidity()) {
@@ -223,6 +261,7 @@
                     e.stopPropagation();
                 }
                 $(this).addClass('was-validated');
+                $('#checked, #approved').prop('disabled', false);
             });
 
             let debounceTimer;

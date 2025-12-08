@@ -11,7 +11,10 @@ class DepartmentSeeder extends Seeder
     {
         $departmentNames = [
             'Marketing',
-            'Engineering',
+            'Management',
+            'Engineering 2',
+            'Engineering 3',
+            'Engineering 9',
         ];
         foreach ($departmentNames as $name) {
             Department::updateOrCreate(['name' => $name]);
