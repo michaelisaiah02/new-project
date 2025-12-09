@@ -32,6 +32,9 @@ class UserController extends Controller
             'checked' => ['boolean'],
         ]);
 
+        // buat nama jadi huruf besar di awal setiap kata
+        $validated['name'] = ucwords(strtolower($validated['name']));
+
         // Clean number → remove non-digits
         $number = preg_replace('/\D/', '', $validated['whatsapp']);
 
@@ -98,6 +101,9 @@ class UserController extends Controller
             'approved' => ['boolean'],
             'checked' => ['boolean'],
         ]);
+
+        // buat nama jadi huruf besar di awal setiap kata
+        $validated['name'] = ucwords(strtolower($validated['name']));
 
         // Clean number → remove non-digits
         $number = preg_replace('/\D/', '', $validated['whatsapp']);

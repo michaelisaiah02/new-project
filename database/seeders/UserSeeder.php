@@ -21,6 +21,8 @@ class UserSeeder extends Seeder
             'id' => '12025',
             'password' => Hash::make($password),
             'department_id' => 1,
+            'whatsapp' => '6281234567890',
+            'email' => fake()->unique()->safeEmail(),
             'approved' => true,
         ]);
         User::factory()->create([
@@ -28,6 +30,8 @@ class UserSeeder extends Seeder
             'id' => '10009',
             'password' => Hash::make($password),
             'department_id' => 2,
+            'whatsapp' => '6281234567891',
+            'email' => fake()->unique()->safeEmail(),
             'checked' => true,
         ]);
     }

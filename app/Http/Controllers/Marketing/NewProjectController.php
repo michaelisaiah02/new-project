@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Marketing;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewProjectRequest;
 use App\Http\Requests\UpdateNewProjectRequest;
+use App\Models\Customer;
 use App\Models\NewProject;
+use Pest\ArchPresets\Custom;
 
 class NewProjectController extends Controller
 {
@@ -14,7 +16,8 @@ class NewProjectController extends Controller
      */
     public function index()
     {
-        return view('marketing.new-projects.index');
+        $customers = Customer::all();
+        return view('marketing.new-projects.index', compact('customers'));
     }
 
     /**

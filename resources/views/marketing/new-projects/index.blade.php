@@ -18,9 +18,10 @@
                         <select class="form-select bg-warning-subtle border-warning border" placeholder="Username"
                             aria-label="Username" aria-describedby="customer" id="customer" name="customer_code">
                             <option value="" selected disabled>Kode Customer</option>
-                            <option value="Customer A">Customer A</option>
-                            <option value="Customer B">Customer B</option>
-                            <option value="Customer C">Customer C</option>
+                            @foreach ($customers as $customer)
+                                <option value="{{ $customer->code }}">{{ $customer->code }} -
+                                    {{ $customer->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -120,29 +121,9 @@
                             class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Drawing
                             Revision
                             Date</span>
-                        <input class="form-control bg-warning-subtle border-warning border" placeholder="dd/mm/yyyy"
+                        <input class="form-control bg-warning-subtle border-warning border" type="date"
                             aria-label="dd/mm/yyyy" aria-describedby="drawing-rev-date" id="drawing-rev-date"
                             name="drawing_rev_date">
-                    </div>
-                </div>
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Packing
-                            Lot</span>
-                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Qty/Lot (pcs)"
-                            aria-label="Qty/Lot (pcs)" aria-describedby="packing-lot" id="packing-lot"
-                            name="packing_lot">
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Material
-                            on
-                            Drawing</span>
-                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Nama Material"
-                            aria-label="Nama Material" aria-describedby="material-on-drawing" id="material-on-drawing"
-                            name="material_on_drawing">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -159,12 +140,16 @@
                             class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-base pt-0 text-start fs-7">Tanggal
                             Terima SPK/LOI/DIE
                             GO</span>
-                        <input class="form-control bg-warning-subtle border-warning border" placeholder="dd/mm/yyyy"
+                        <input class="form-control bg-warning-subtle border-warning border" type="date"
                             aria-label="dd/mm/yyyy" aria-describedby="receive-date" id="receive-date"
                             name="receive_date">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle">No. SPK</span>
-                        <input class="form-control bg-warning-subtle border-warning border" placeholder="dd/mm/yyyy"
-                            aria-label="dd/mm/yyyy" aria-describedby="spk-num" id="spk-num" name="spk_num">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7 text-wrap"
+                            style="width: 6rem;">No. SdPK
+                            /LOI/DIE
+                            GO</span>
+                        <input class="form-control bg-warning-subtle border-warning border"
+                            placeholder="No. SPK /LOI/DIE GO" aria-label="No. SPK /LOI/DIE GO" aria-describedby="spk-num"
+                            id="spk-num" name="spk_num">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -178,20 +163,28 @@
                 </div>
                 <div class="col-md-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Message</span>
-                        <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Pesan dari management" aria-label="Pesan dari management"
-                            aria-describedby="message" id="message" name="message">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor
+                            Change</span>
+                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Minor Change"
+                            aria-label="Pesan dari management" aria-describedby="minor" id="minor" name="minor">
                     </div>
                 </div>
                 <div class="col-md-5">
+                    <div class="input-group">
+                        <span
+                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Material
+                            on
+                            Drawing</span>
+                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Nama Material"
+                            aria-label="Nama Material" aria-describedby="material-on-drawing" id="material-on-drawing"
+                            name="material_on_drawing">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor</span>
-                        <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Pesan dari management" aria-label="Pesan dari management"
-                            aria-describedby="minor" id="minor" name="minor">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Message</span>
+                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Pesan"
+                            aria-label="Pesan dari management" aria-describedby="message" id="message" name="message">
                     </div>
                 </div>
             </div>

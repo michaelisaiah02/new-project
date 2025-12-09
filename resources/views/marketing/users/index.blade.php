@@ -23,6 +23,7 @@
                         <th>User Name</th>
                         <th>Departement</th>
                         <th>No WA</th>
+                        <th>Email</th>
                         <th>Checked</th>
                         <th>Approved</th>
                         <th>Action</th>
