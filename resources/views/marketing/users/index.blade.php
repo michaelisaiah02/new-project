@@ -88,6 +88,11 @@
                             <div class="invalid-feedback">Enter a valid phone number.</div>
                         </div>
                     </div>
+                    <div class="row">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                    </div>
                     <div class="row mb-3">
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" minlength="6">
@@ -143,15 +148,13 @@
 
 @section('scripts')
     <script type="module">
-        function fetchUsers(keyword = '', page = 1, role = '') {
+        function fetchUsers(keyword = '') {
             $('#loading').show();
             $.ajax({
                 url: `{{ route('marketing.users.search') }}`,
                 type: 'GET',
                 data: {
-                    keyword: keyword,
-                    page: page,
-                    role: role
+                    keyword: keyword
                 },
                 success: function(response) {
                     $('#user-table-body').html(response.html);
@@ -241,6 +244,7 @@
                 $('#whatsapp').val(fullPhone.replace(/^62/, ''));
                 // End parsing nomor WhatsApp
 
+                $('#email').val($(this).data('email'));
                 $('#userModalLabel').text('Edit User');
                 $('#userForm').attr('action', `{{ url('marketing/users/update-user') }}/${id}`);
                 new bootstrap.Modal(document.getElementById('userModal')).show();

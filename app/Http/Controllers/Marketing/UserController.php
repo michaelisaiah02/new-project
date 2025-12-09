@@ -26,6 +26,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
             'whatsapp' => ['required', 'string', 'max:13'],  // validasi custom nanti
+            'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'approved' => ['boolean'],
             'checked' => ['boolean'],
@@ -92,6 +93,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
             'whatsapp' => ['required', 'string'],  // validasi custom nanti
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:6'],
             'approved' => ['boolean'],
             'checked' => ['boolean'],
@@ -180,6 +182,8 @@ class UserController extends Controller
                 $q->where(function ($query) use ($keyword) {
                     $query->where('name', 'like', "%{$keyword}%")
                         ->orWhere('id', 'like', "%{$keyword}%")
+                        ->orWhere('whatsapp', 'like', "%{$keyword}%")
+                        ->orWhere('email', 'like', "%{$keyword}%")
                         ->orWhereHas('department', function ($deptQuery) use ($keyword) {
                             $deptQuery->where('name', 'like', "%{$keyword}%");
                         });
