@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\NewProject;
+use App\Models\Project;
 
 class DashboardController extends Controller
 {
@@ -24,13 +24,13 @@ class DashboardController extends Controller
 
     public function engineering()
     {
-        $newProjects = NewProject::with('customer')
+        $newProjects = Project::with('customer')
             ->whereHas('customer', function ($q) {
                 $q->where('department_id', auth()->user()->department_id);
             })->whereIn('remark', ['new', 'not checked', 'not approved'])
             ->get();
 
-        $ongoingProjects = NewProject::with('customer')
+        $ongoingProjects = Project::with('customer')
             ->whereHas('customer', function ($q) {
                 $q->where('department_id', auth()->user()->department_id);
             })->where('remark', 'on going')

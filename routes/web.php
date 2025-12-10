@@ -4,7 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\DocumentTypeController;
-use App\Http\Controllers\Marketing\NewProjectController;
+use App\Http\Controllers\Marketing\ProjectController;
 use App\Http\Controllers\Marketing\UserController;
 use App\Http\Middleware\CheckDepartmentAccess;
 use Illuminate\Support\Facades\Route;
@@ -65,15 +65,14 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
             Route::get('/search', 'search')->name('search');
         });
 
-        Route::prefix('new-projects')->as('new-projects.')->controller(NewProjectController::class)->group(function () {
+        Route::prefix('projects')->as('projects.')->controller(ProjectController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/store', 'store')->name('store');
-            Route::get('/{newProject}', 'show')->name('show');
-            Route::get('/{newProject}/edit', 'edit')->name('edit');
-            Route::put('/{newProject}', 'update')->name('update');
-            Route::delete('/{newProject}', 'destroy')->name('destroy');
-            Route::post('/generate-drawing-label', 'generateDrawingLabel')->name('generate-drawing-label');
+            Route::get('/{project}', 'show')->name('show');
+            Route::get('/{project}/edit', 'edit')->name('edit');
+            Route::put('/{project}', 'update')->name('update');
+            Route::delete('/{project}', 'destroy')->name('destroy');
         });
     });
 });

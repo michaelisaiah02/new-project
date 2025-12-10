@@ -3,283 +3,283 @@
 @section('title', 'MANAGEMENT USERS')
 
 @section('content')
-    <div class="container mt-3">
-        <div class="row justify-content-md-end justify-content-center align-items-center mb-3">
-            <div class="col-auto my-2 my-md-0 d-flex align-items-center">
-                <div id="loading-spinner" style="display: none;" class="text-center me-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <input type="search" class="form-control" placeholder="Search..." id="search-user" autocomplete="off">
-            </div>
+  <div class="container mt-3">
+    <div class="row justify-content-md-end justify-content-center align-items-center mb-3">
+      <div class="col-auto my-2 my-md-0 d-flex align-items-center">
+        <div id="loading-spinner" style="display: none;" class="text-center me-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
         </div>
-        <div class="table-responsive text-nowrap mb-3" style="max-height: 350px; overflow-y: auto;">
-            <table class="table table-sm table-bordered m-0" id="user-table">
-                <thead class="table-primary sticky-top">
-                    <tr class="text-center">
-                        <th>No</th>
-                        <th>ID User</th>
-                        <th>User Name</th>
-                        <th>Departement</th>
-                        <th>No WA</th>
-                        <th>Email</th>
-                        <th>Checked</th>
-                        <th>Approved</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="user-table-body">
-                    {{-- Data will generate by AJAX --}}
-                </tbody>
-            </table>
-        </div>
-        <div
-            class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
-            <div class="col-auto">
-                <a href="{{ route('marketing') }}" class="btn btn-primary fs-5">Back</a>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary btn-lg text-white rounded-pill m-0 py-2" data-bs-toggle="modal"
-                    data-bs-target="#userModal" id="btn-add-user">
-                    <i class="bi bi-plus-lg fs-5"></i>
-                </button>
-            </div>
-        </div>
+        <input type="search" class="form-control" placeholder="Search..." id="search-user" autocomplete="off">
+      </div>
     </div>
+    <div class="table-responsive text-nowrap mb-3" style="max-height: 350px; overflow-y: auto;">
+      <table class="table table-sm table-bordered m-0" id="user-table">
+        <thead class="table-primary sticky-top">
+          <tr class="text-center">
+            <th>No</th>
+            <th>ID User</th>
+            <th>User Name</th>
+            <th>Departement</th>
+            <th>No WA</th>
+            <th>Email</th>
+            <th>Checked</th>
+            <th>Approved</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="user-table-body">
+          {{-- Data will generate by AJAX --}}
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
+      <div class="col-auto">
+        <a href="{{ route('marketing') }}" class="btn btn-primary fs-5">Back</a>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary btn-lg text-white rounded-pill m-0 py-2" data-bs-toggle="modal"
+          data-bs-target="#userModal" id="btn-add-user">
+          <i class="bi bi-plus-lg fs-5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
 
-    <!-- Modal Tambah/Edit User -->
-    <div class="modal fade modal-sm" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <form class="modal-content needs-validation" method="POST" id="userForm" novalidate>
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title" id="userModalLabel">Add User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <label for="id" class="form-label">ID User</label>
-                        <input type="text" class="form-control" id="id" name="id" pattern="^\d{5}$"
-                            inputmode="numeric" minlength="5" maxlength="5" required>
-                        <div class="invalid-feedback">ID User must consist of exactly 5 digits.</div>
-                    </div>
-                    <div class="row">
-                        <label for="name" class="form-label">User Name</label>
-                        <input type="text" class="form-control" id="name" name="name" pattern="^[A-Za-z\s]+$"
-                            required>
-                        <div class="invalid-feedback">Name must contain letters only.</div>
-                    </div>
-                    <div class="row">
-                        <label for="department" class="form-label">Department</label>
-                        <select class="form-select" id="department" name="department_id">
-                            <option value="" disabled selected>Choose Department</option>
-                            @foreach ($departments as $department)
-                                <option value="{{ $department->id }}">{{ $department->name }}</option>
-                            @endforeach
-                        </select>
-                        <div class="invalid-feedback">Department must be selected.</div>
-                    </div>
-                    <div class="row">
-                        <label for="whatsapp" class="form-label">WhatsApp Number</label>
-                        <div class="col-8 px-0 mx-0">
-                            <input type="tel" id="whatsapp" name="whatsapp" class="form-control"
-                                placeholder="Contoh: 081234567890 atau 81234567890" inputmode="numeric"
-                                pattern="^(?:\+62|62)?0?[0-9]{9,13}$" required>
-                            <div class="invalid-feedback">Enter a valid phone number.</div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                        <div class="invalid-feedback">Please enter a valid email address.</div>
-                    </div>
-                    <div class="row mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" minlength="6">
-                        <div class="invalid-feedback">Password must be at least 6 characters.</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="checked" name="checked"
-                                    value="1">
-                                <label class="form-check-label user-select-none" for="checked">Checked</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="approved" name="approved"
-                                    value="1">
-                                <label class="form-check-label user-select-none" for="approved">Approved</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
+  <!-- Modal Tambah/Edit User -->
+  <div class="modal fade modal-sm" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content needs-validation" method="POST" id="userForm" novalidate>
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="userModalLabel">Add User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-    </div>
-    <!-- Modal Delete User -->
-    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <form method="POST" id="deleteUserForm" class="modal-content">
-                @csrf
-                @method('DELETE')
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteUserModalLabel">Delete User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to delete the user named <strong id="deleteUserName"></strong>?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </div>
-            </form>
+        <div class="modal-body">
+          <div class="row">
+            <label for="id" class="form-label">ID User</label>
+            <input type="text" class="form-control" id="id" name="id" pattern="^\d{5}$" inputmode="numeric"
+              minlength="5" maxlength="5" required>
+            <div class="invalid-feedback">ID User must consist of exactly 5 digits.</div>
+          </div>
+          <div class="row">
+            <label for="name" class="form-label">User Name</label>
+            <input type="text" class="form-control" id="name" name="name" pattern="^[A-Za-z\s]+$" required>
+            <div class="invalid-feedback">Name must contain letters only.</div>
+          </div>
+          <div class="row">
+            <label for="department" class="form-label">Department</label>
+            <select class="form-select" id="department" name="department_id">
+              <option value="" disabled selected>Choose Department</option>
+              @foreach ($departments as $department)
+                <option value="{{ $department->id }}">{{ $department->name }}</option>
+              @endforeach
+            </select>
+            <div class="invalid-feedback">Department must be selected.</div>
+          </div>
+          <div class="row">
+            <label for="whatsapp" class="form-label">WhatsApp Number</label>
+            <div class="col-8 px-0 mx-0">
+              <input type="tel" id="whatsapp" name="whatsapp" class="form-control"
+                placeholder="Contoh: 081234567890 atau 81234567890" inputmode="numeric"
+                pattern="^(?:\+62|62)?0?[0-9]{9,13}$" required>
+              <div class="invalid-feedback">Enter a valid phone number.</div>
+            </div>
+          </div>
+          <div class="row">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+            <div class="invalid-feedback">Please enter a valid email address.</div>
+          </div>
+          <div class="row mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" minlength="8"
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$">
+            <div class="invalid-feedback">
+              Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="checked" name="checked" value="1">
+                <label class="form-check-label user-select-none" for="checked">Checked</label>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="approved" name="approved" value="1">
+                <label class="form-check-label user-select-none" for="approved">Approved</label>
+              </div>
+            </div>
+          </div>
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
     </div>
-    <x-toast />
+  </div>
+  <!-- Modal Delete User -->
+  <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" id="deleteUserForm" class="modal-content">
+        @csrf
+        @method('DELETE')
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteUserModalLabel">Delete User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete the user named <strong id="deleteUserName"></strong>?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <x-toast />
 @endsection
 
 @section('scripts')
-    <script type="module">
-        function fetchUsers(keyword = '') {
-            $('#loading').show();
-            $.ajax({
-                url: `{{ route('marketing.users.search') }}`,
-                type: 'GET',
-                data: {
-                    keyword: keyword
-                },
-                success: function(response) {
-                    $('#user-table-body').html(response.html);
-                    $('#pagination-links').html(response.pagination);
-                    $('html, body').animate({
-                        scrollTop: $('#user-table').offset().top - 100
-                    }, 300);
-                    $('.pagination nav').addClass('w-100');
-                },
-                complete: function() {
-                    $('#loading').hide();
-                },
-                error: function() {
-                    alert('Gagal memuat data.');
-                }
-            });
+  <script type="module">
+    function fetchUsers(keyword = '') {
+      $('#loading').show();
+      $.ajax({
+        url: `{{ route('marketing.users.search') }}`,
+        type: 'GET',
+        data: {
+          keyword: keyword
+        },
+        success: function(response) {
+          $('#user-table-body').html(response.html);
+          $('#pagination-links').html(response.pagination);
+          $('html, body').animate({
+            scrollTop: $('#user-table').offset().top - 100
+          }, 300);
+          $('.pagination nav').addClass('w-100');
+        },
+        complete: function() {
+          $('#loading').hide();
+        },
+        error: function() {
+          alert('Gagal memuat data.');
         }
+      });
+    }
 
-        function checkDepartment(departmentId, approved = false, checked = false) {
-            const $checked = $('#checked');
-            const $approved = $('#approved');
-            const $checkedWrapper = $checked.closest('.form-check');
-            const $approvedWrapper = $approved.closest('.form-check');
+    function checkDepartment(departmentId, approved = false, checked = false) {
+      const $checked = $('#checked');
+      const $approved = $('#approved');
+      const $checkedWrapper = $checked.closest('.form-check');
+      const $approvedWrapper = $approved.closest('.form-check');
 
-            const optionText = $('#department option[value="' + departmentId + '"]').text().trim().toLowerCase();
-            const normalized = (optionText || String(departmentId || '')).toLowerCase();
+      const optionText = $('#department option[value="' + departmentId + '"]').text().trim().toLowerCase();
+      const normalized = (optionText || String(departmentId || '')).toLowerCase();
 
-            const resetState = () => {
-                $checkedWrapper.removeClass('d-none');
-                $approvedWrapper.removeClass('d-none');
-                $checked.prop({
-                    checked: false,
-                    disabled: false
-                });
-                $approved.prop({
-                    checked: false,
-                    disabled: false
-                });
-            };
-
-            resetState();
-
-            if (normalized.includes('marketing')) {
-                $checked.prop('checked', true).prop('disabled', true);
-                $approved.prop('checked', true).prop('disabled', true);
-
-                $checkedWrapper.addClass('d-none');
-                $approvedWrapper.addClass('d-none');
-
-            } else if (normalized.includes('management')) {
-                $checked.prop('checked', true).prop('disabled', true);
-                $checkedWrapper.addClass('d-none');
-
-                $approved.prop('checked', true).prop('disabled', true);
-            }
-
-            $checked.prop('checked', checked);
-            $approved.prop('checked', approved);
-        }
-
-        $(document).ready(function() {
-            // Add User
-            $('#btn-add-user').click(function() {
-                $('#userForm').trigger('reset');
-                $('#userModalLabel').text('Add User');
-                $('#userForm').attr('action', "{{ route('marketing.users.store') }}");
-            });
-
-            $('#department').change(function() {
-                const departmentId = $(this).val();
-                checkDepartment(departmentId);
-            });
-
-            // Delegasi tombol Edit
-            $(document).on('click', '.btn-edit-user', function() {
-                const id = $(this).data('id');
-                $('#id').val(id);
-                $('#password').val('');
-                $('#name').val($(this).data('name'));
-                $('#department').val($(this).data('department'));
-                checkDepartment($(this).data('department'), $(this).data('approved'), $(this).data(
-                    'checked'));
-
-                // Parsing nomor WhatsApp
-                const rawWhatsapp = $(this).data('whatsapp') || '';
-                const fullPhone = String(rawWhatsapp).replace(/\D/g, ''); // e.g. +6281222459778
-                $('#whatsapp').val(fullPhone.replace(/^62/, ''));
-                // End parsing nomor WhatsApp
-
-                $('#email').val($(this).data('email'));
-                $('#userModalLabel').text('Edit User');
-                $('#userForm').attr('action', `{{ url('marketing/users/update-user') }}/${id}`);
-                new bootstrap.Modal(document.getElementById('userModal')).show();
-            });
-
-            // Delegasi tombol Delete
-            $(document).on('click', '.btn-delete-user', function() {
-                const id = $(this).data('id');
-                const name = $(this).data('name');
-                $('#deleteUserForm').attr('action', `{{ url('marketing/users/delete-user') }}/${id}`);
-                $('#deleteUserName').text(name);
-            });
-
-            // Form Validation
-            $('.needs-validation').on('submit', function(e) {
-                if (!this.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                $(this).addClass('was-validated');
-                $('#checked, #approved').prop('disabled', false);
-            });
-
-            let debounceTimer;
-            $('#search-user').on('keyup', function() {
-                clearTimeout(debounceTimer);
-                const keyword = $(this).val();
-                debounceTimer = setTimeout(() => {
-                    fetchUsers(keyword);
-                }, 400);
-            });
-
-            // Initial fetch
-            fetchUsers();
+      const resetState = () => {
+        $checkedWrapper.removeClass('d-none');
+        $approvedWrapper.removeClass('d-none');
+        $checked.prop({
+          checked: false,
+          disabled: false
         });
-    </script>
+        $approved.prop({
+          checked: false,
+          disabled: false
+        });
+      };
+
+      resetState();
+
+      if (normalized.includes('marketing')) {
+        $checked.prop('checked', true).prop('disabled', true);
+        $approved.prop('checked', true).prop('disabled', true);
+
+        $checkedWrapper.addClass('d-none');
+        $approvedWrapper.addClass('d-none');
+
+      } else if (normalized.includes('management')) {
+        $checked.prop('checked', true).prop('disabled', true);
+        $checkedWrapper.addClass('d-none');
+
+        $approved.prop('checked', true).prop('disabled', true);
+      }
+
+      $checked.prop('checked', checked);
+      $approved.prop('checked', approved);
+    }
+
+    $(document).ready(function() {
+      // Add User
+      $('#btn-add-user').click(function() {
+        $('#userForm').trigger('reset');
+        $('#userModalLabel').text('Add User');
+        $('#userForm').attr('action', "{{ route('marketing.users.store') }}");
+      });
+
+      $('#department').change(function() {
+        const departmentId = $(this).val();
+        checkDepartment(departmentId);
+      });
+
+      // Delegasi tombol Edit
+      $(document).on('click', '.btn-edit-user', function() {
+        const id = $(this).data('id');
+        $('#id').val(id);
+        $('#password').val('');
+        $('#name').val($(this).data('name'));
+        $('#department').val($(this).data('department'));
+        checkDepartment($(this).data('department'), $(this).data('approved'), $(this).data(
+          'checked'));
+
+        // Parsing nomor WhatsApp
+        const rawWhatsapp = $(this).data('whatsapp') || '';
+        const fullPhone = String(rawWhatsapp).replace(/\D/g, ''); // e.g. +6281222459778
+        $('#whatsapp').val(fullPhone.replace(/^62/, ''));
+        // End parsing nomor WhatsApp
+
+        $('#email').val($(this).data('email'));
+        $('#userModalLabel').text('Edit User');
+        $('#userForm').attr('action', `{{ url('marketing/users/update-user') }}/${id}`);
+        new bootstrap.Modal(document.getElementById('userModal')).show();
+      });
+
+      // Delegasi tombol Delete
+      $(document).on('click', '.btn-delete-user', function() {
+        const id = $(this).data('id');
+        const name = $(this).data('name');
+        $('#deleteUserForm').attr('action', `{{ url('marketing/users/delete-user') }}/${id}`);
+        $('#deleteUserName').text(name);
+      });
+
+      // Form Validation
+      $('.needs-validation').on('submit', function(e) {
+        if (!this.checkValidity()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        $(this).addClass('was-validated');
+        $('#checked, #approved').prop('disabled', false);
+      });
+
+      let debounceTimer;
+      $('#search-user').on('keyup', function() {
+        clearTimeout(debounceTimer);
+        const keyword = $(this).val();
+        debounceTimer = setTimeout(() => {
+          fetchUsers(keyword);
+        }, 400);
+      });
+
+      // Initial fetch
+      fetchUsers();
+    });
+  </script>
 @endsection

@@ -22,9 +22,9 @@ class Customer extends Model
         'department_id',
     ];
 
-    public function newProjects()
+    public function projects()
     {
-        return $this->hasMany(NewProject::class, 'customer_code', 'code');
+        return $this->hasMany(Project::class, 'customer_code', 'code');
     }
 
     public function department()

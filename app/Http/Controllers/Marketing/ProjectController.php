@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Marketing;
 
 use App\Models\Customer;
-use App\Models\NewProject;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Pest\ArchPresets\Custom;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreNewProjectRequest;
-use App\Http\Requests\UpdateNewProjectRequest;
+use App\Http\Requests\StoreProjectRequest;
+use App\Http\Requests\UpdateProjectRequest;
+use App\Helpers\FileHelper;
 
-class NewProjectController extends Controller
+class ProjectController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -18,7 +19,7 @@ class NewProjectController extends Controller
     public function index()
     {
         $customers = Customer::all();
-        return view('marketing.new-projects.index', compact('customers'));
+        return view('marketing.projects.index', compact('customers'));
     }
 
     /**
@@ -40,10 +41,10 @@ class NewProjectController extends Controller
             'part_number' => 'required|string|max:50',
             'part_name' => 'required|string|max:100',
             'part_type' => 'required|string|max:50',
-            'drawing_2d' => 'required|file|mimes:pdf,dwg,dxf',
+            'drawing_2d' => 'required|file',
             'drawing_label_2d' => 'required|string|max:100',
-            'drawing_3d' => 'required|file|mimes:pdf,step,iges,stp',
-            'drawing_label_3d' => 'required|string|max:100',
+            'drawing_3d' => 'nullable|file',
+            'drawing_label_3d' => 'nullable|string|max:100',
             'qty' => 'required|integer|min:1',
             'eee_number' => 'nullable|string|max:50',
             'drawing_number' => 'nullable|string|max:50',
@@ -61,19 +62,18 @@ class NewProjectController extends Controller
         // === 2D FILE ===
         if ($request->hasFile('drawing_2d')) {
 
-            // Ambil label (misal: ABC123-2D)
             $name2d = $validated['drawing_label_2d']
-                ? $validated['drawing_label_2d'] . '.pdf'
-                : $request->file('drawing_2d')->getClientOriginalName();
+                ?: $request->file('drawing_2d')->getClientOriginalName();
 
-            // Path tujuan
-            $path2d = $request->file('drawing_2d')->storeAs(
-                "{$customerCode}/drawings",
-                $name2d,
-                'public'
+            // Simpan file via helper
+            $validated['drawing_2d'] = FileHelper::storeDrawingFile(
+                $request->file('drawing_2d'),
+                $customerCode,
+                $validated['model'],
+                $validated['part_number'],
+                $name2d
             );
 
-            $validated['drawing_2d'] = $path2d;
             unset($validated['drawing_label_2d']);
         }
 
@@ -81,20 +81,21 @@ class NewProjectController extends Controller
         if ($request->hasFile('drawing_3d')) {
 
             $name3d = $validated['drawing_label_3d']
-                ? $validated['drawing_label_3d'] . '.pdf'
-                : $request->file('drawing_3d')->getClientOriginalName();
+                ?: $request->file('drawing_3d')->getClientOriginalName();
 
-            $path3d = $request->file('drawing_3d')->storeAs(
-                "{$customerCode}/drawings",
-                $name3d,
-                'public'
+            // Simpan file via helper
+            $validated['drawing_2d'] = FileHelper::storeDrawingFile(
+                $request->file('drawing_3d'),
+                $customerCode,
+                $validated['model'],
+                $validated['part_number'],
+                $name2d
             );
 
-            $validated['drawing_3d'] = $path3d;
             unset($validated['drawing_label_3d']);
         }
 
-        NewProject::create($validated);
+        Project::create($validated);
 
         return redirect()->back()->with('success', 'New project created successfully.');
     }
@@ -102,7 +103,7 @@ class NewProjectController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(NewProject $newProject)
+    public function show(Project $project)
     {
         //
     }
@@ -110,7 +111,7 @@ class NewProjectController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(NewProject $newProject)
+    public function edit(Project $project)
     {
         //
     }
@@ -118,7 +119,7 @@ class NewProjectController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateNewProjectRequest $request, NewProject $newProject)
+    public function update(UpdateProjectRequest $request, Project $project)
     {
         //
     }
@@ -126,7 +127,7 @@ class NewProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(NewProject $newProject)
+    public function destroy(Project $project)
     {
         //
     }

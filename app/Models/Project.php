@@ -5,10 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class NewProject extends Model
+class Project extends Model
 {
-    /** @use HasFactory<\Database\Factories\NewProjectFactory> */
+    /** @use HasFactory<\Database\Factories\ProjectFactory> */
     use HasFactory;
+
+    protected $primaryKey = 'part_number';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 
     protected $fillable = [
         'customer_code',
@@ -26,7 +32,6 @@ class NewProject extends Model
         'receive_date_sldg',
         'sldg_number',
         'masspro_target',
-        'message',
         'minor_change',
     ];
 

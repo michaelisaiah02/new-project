@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\NewProject;
+use App\Models\Project;
 use App\Models\User;
 
-class NewProjectPolicy
+class ProjectPolicy
 {
     /**
      * Determine whether the user can view any models.

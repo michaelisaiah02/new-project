@@ -36,6 +36,8 @@ class CustomerController extends Controller
             'department_id' => ['required', 'exists:departments,id'],
         ]);
 
+        $validated['code'] = strtoupper($validated['code']);
+
         Customer::create($validated);
 
         return redirect()
@@ -135,7 +137,7 @@ class CustomerController extends Controller
             ->first();
 
         // kalau belum ada stage ini → buat model dummy
-        if (! $stage) {
+        if (!$stage) {
             $stage = new CustomerStage([
                 'customer_code' => $customer->code,
                 'stage_number' => $stageNumber,
@@ -189,7 +191,7 @@ class CustomerController extends Controller
         $docIds = $request->input('document_type_ids', []);
 
         // 1️⃣ Cegah stage baru tanpa dokumen
-        if (! $stage && count($docIds) === 0) {
+        if (!$stage && count($docIds) === 0) {
             return back()
                 ->withErrors(['document_type_ids' => 'Minimal pilih 1 dokumen untuk stage baru.'])
                 ->withInput();
@@ -228,7 +230,7 @@ class CustomerController extends Controller
                 'qr_position' => $validated['qr_position'][$docId] ?? null,
             ];
         }
-        if (! empty($errors)) {
+        if (!empty($errors)) {
             return back()->withErrors($errors)->withInput();
         }
         $stage->documents()->sync($syncData);

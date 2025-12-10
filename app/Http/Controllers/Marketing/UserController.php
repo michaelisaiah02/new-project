@@ -138,8 +138,38 @@ class UserController extends Controller
         $dept = Department::find($data['department_id']);
         $deptType = $dept->type();
 
-        if ($deptType === 'engineering' && $data['checked'] && $data['approved']) {
-            return back()->withErrors(['checked' => 'Checked & Approved tidak boleh aktif bersamaan']);
+        // Misal data lama dari database
+        $oldChecked = $user->checked;
+        $oldApproved = $user->approved;
+
+        // Data baru dari request
+        $newChecked = $data['checked'];
+        $newApproved = $data['approved'];
+
+        if ($deptType === 'engineering') {
+
+            // Kalau sebelumnya APPROVED = true, dan sekarang user nyalain CHECKED
+            if ($oldApproved && !$oldChecked && $newChecked) {
+                $validated['approved'] = false;
+                $validated['checked'] = true;
+            }
+
+            // Kalau sebelumnya CHECKED = true, dan sekarang user nyalain APPROVED
+            if ($oldChecked && !$oldApproved && $newApproved) {
+                $validated['checked'] = false;
+                $validated['approved'] = true;
+            }
+
+            // Kalau sebelumnya APPROVED atau CHECKED = true, dan sekarang user nyalain dua-duanya
+// Atau
+            // CASE 2: Kalau sebelumnya dua-duanya false, tapi sekarang user nyalain dua-duanya
+            // Kalau user mencoba mengaktifkan keduanya di input baru
+            if ($newChecked && $newApproved) {
+                return back()->withErrors([
+                    'error' => 'Checked & Approved tidak boleh aktif bersamaan'
+                ]);
+            }
+
         }
 
         switch ($deptType) {
