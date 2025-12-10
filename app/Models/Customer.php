@@ -22,6 +22,11 @@ class Customer extends Model
         'department_id',
     ];
 
+    public function newProjects()
+    {
+        return $this->hasMany(NewProject::class, 'customer_code', 'code');
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class);

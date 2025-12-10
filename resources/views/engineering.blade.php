@@ -14,37 +14,36 @@
                                 <th scope="col">Model</th>
                                 <th scope="col">Message</th>
                                 <th scope="col">Date</th>
+                                <th scope="col">Remark</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="">
-                                <td scope="row">R1C1</td>
-                                <td>R1C2</td>
-                                <td>R1C3</td>
-                                <td>R1C2</td>
-                                <td>R1C3</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
+                            @foreach ($newProjects as $newProject)
+                                <tr class="">
+                                    <td scope="row">{{ $loop->iteration }}</td>
+                                    <td>{{ $newProject->customer_code }}</td>
+                                    <td>{{ $newProject->model }}</td>
+                                    <td>{{ $newProject->message }}</td>
+                                    <td>{{ $newProject->created_at->format('d-m-Y') }}</td>
+                                    <td>
+                                        @switch($newProject->remark)
+                                            @case('new')
+                                                New!
+                                            @break
+
+                                            @case('not checked')
+                                                Not Yet Checked
+                                            @break
+
+                                            @case('not approved')
+                                                Not Yet Approved
+                                            @break
+
+                                            @default
+                                        @endswitch
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -64,51 +63,20 @@
                                 <th scope="col">Model</th>
                                 <th scope="col">Message</th>
                                 <th scope="col">Date</th>
+                                <th scope="col">Remark</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="">
-                                <td scope="row">R1C1</td>
-                                <td>R1C2</td>
-                                <td>R1C3</td>
-                                <td>R1C2</td>
-                                <td>R1C3</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
-                            <tr class="">
-                                <td scope="row">Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                                <td>Item</td>
-                            </tr>
+                            @foreach ($ongoingProjects as $ongoingProject)
+                                <tr class="">
+                                    <td scope="row">{{ $loop->iteration }}</td>
+                                    <td>{{ $ongoingProject->customer_code }}</td>
+                                    <td>{{ $ongoingProject->model }}</td>
+                                    <td>{{ $ongoingProject->message }}</td>
+                                    <td>{{ $ongoingProject->created_at->format('d-m-Y') }}</td>
+                                    <td>On Going</td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -122,8 +90,7 @@
                 </form>
             </div>
             <div class="col-auto px-0">
-                <a href="{{ route('main-menu') }}" class="btn btn-primary border-3 border-light-subtle ms-auto">MAIN
-                    MENU</a>
+                <a href="" class="btn btn-primary border-3 border-light-subtle ms-auto">List Mass Production Part</a>
             </div>
         </div>
     </div>

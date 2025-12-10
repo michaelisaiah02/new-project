@@ -73,6 +73,7 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
             Route::get('/{newProject}/edit', 'edit')->name('edit');
             Route::put('/{newProject}', 'update')->name('update');
             Route::delete('/{newProject}', 'destroy')->name('destroy');
+            Route::post('/generate-drawing-label', 'generateDrawingLabel')->name('generate-drawing-label');
         });
     });
 });

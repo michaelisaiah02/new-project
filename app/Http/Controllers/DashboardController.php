@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\NewProject;
+
 class DashboardController extends Controller
 {
     public function index()
@@ -22,7 +24,19 @@ class DashboardController extends Controller
 
     public function engineering()
     {
-        return view('engineering');
+        $newProjects = NewProject::with('customer')
+            ->whereHas('customer', function ($q) {
+                $q->where('department_id', auth()->user()->department_id);
+            })->whereIn('remark', ['new', 'not checked', 'not approved'])
+            ->get();
+
+        $ongoingProjects = NewProject::with('customer')
+            ->whereHas('customer', function ($q) {
+                $q->where('department_id', auth()->user()->department_id);
+            })->where('remark', 'on going')
+            ->get();
+
+        return view('engineering', compact('newProjects', 'ongoingProjects'));
     }
 
     public function management()

@@ -26,10 +26,11 @@ return new class extends Migration
             $table->date('drawing_revision_date');
             $table->string('material_on_drawing');
             $table->date('receive_date_sldg')->comment('Receive Date SPK/LOI/DIE GO');
-            $table->string('spk_number')->comment('SPK/LOI/DIE GO Number');
+            $table->string('sldg_number')->comment('SPK/LOI/DIE GO Number');
             $table->string('masspro_target');
             $table->string('message')->comment('Message from Management');
             $table->string('minor_change');
+            $table->enum('remark', ['new', 'not checked', 'not approved', 'on going', 'completed'])->default('new');
             $table->timestamps();
 
             $table->foreign('customer_code')->references('code')->on('customers')->onDelete('cascade');

@@ -1,5 +1,5 @@
 @if (session()->has('error'))
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
         <div id="errorNotification" class="toast align-items-center text-bg-danger border-0" role="alert"
             aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
@@ -14,7 +14,7 @@
     </div>
 @endif
 @if (session()->has('warning'))
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
         <div id="warningNotification" class="toast align-items-center text-bg-warning border-0" role="alert"
             aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
@@ -29,7 +29,7 @@
     </div>
 @endif
 @if (session()->has('success'))
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
         <div id="successNotification" class="toast align-items-center text-bg-success border-0" role="alert"
             aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
@@ -44,7 +44,7 @@
     </div>
 @endif
 @if ($errors->any())
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
         <div id="errorNotification" class="toast align-items-center border-0" role="alert" aria-live="assertive"
             aria-atomic="true">
             <div class="toast-header">
