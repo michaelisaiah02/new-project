@@ -40,7 +40,7 @@ class ProjectController extends Controller
             'model' => 'required|string|max:50',
             'part_number' => 'required|string|max:50',
             'part_name' => 'required|string|max:100',
-            'part_type' => 'required|string|max:50',
+            'part_type' => 'required|string|in:Hose,Molding,Weatherstrip,Bonding Metal',
             'drawing_2d' => 'required|file',
             'drawing_label_2d' => 'required|string|max:100',
             'drawing_3d' => 'nullable|file',
@@ -56,6 +56,10 @@ class ProjectController extends Controller
             'message' => 'nullable|string',
             'minor_change' => 'nullable|string',
         ]);
+
+        $validated['model'] = strtoupper($validated['model']);
+        $validated['part_number'] = strtoupper($validated['part_number']);
+        $validated['part_name'] = ucwords(strtolower($validated['part_name']));
 
         $customerCode = $validated['customer_code'];
 
@@ -84,12 +88,12 @@ class ProjectController extends Controller
                 ?: $request->file('drawing_3d')->getClientOriginalName();
 
             // Simpan file via helper
-            $validated['drawing_2d'] = FileHelper::storeDrawingFile(
+            $validated['drawing_3d'] = FileHelper::storeDrawingFile(
                 $request->file('drawing_3d'),
                 $customerCode,
                 $validated['model'],
                 $validated['part_number'],
-                $name2d
+                $name3d
             );
 
             unset($validated['drawing_label_3d']);

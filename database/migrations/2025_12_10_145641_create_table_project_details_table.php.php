@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('project_details', function (Blueprint $table) {
             $table->id();
             $table->string('project_part_number');
-            $table->smallInteger('document_type_id');
+            $table->unsignedSmallInteger('document_type_id');
             $table->date('assigned_date');
             $table->date('actual_date');
             $table->boolean('checked')->default(false);
