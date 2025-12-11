@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers\Marketing;
 
+use App\Helpers\FileHelper;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Customer;
 use App\Models\Project;
 use Illuminate\Http\Request;
-use Pest\ArchPresets\Custom;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreProjectRequest;
-use App\Http\Requests\UpdateProjectRequest;
-use App\Helpers\FileHelper;
 
 class ProjectController extends Controller
 {
@@ -19,6 +17,7 @@ class ProjectController extends Controller
     public function index()
     {
         $customers = Customer::all();
+
         return view('marketing.projects.index', compact('customers'));
     }
 
@@ -46,15 +45,16 @@ class ProjectController extends Controller
             'drawing_3d' => 'nullable|file',
             'drawing_label_3d' => 'nullable|string|max:100',
             'qty' => 'required|integer|min:1',
-            'eee_number' => 'nullable|string|max:50',
-            'drawing_number' => 'nullable|string|max:50',
-            'drawing_revision_date' => 'nullable|date',
-            'material_on_drawing' => 'nullable|string|max:255',
-            'receive_date_sldg' => 'nullable|date',
-            'sldg_number' => 'nullable|string|max:50',
-            'masspro_target' => 'nullable|date',
-            'message' => 'nullable|string',
-            'minor_change' => 'nullable|string',
+            'eee_number' => 'required|string|max:50',
+            'suffix' => 'required|string|max:20',
+            'drawing_number' => 'required|string|max:50',
+            'drawing_revision_date' => 'required|date',
+            'material_on_drawing' => 'required|string|max:255',
+            'receive_date_sldg' => 'required|date',
+            'sldg_number' => 'required|string|max:50',
+            'masspro_target' => 'required|date',
+            'message' => 'required|string',
+            'minor_change' => 'required|string',
         ]);
 
         $validated['model'] = strtoupper($validated['model']);

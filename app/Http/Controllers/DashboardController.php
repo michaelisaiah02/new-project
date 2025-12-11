@@ -9,6 +9,7 @@ class DashboardController extends Controller
     public function index()
     {
         $type = auth()->user()->department->type();
+
         return match ($type) {
             'marketing' => redirect()->route('marketing'),
             'engineering' => redirect()->route('engineering'),

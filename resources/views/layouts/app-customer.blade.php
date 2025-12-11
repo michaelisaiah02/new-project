@@ -23,37 +23,40 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light text-light py-0 my-0 {{ request()->is('login') ? 'bg-transparent px-3' : 'bg-primary' }}"
-        id="navbar-project">
+    <nav class="navbar navbar-expand-lg navbar-light text-light py-0 my-0 bg-primary" id="navbar-project">
         <div class="container-fluid justify-content-between my-0 py-0">
             <a class="navbar-brand mx-0 mx-md-4" href="/">
                 <img src="{{ asset('image/logo-pt.png') }}" alt="Logo" class="mt-0 logo">
             </a>
-            <div class="row text-center justify-content-end align-items-center w-75 {{ request()->is('login') ? 'text-light' : 'bg-none' }}"
-                id="title-section">
-                <div class="{{ request()->is('login') ? 'col-12' : 'col-md-9' }}">
+            <div class="row text-center justify-content-center align-items-center w-75 bg-none" id="title-section">
+                <div class="col-md-12">
                     <p class="align-self-center company-name py-0 my-0 lh-lg">PT. CATURINDO AGUNGJAYA RUBBER</p>
-                    @if (request()->is('login') || request()->is('/') || request()->is('main-menu'))
-                        <p id="main-title"
-                            class="align-self-center main-title py-0 my-0 text-uppercase lh-1 {{ request()->is('login') ? 'shadow-none' : 'shadow-sm' }}">
-                            @yield('title')</p>
-                    @else
-                        <p id="sub-title"
-                            class="p-0 my-auto sub-judul border-3 border-light-subtle border-dotted rounded-2 text-uppercase bg-secondary-subtle text-dark">
-                            @yield('title')</p>
-                    @endif
-                </div>
-                @if (!request()->is('login'))
-                    <div class="col-md-auto">
-                        <div class="card my-0 py-0">
-                            <div
-                                class="card-body my-0 py-0 bg-secondary-subtle border-3 border-light-subtle rounded-3 text-center">
-                                <p class="py-0 my-0">{{ auth()->id() }} - {{ auth()->user()->name }}</p>
-                                <p class="py-0 my-0">{{ auth()->user()->department->name }}</p>
+                    <div class="row justify-content-end align-items-center">
+                        <div class="col-md-6">
+                            <p id="sub-title"
+                                class="p-0 my-auto sub-judul border-3 border-light-subtle border-dotted rounded-2 text-uppercase bg-secondary-subtle text-dark">
+                                @yield('title')</p>
+                        </div>
+                        <div
+                            class="col-md-3 customer-title p-0 my-auto border-3 border-light-subtle border-dotted rounded-2 text-uppercase bg-secondary-subtle text-dark">
+                            <p class="p-0 m-0 fs-5">
+                                {{ $project->customer_code }}
+                            </p>
+                            <p class="p-0 m-0 fs-6">
+                                {{ $project->customer->name }}
+                            </p>
+                        </div>
+                        <div class="col-md-auto user-title">
+                            <div class="card my-0 pt-1 pb-0 bg-secondary-subtle">
+                                <div
+                                    class="card-body my-0 py-0 bg-secondary-subtle border-3 border-light-subtle rounded-3 text-center">
+                                    <p class="py-0 my-0">{{ auth()->id() }} - {{ auth()->user()->name }}</p>
+                                    <p class="py-0 my-0">{{ auth()->user()->department->name }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                @endif
+                </div>
             </div>
             <a class="navbar-brand mx-0 mx-md-4" href="/">
                 <img src="{{ asset('image/logo-rice.png') }}" alt="Logo" class="mt-0 logo">

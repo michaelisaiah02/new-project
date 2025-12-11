@@ -2,8 +2,9 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\Engineering\ProjectEngineerController;
+use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Marketing\ProjectController;
 use App\Http\Controllers\Marketing\UserController;
 use App\Http\Middleware\CheckDepartmentAccess;
@@ -12,8 +13,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/ping', function () {
     return response()->json(['pong' => true]);
 })->name('ping');
-
-
 
 Route::middleware('guest')->group(function () {
     Route::controller(LoginController::class)->group(function () {
@@ -67,12 +66,18 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
 
         Route::prefix('projects')->as('projects.')->controller(ProjectController::class)->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
             Route::post('/store', 'store')->name('store');
-            Route::get('/{project}', 'show')->name('show');
             Route::get('/{project}/edit', 'edit')->name('edit');
             Route::put('/{project}', 'update')->name('update');
-            Route::delete('/{project}', 'destroy')->name('destroy');
+        });
+    });
+
+    Route::prefix('engineering')->as('engineering.')->group(function () {
+        Route::prefix('projects')->as('projects.')->controller(ProjectEngineerController::class)->group(function () {
+            Route::get('/{project}', 'new')->name('new');
+            Route::post('/{project}', 'updateNew')->name('updateNew');
+            Route::get('/{project}/on-going', 'onGoing')->name('onGoing');
+            Route::post('/{project}/on-going', 'updateOnGoing')->name('updateOnGoing');
         });
     });
 });

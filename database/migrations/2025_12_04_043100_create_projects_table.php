@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -20,6 +21,7 @@ return new class extends Migration {
             $table->string('drawing_3d')->nullable()->comment('3D Drawing File Name');
             $table->integer('qty')->comment('Qty per Year (pcs)');
             $table->string('eee_number')->comment('ECI/EO/ECN Number');
+            $table->string('suffix')->nullable();
             $table->string('drawing_number');
             $table->date('drawing_revision_date');
             $table->string('material_on_drawing');

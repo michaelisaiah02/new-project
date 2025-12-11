@@ -84,6 +84,10 @@ img.icon {
         font-size: .8rem !important;
     }
 
+    .customer-title {
+        width: 95% !important;
+    }
+
     .main-title,
     .company-name {
         font-size: 1rem;
@@ -112,6 +116,15 @@ img.icon {
 @include up("md") {
     .sub-judul {
         font-size: 28pt !important;
+        transform: translateY(-10px);
+        -webkit-transform: translateY(-10px);
+        -moz-transform: translateY(-10px);
+        -ms-transform: translateY(-10px);
+        -o-transform: translateY(-10px);
+    }
+
+    .customer-title,
+    .user-title {
         transform: translateY(-10px);
         -webkit-transform: translateY(-10px);
         -moz-transform: translateY(-10px);

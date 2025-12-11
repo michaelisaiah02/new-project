@@ -26,6 +26,7 @@ class Project extends Model
         'drawing_3d',
         'qty',
         'eee_number',
+        'suffix',
         'drawing_number',
         'drawing_revision_date',
         'material_on_drawing',
@@ -33,6 +34,9 @@ class Project extends Model
         'sldg_number',
         'masspro_target',
         'minor_change',
+        'remark',
+        'approved',
+        'checked',
     ];
 
     public function customer()

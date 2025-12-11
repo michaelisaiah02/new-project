@@ -2,8 +2,8 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class FileHelper
 {
@@ -11,11 +11,6 @@ class FileHelper
      * Simpan file dengan struktur:
      * customer_code/model/part_number/filename.ext
      *
-     * @param UploadedFile $file
-     * @param string $customerCode
-     * @param string $model
-     * @param string $partNumber
-     * @param string $filename
      * @return string Hanya nama file untuk disimpan ke database
      */
     public static function storeDrawingFile(

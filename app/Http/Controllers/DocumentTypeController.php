@@ -2,13 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Department;
 use App\Models\DocumentType;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Hash;
-use PhpParser\Comment\Doc;
 
 class DocumentTypeController extends Controller
 {
@@ -29,6 +24,7 @@ class DocumentTypeController extends Controller
 
         return redirect()->route('document-type.index')->with('success', 'Document type added successfully.');
     }
+
     public function update(Request $request, DocumentType $documentType)
     {
         $validated = $request->validate([

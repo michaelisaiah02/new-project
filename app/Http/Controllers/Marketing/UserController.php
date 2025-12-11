@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Marketing;
 
-use App\Models\User;
-use App\Models\Department;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
+use App\Models\Department;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -87,6 +87,7 @@ class UserController extends Controller
 
         return redirect()->route('marketing.users.index')->with('success', 'User added successfully.');
     }
+
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -149,24 +150,24 @@ class UserController extends Controller
         if ($deptType === 'engineering') {
 
             // Kalau sebelumnya APPROVED = true, dan sekarang user nyalain CHECKED
-            if ($oldApproved && !$oldChecked && $newChecked) {
+            if ($oldApproved && ! $oldChecked && $newChecked) {
                 $validated['approved'] = false;
                 $validated['checked'] = true;
             }
 
             // Kalau sebelumnya CHECKED = true, dan sekarang user nyalain APPROVED
-            if ($oldChecked && !$oldApproved && $newApproved) {
+            if ($oldChecked && ! $oldApproved && $newApproved) {
                 $validated['checked'] = false;
                 $validated['approved'] = true;
             }
 
             // Kalau sebelumnya APPROVED atau CHECKED = true, dan sekarang user nyalain dua-duanya
-// Atau
+            // Atau
             // CASE 2: Kalau sebelumnya dua-duanya false, tapi sekarang user nyalain dua-duanya
             // Kalau user mencoba mengaktifkan keduanya di input baru
             if ($newChecked && $newApproved) {
                 return back()->withErrors([
-                    'error' => 'Checked & Approved tidak boleh aktif bersamaan'
+                    'error' => 'Checked & Approved tidak boleh aktif bersamaan',
                 ]);
             }
 
@@ -184,12 +185,13 @@ class UserController extends Controller
                 break;
 
             case 'engineering':
-                if (!empty($data['approved']))
+                if (! empty($data['approved'])) {
                     User::where('department_id', $data['department_id'])
                         ->where('id', '!=', $user->id)
                         ->update(['approved' => false]);
+                }
 
-                if (!empty($data['approved']) && !empty($data['checked'])) {
+                if (! empty($data['approved']) && ! empty($data['checked'])) {
                     $data['checked'] = false;
                 }
                 break;
