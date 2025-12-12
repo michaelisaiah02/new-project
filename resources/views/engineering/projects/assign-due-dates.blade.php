@@ -2,6 +2,9 @@
 @section('title', 'New Project')
 @section('customer', $project->customer->name)
 @section('content')
+    @php
+        $stages = [];
+    @endphp
     <div class="container-fluid mt-2">
         <div class="row justify-content-center mb-2">
             <div class="col-md-4">
@@ -32,7 +35,7 @@
         </div>
         <div class="row mb-2 ms-0 justify-content-between">
             <div class="col-auto border-0 shadow-sm bg-secondary-subtle bg-gradient rounded-2">
-                <p class="fs-4 p-0 m-0">Documents Requirement</p>
+                <p class="fs-4 p-0 m-0 fw-bold">Assign Due Dates</p>
             </div>
             <div class="col-auto">
                 <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
@@ -41,36 +44,46 @@
                 </button>
             </div>
         </div>
-        <form action="{{ route('engineering.projects.saveNew', ['project' => $project->part_number]) }}" method="post">
+        <form action="{{ route('engineering.projects.saveAssignDueDates', ['project' => $project->part_number]) }}"
+            method="post">
             @csrf
-            <div class="container-fluid mb-5 pb-3 pt-1" style="max-height: 350px; overflow-y: auto;">
-                @foreach ($stages as $stage)
-                    <div class="row mb-2 mx-0">
-                        <div class="col-auto my-auto">
-                            <span class="card border-dark border-3 bg-secondary-subtle adjust-width p-1">Stage
-                                {{ $stage->stage_number }}</span>
-                        </div>
-                        <div class="col-md-10">
-                            <div class="row gap-2">
-                                @foreach ($stage->documents as $doc)
-                                    <div class="card col-auto">
-                                        <div class="card-body my-0 py-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" value="{{ $doc->code }}"
-                                                    id="checkChecked{{ $doc->code }}"
-                                                    name="documents_codes[{{ $stage->stage_number }}][]" checked>
-                                                <label class="form-check-label" for="checkChecked{{ $doc->code }}">
-                                                    {{ $doc->name }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                    <hr class="border border-primary border-2 opacity-75">
-                @endforeach
+            <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 350px; overflow-y: auto;">
+                <table class="table table-sm table-bordered m-0 text-center">
+                    <thead class="table-primary">
+                        <tr>
+                            <th scope="col">Stage</th>
+                            <th scope="col">Document</th>
+                            <th scope="col">Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="">
+                            <td scope="row" rowspan="3">Stage 1</td>
+                            <td class="align-middle w-75">Document A</td>
+                            <td>
+                                <input type="date" name="due_date" id="due-date"
+                                    class="form-control form-control-sm
+                                    bg-secondary-subtle border-3 border-dark">
+                            </td>
+                        </tr>
+                        <tr class="">
+                            <td scope="row">Document B</td>
+                            <td>
+                                <input type="date" name="due_date" id="due-date"
+                                    class="form-control form-control-sm
+                                    bg-secondary-subtle border-3 border-dark">
+                            </td>
+                        </tr>
+                        <tr class="">
+                            <td scope="row">Document C</td>
+                            <td>
+                                <input type="date" name="due_date" id="due-date"
+                                    class="form-control form-control-sm
+                                    bg-secondary-subtle border-3 border-dark">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div
                 class="row justify-content-between align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">

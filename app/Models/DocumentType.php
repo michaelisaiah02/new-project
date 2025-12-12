@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class DocumentType extends Model
 {
+    protected $primaryKey = 'code';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
+        'code',
         'name',
     ];
 
@@ -15,5 +19,10 @@ class DocumentType extends Model
         return $this->belongsToMany(CustomerStage::class, 'customer_stage_documents')
             ->withPivot('qr_position')
             ->withTimestamps();
+    }
+
+    public function projectDocuments()
+    {
+        return $this->hasMany(ProjectDocument::class, 'document_type_code', 'code');
     }
 }

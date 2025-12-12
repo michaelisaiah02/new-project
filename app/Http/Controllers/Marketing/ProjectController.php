@@ -53,7 +53,6 @@ class ProjectController extends Controller
             'receive_date_sldg' => 'required|date',
             'sldg_number' => 'required|string|max:50',
             'masspro_target' => 'required|date',
-            'message' => 'required|string',
             'minor_change' => 'required|string',
         ]);
 

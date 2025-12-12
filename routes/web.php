@@ -75,7 +75,9 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
     Route::prefix('engineering')->as('engineering.')->group(function () {
         Route::prefix('projects')->as('projects.')->controller(ProjectEngineerController::class)->group(function () {
             Route::get('/{project}', 'new')->name('new');
-            Route::post('/{project}', 'updateNew')->name('updateNew');
+            Route::post('/{project}', 'saveNew')->name('saveNew');
+            Route::get('/{project}/assign-due-date', 'assignDueDates')->name('assignDueDates');
+            Route::post('/{project}/assign-due-date', 'saveAssignDueDates')->name('saveAssignDueDates');
             Route::get('/{project}/on-going', 'onGoing')->name('onGoing');
             Route::post('/{project}/on-going', 'updateOnGoing')->name('updateOnGoing');
         });

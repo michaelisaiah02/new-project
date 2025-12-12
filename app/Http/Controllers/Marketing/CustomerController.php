@@ -83,13 +83,13 @@ class CustomerController extends Controller
         $stageNumber = $nextStageNumber;
 
         $usedDocs = $customer->stages()
-            ->with('documents:id')   // load docs
+            ->with('documents:code')   // load docs
             ->get()
             ->pluck('documents')
             ->flatten()
-            ->pluck('id');
+            ->pluck('code');
 
-        $availableDocuments = DocumentType::whereNotIn('id', $usedDocs)->get();
+        $availableDocuments = DocumentType::whereNotIn('code', $usedDocs)->get();
 
         return view('marketing.customers.create-stages', compact(
             'customer',
@@ -103,7 +103,7 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'stage_number' => 'required|integer',
             'stage_name' => 'string|nullable',
-            'document_type_ids' => 'required|array',
+            'document_type_codes' => 'required|array',
             'qr_position' => 'required|array',
         ]);
 
@@ -111,10 +111,10 @@ class CustomerController extends Controller
             'stage_number' => $validated['stage_number'],
             'stage_name' => $validated['stage_name'],
             'customer_code' => $customer->code,
-            'document_type_id' => null, // gak dipakai lagi
+            'document_type_code' => null, // gak dipakai lagi
         ]);
 
-        foreach ($validated['document_type_ids'] as $docId) {
+        foreach ($validated['document_type_codes'] as $docId) {
             $stage->documents()->attach($docId, [
                 'qr_position' => $validated['qr_position'][$docId],
             ]);
@@ -150,14 +150,14 @@ class CustomerController extends Controller
             ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
             ->where('customer_stages.customer_code', $customer->code)
             ->where('customer_stages.stage_number', '!=', $stageNumber)
-            ->pluck('document_type_id');
+            ->pluck('document_type_code');
 
         // available docs
-        $availableDocuments = DocumentType::whereNotIn('id', $usedDocs)->get();
+        $availableDocuments = DocumentType::whereNotIn('code', $usedDocs)->get();
 
         // current stage docs
         $currentDocs = $stage->exists
-            ? $stage->documents()->pluck('document_type_id')
+            ? $stage->documents()->pluck('document_type_code')
             : collect();
 
         $maxStage = $customer->stages()->max('stage_number') ?? 0;
@@ -165,9 +165,9 @@ class CustomerController extends Controller
         $usedDocs = DB::table('customer_stage_documents')
             ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
             ->where('customer_stages.customer_code', $customer->code)
-            ->pluck('document_type_id');
+            ->pluck('document_type_code');
 
-        $remainingDocs = DocumentType::whereNotIn('id', $usedDocs)->count();
+        $remainingDocs = DocumentType::whereNotIn('code', $usedDocs)->count();
 
         $canAddStage = $remainingDocs > 0;
 
@@ -188,25 +188,25 @@ class CustomerController extends Controller
             ->where('stage_number', $stageNumber)
             ->first();
 
-        $docIds = $request->input('document_type_ids', []);
+        $docIds = $request->input('document_type_codes', []);
 
         // 1️⃣ Cegah stage baru tanpa dokumen
         if (! $stage && count($docIds) === 0) {
             return back()
-                ->withErrors(['document_type_ids' => 'Minimal pilih 1 dokumen untuk stage baru.'])
+                ->withErrors(['document_type_codes' => 'Minimal pilih 1 dokumen untuk stage baru.'])
                 ->withInput();
         }
 
         // 2️⃣ (opsional) Kalau mau juga cegah edit stage jadi kosong:
         if ($stage && count($docIds) === 0) {
             return back()
-                ->withErrors(['document_type_ids' => 'Stage tidak boleh kosong dokumen. Gunakan fitur delete stage kalau mau menghapus.'])
+                ->withErrors(['document_type_codes' => 'Stage tidak boleh kosong dokumen. Gunakan fitur delete stage kalau mau menghapus.'])
                 ->withInput();
         }
 
         $validated = $request->validate([
             'stage_name' => 'nullable|string',
-            'document_type_ids' => 'nullable|array',
+            'document_type_codes' => 'nullable|array',
             'qr_position' => 'nullable|array',
         ]);
 
@@ -222,12 +222,12 @@ class CustomerController extends Controller
         $errors = [];
 
         $syncData = [];
-        foreach ($validated['document_type_ids'] ?? [] as $docId) {
-            if (empty($validated['qr_position'][$docId] ?? null)) {
-                $errors["qr_position.$docId"] = 'Dokumen yang dipilih harus punya posisi QR.';
+        foreach ($validated['document_type_codes'] ?? [] as $docCode) {
+            if (empty($validated['qr_position'][$docCode] ?? null)) {
+                $errors["qr_position.$docCode"] = 'Dokumen yang dipilih harus punya posisi QR.';
             }
-            $syncData[$docId] = [
-                'qr_position' => $validated['qr_position'][$docId] ?? null,
+            $syncData[$docCode] = [
+                'qr_position' => $validated['qr_position'][$docCode] ?? null,
             ];
         }
         if (! empty($errors)) {
@@ -256,8 +256,8 @@ class CustomerController extends Controller
             $usedDocs = DB::table('customer_stage_documents')
                 ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
                 ->where('customer_stages.customer_code', $customer->code)
-                ->pluck('document_type_id');
-            $remainingDocs = DocumentType::whereNotIn('id', $usedDocs)->count();
+                ->pluck('document_type_code');
+            $remainingDocs = DocumentType::whereNotIn('code', $usedDocs)->count();
 
             if ($remainingDocs === 0) {
                 return back()->with('error', 'Semua dokumen sudah dipakai, tidak bisa tambah stage baru.');

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('document_types', function (Blueprint $table) {
-            $table->smallIncrements('id')->primary();
+            $table->string('code')->primary();
             $table->string('name');
             $table->timestamps();
         });

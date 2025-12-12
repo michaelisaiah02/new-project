@@ -43,4 +43,9 @@ class Project extends Model
     {
         return $this->belongsTo(Customer::class, 'customer_code', 'code');
     }
+
+    public function documents()
+    {
+        return $this->hasMany(ProjectDocument::class, 'project_part_number', 'part_number');
+    }
 }

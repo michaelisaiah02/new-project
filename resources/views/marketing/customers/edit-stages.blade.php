@@ -41,18 +41,18 @@
                         </thead>
                         <tbody>
                             @foreach ($availableDocuments as $doc)
-                                <tr class="text-center align-middle">
+                                <tr class="text-center align-middle doc-row">
                                     <td>
-                                        <input type="checkbox" class="doc-check" name="document_type_ids[]"
-                                            value="{{ $doc->id }}"
-                                            {{ $currentDocs->contains($doc->id) ? 'checked' : '' }}>
+                                        <input type="checkbox" class="doc-check" name="document_type_codes[]"
+                                            value="{{ $doc->code }}"
+                                            {{ $currentDocs->contains($doc->code) ? 'checked' : '' }}>
                                     </td>
-                                    <td>{{ $doc->name }}</td>
-                                    @foreach (['above_left', 'above_right', 'below_left', 'below_right'] as $position)
-                                        <td>
-                                            <input type="radio" class="qr-option" name="qr_position[{{ $doc->id }}]"
+                                    <td class="text-start">{{ $doc->name }}</td>
+                                    @foreach (['top_left', 'top_right', 'bottom_left', 'bottom_right'] as $position)
+                                        <td class="qr-cell">
+                                            <input type="radio" class="qr-option" name="qr_position[{{ $doc->code }}]"
                                                 value="{{ $position }}"
-                                                {{ $stage->documents->firstWhere('id', $doc->id)?->pivot->qr_position == $position ? 'checked' : '' }}>
+                                                {{ $stage->documents->firstWhere('code', $doc->code)?->pivot->qr_position == $position ? 'checked' : '' }}>
                                         </td>
                                     @endforeach
                                 </tr>
@@ -180,9 +180,67 @@
                     .appendTo('body')
                     .trigger('submit');
             });
+
+            // CLICK ON ROW (toggle checkbox)
+            $('.doc-row').on('click', function(e) {
+
+                // kalau klik radio -> skip
+                if ($(e.target).is('.qr-option')) return;
+
+                // kalau klik QR cell -> skip (biar handler QR-cell yang jalan)
+                if ($(e.target).closest('.qr-cell').length) return;
+
+                // kalau klik checkbox -> skip (default behavior)
+                if ($(e.target).is('.doc-check')) return;
+
+                // toggle checkbox
+                const $cb = $(this).find('.doc-check');
+                $cb.prop('checked', !$cb.prop('checked')).trigger('change');
+            });
+
+            // CLICK QR CELL → AUTO CHECK RADIO
+            $('.qr-cell').on('click', function(e) {
+                e.stopPropagation(); // biar klik cell gak nyentuh row-click
+
+                const $radio = $(this).find('.qr-option');
+
+                // enable row first (if needed)
+                const $row = $(this).closest('tr');
+                const $cb = $row.find('.doc-check');
+
+                // kalau checkbox belum checked → checklist dulu
+                if (!$cb.prop('checked')) {
+                    $cb.prop('checked', true).trigger('change');
+                }
+
+                // sekarang check radio-nya
+                $radio.prop('checked', true).trigger('change');
+            });
+
+
+            // CHECKBOX CHANGE HANDLER
+            $('.doc-check').on('change', function() {
+                let $row = $(this).closest('tr');
+                let $radios = $row.find('.qr-option');
+
+                if (this.checked) {
+                    $radios.prop('disabled', false);
+
+                    // kalau belum ada radio yg dipilih → pilih yg pertama
+                    if (!$radios.is(':checked')) {
+                        $radios.first().prop('checked', true);
+                    }
+
+                } else {
+                    $radios.prop('checked', false).prop('disabled', true);
+                }
+            });
+
+            // INIT LOAD
+            $('.doc-check').trigger('change');
         });
         $(document).ready(function() {
-
+            // disable semua qr options saat awal
             $('.doc-check').each(function() {
                 let row = $(this).closest('tr');
                 if ($(this).is(':checked')) {

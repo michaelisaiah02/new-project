@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('customer_stage_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_stage_id')->constrained('customer_stages')->onDelete('cascade');
-            $table->unsignedSmallInteger('document_type_id');
-            $table->enum('qr_position', ['above_left', 'above_right', 'below_left', 'below_right']);
+            $table->string('document_type_code');
+            $table->enum('qr_position', ['top_left', 'top_right', 'bottom_left', 'bottom_right']);
             $table->timestamps();
 
-            $table->foreign('document_type_id')->references('id')->on('document_types')->onDelete('cascade');
+            $table->foreign('document_type_code')->references('code')->on('document_types')->onDelete('cascade');
         });
     }
 

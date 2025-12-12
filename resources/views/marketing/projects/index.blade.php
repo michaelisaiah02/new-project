@@ -55,7 +55,7 @@
                                 id="btn-upload-2d" disabled>Upload 2D</button>
                             <input type="file" class="form-control bg-secondary-subtle border-secondary border"
                                 id="upload-2d" name="drawing_2d" placeholder="Upload 2D" aria-label="Upload 2D"
-                                aria-describedby="upload-2d" hidden value="{{ old('drawing_2d') }}">
+                                aria-describedby="upload-2d" hidden>
                         </div>
                         <div class="col">
                             <button type="button" class="btn btn-primary border-3 border-light-subtle w-100"
@@ -99,18 +99,11 @@
                 </div>
                 <div class="col-md-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7">No.
-                            ECI/EO/ECN</span>
-                        <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Nomor Revisi Drawing" aria-label="Nomor Revisi Drawing"
-                            aria-describedby="eee-number" id="eee-number" name="eee_number"
-                            value="{{ old('eee_number') }}">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7">No.
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-start">No.
                             Drawing</span>
-                        <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Nomor Revisi Drawing" aria-label="Nomor Revisi Drawing"
-                            aria-describedby="drawing-number" id="drawing-number" name="drawing_number"
-                            value="{{ old('drawing_number') }}">
+                        <input class="form-control bg-warning-subtle border-warning border" type="date"
+                            aria-label="dd/mm/yyyy" aria-describedby="drawing-number" id="drawing-number"
+                            name="drawing_number" value="{{ old('drawing_number') }}">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -135,13 +128,16 @@
                 </div>
                 <div class="col-md-6">
                     <div class="input-group">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Drawing
-                            Revision
-                            Date</span>
-                        <input class="form-control bg-warning-subtle border-warning border" type="date"
-                            aria-label="dd/mm/yyyy" aria-describedby="drawing-revision-date" id="drawing-revision-date"
-                            name="drawing_revision_date" value="{{ old('drawing_revision_date') }}">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7">No.
+                            ECI/EO/ECN</span>
+                        <input class="form-control bg-warning-subtle border-warning border"
+                            placeholder="Nomor Revisi Drawing" aria-label="Nomor Revisi Drawing"
+                            aria-describedby="eee-number" id="eee-number" name="eee_number"
+                            value="{{ old('eee_number') }}">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle">Suffix</span>
+                        <input class="form-control bg-warning-subtle border-warning border" type="text"
+                            aria-label="Suffix" aria-describedby="suffix" id="suffix" name="suffix"
+                            placeholder="..." value="{{ old('suffix') }}">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -156,20 +152,12 @@
                 <div class="col-md-6">
                     <div class="input-group">
                         <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-base pt-0 text-start fs-7">Tanggal
-                            Terima SPK/LOI/DIE
-                            GO</span>
+                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Drawing
+                            Revision
+                            Date</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="date"
-                            aria-label="dd/mm/yyyy" aria-describedby="receive-date-sldg" id="receive-date-sldg"
-                            name="receive_date_sldg" value="{{ old('receive_date_sldg') }}">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7 text-wrap pt-0"
-                            style="width: 6rem;">No. SPK
-                            /LOI/DIE
-                            GO</span>
-                        <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="No. SPK /LOI/DIE GO" aria-label="No. SPK /LOI/DIE GO"
-                            aria-describedby="sldg-number" id="sldg-number" name="sldg_number"
-                            value="{{ old('sldg_number') }}">
+                            aria-label="dd/mm/yyyy" aria-describedby="drawing-revision-date" id="drawing-revision-date"
+                            name="drawing_revision_date" value="{{ old('drawing_revision_date') }}">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -183,11 +171,21 @@
                 </div>
                 <div class="col-md-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor
-                            Change</span>
-                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Minor Change"
-                            aria-label="Pesan dari management" aria-describedby="minor-change" id="minor-change"
-                            name="minor_change" value="{{ old('minor_change') }}">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7 text-wrap pt-0"
+                            style="width: 6rem;">No. SPK
+                            /LOI/DIE
+                            GO</span>
+                        <input class="form-control bg-warning-subtle border-warning border"
+                            placeholder="No. SPK /LOI/DIE GO" aria-label="No. SPK /LOI/DIE GO"
+                            aria-describedby="sldg-number" id="sldg-number" name="sldg_number"
+                            value="{{ old('sldg_number') }}">
+                        <span
+                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-base pt-0 text-start fs-7">Tanggal
+                            Terima SPK/LOI/DIE
+                            GO</span>
+                        <input class="form-control bg-warning-subtle border-warning border" type="date"
+                            aria-label="dd/mm/yyyy" aria-describedby="receive-date-sldg" id="receive-date-sldg"
+                            name="receive_date_sldg" value="{{ old('receive_date_sldg') }}">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -202,6 +200,13 @@
                     </div>
                 </div>
                 <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor
+                            Change</span>
+                        <input class="form-control bg-warning-subtle border-warning border" placeholder="Minor Change"
+                            aria-label="Pesan dari management" aria-describedby="minor-change" id="minor-change"
+                            name="minor_change" value="{{ old('minor_change') }}">
+                    </div>
                 </div>
             </div>
             <div
