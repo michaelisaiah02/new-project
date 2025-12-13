@@ -3,11 +3,11 @@
         <td>{{ $loop->iteration }}</td>
         <td class="text-start">{{ $documentType->name }}</td>
         <td>
-            <button class="btn btn-sm btn-primary btn-edit-document-type" data-id="{{ $documentType->id }}"
+            <button class="btn btn-sm btn-primary btn-edit" data-code="{{ $documentType->code }}"
                 data-name="{{ $documentType->name }}">
                 Edit
             </button>
-            <button class="btn btn-sm btn-danger btn-delete-document-type" data-id="{{ $documentType->id }}"
+            <button class="btn btn-sm btn-danger btn-delete" data-code="{{ $documentType->code }}"
                 data-name="{{ $documentType->name }}" data-bs-toggle="modal" data-bs-target="#deleteDocumentTypeModal">
                 Delete
             </button>

@@ -31,8 +31,8 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
     Route::prefix('document-type')->as('document-type.')->controller(DocumentTypeController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/store', 'store')->name('store');
-        Route::post('/update-document-type/{id}', 'update')->name('update');
-        Route::delete('/delete-document-type/{id}', 'destroy');
+        Route::post('/update/{code}', 'update')->name('update');
+        Route::delete('/delete/{code}', 'destroy');
         Route::get('/search', 'search')->name('search');
     });
 

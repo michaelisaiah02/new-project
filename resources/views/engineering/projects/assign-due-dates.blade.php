@@ -47,156 +47,67 @@
         <form action="{{ route('engineering.projects.saveAssignDueDates', ['project' => $project->part_number]) }}"
             method="post">
             @csrf
+
             <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 350px; overflow-y: auto;">
-                <table class="table table-sm table-bordered m-0 text-center">
+                <table class="table table-sm table-bordered m-0 text-start align-middle">
                     <thead class="table-primary">
                         <tr>
-                            <th scope="col">Stage</th>
-                            <th scope="col">Document</th>
-                            <th scope="col">Due Date</th>
+                            <th class="text-center">Stage</th>
+                            <th>Document</th>
+                            <th class="text-center">Due Date</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="">
-                            <td scope="row" rowspan="3">Stage 1</td>
-                            <td class="align-middle w-75">Document A</td>
-                            <td>
-                                <input type="date" name="due_date" id="due-date"
-                                    class="form-control form-control-sm
-                                    bg-secondary-subtle border-3 border-dark">
-                            </td>
-                        </tr>
-                        <tr class="">
-                            <td scope="row">Document B</td>
-                            <td>
-                                <input type="date" name="due_date" id="due-date"
-                                    class="form-control form-control-sm
-                                    bg-secondary-subtle border-3 border-dark">
-                            </td>
-                        </tr>
-                        <tr class="">
-                            <td scope="row">Document C</td>
-                            <td>
-                                <input type="date" name="due_date" id="due-date"
-                                    class="form-control form-control-sm
-                                    bg-secondary-subtle border-3 border-dark">
-                            </td>
-                        </tr>
+                        @foreach ($projectDocuments as $stageId => $docs)
+                            @foreach ($docs as $index => $pd)
+                                <tr>
+                                    @if ($index === 0)
+                                        <td rowspan="{{ $docs->count() }}" class="text-center">
+                                            Stage {{ $pd->stage->stage_number }}
+                                        </td>
+                                    @endif
+
+                                    <td class="w-75">
+                                        {{ $pd->documentType->name }}
+                                    </td>
+
+                                    <td>
+                                        <input type="date" name="due_dates[{{ $pd->id }}]"
+                                            value="{{ $pd->due_date }}"
+                                            class="form-control form-control-sm
+                                              bg-secondary-subtle border-3 border-dark">
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endforeach
                     </tbody>
                 </table>
             </div>
-            <div
-                class="row justify-content-between align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+
+            <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+                <div class="col-md">
+                    <div class="form-floating">
+                        <textarea class="form-control form-control-sm" id="floatingPassword" placeholder="Password"></textarea>
+                        <label for="floatingPassword">Approval History</label>
+                    </div>
+                </div>
                 <div class="col-auto">
                     <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-primary" type="submit">
-                        Assign Due Dates
+                        Approved/ Checked
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" type="submit">
+                        Save
                     </button>
                 </div>
             </div>
         </form>
     </div>
-    <div class="modal fade modal-lg" id="showProjectModal" tabindex="-1" aria-labelledby="showProjectModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-header bg-primary text-light">
-                <h5 class="modal-title" id="showProjectModalLabel">Project Data</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Customer</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border text-center"
-                        value="{{ $project->customer->code }}" readonly>
-                    <input type="text"
-                        class="form-control bg-secondary-subtle border-secondary border w-auto text-center"
-                        value="{{ $project->customer->name }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->part_number }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Nama
-                        Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->part_name }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part Type</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->part_type }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->model }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No.
-                        ECI/EO/ECN</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->eee_number }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Suffix</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->suffix }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Drawing</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->drawing_number }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Drawing
-                        Revision
-                        Date</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->drawing_revision_date }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. SPK
-                        /LOI/DIE
-                        GO</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->sldg_number }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Tanggal
-                        Terima SPK/LOI/DIE
-                        GO</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->receive_date_sldg }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">QTY/Year</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->qty }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Target
-                        Masspro</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->masspro_target }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Material
-                        on
-                        Drawing</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->material_on_drawing }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor
-                        Change</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->minor_change }}" readonly>
-                </div>
-                <div class="input-group">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Remark</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->remark }}" readonly>
-                </div>
-            </div>
-            <div class="modal-footer bg-primary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-            </form>
-        </div>
-    </div>
+    @include('engineering.projects.partials.data-project-modal', ['project' => $project])
     <x-toast />
 @endsection
 

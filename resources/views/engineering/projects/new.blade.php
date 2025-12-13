@@ -53,13 +53,21 @@
                         <div class="col-md-10">
                             <div class="row gap-2">
                                 @foreach ($stage->documents as $doc)
+                                    @php
+                                        $isChecked =
+                                            isset($selectedDocs[$stage->id]) &&
+                                            in_array($doc->code, $selectedDocs[$stage->id]);
+                                    @endphp
+
                                     <div class="card col-auto">
                                         <div class="card-body my-0 py-2">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" value="{{ $doc->code }}"
-                                                    id="checkChecked{{ $doc->code }}"
-                                                    name="documents_codes[{{ $stage->stage_number }}][]" checked>
-                                                <label class="form-check-label" for="checkChecked{{ $doc->code }}">
+                                                    id="checkChecked{{ $stage->id }}{{ $doc->code }}"
+                                                    name="documents_codes[{{ $stage->stage_number }}][]"
+                                                    {{ $isChecked ? 'checked' : '' }}>
+                                                <label class="form-check-label"
+                                                    for="checkChecked{{ $stage->id }}{{ $doc->code }}">
                                                     {{ $doc->name }}
                                                 </label>
                                             </div>
@@ -67,9 +75,14 @@
                                     </div>
                                 @endforeach
                             </div>
+                            @if ($errors->has("documents_codes.$stage->stage_number"))
+                                <div class="text-danger small mt-1">
+                                    {{ $errors->first("documents_codes.$stage->stage_number") }}
+                                </div>
+                            @endif
                         </div>
                     </div>
-                    <hr class="border border-primary border-2 opacity-75">
+                    <hr class="border border-2 border-primary opacity-75">
                 @endforeach
             </div>
             <div
@@ -85,108 +98,6 @@
             </div>
         </form>
     </div>
-    <div class="modal fade modal-lg" id="showProjectModal" tabindex="-1" aria-labelledby="showProjectModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-header bg-primary text-light">
-                <h5 class="modal-title" id="showProjectModalLabel">Project Data</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Customer</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border text-center"
-                        value="{{ $project->customer->code }}" readonly>
-                    <input type="text"
-                        class="form-control bg-secondary-subtle border-secondary border w-auto text-center"
-                        value="{{ $project->customer->name }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->part_number }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Nama
-                        Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->part_name }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part Type</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->part_type }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->model }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No.
-                        ECI/EO/ECN</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->eee_number }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Suffix</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->suffix }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Drawing</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->drawing_number }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Drawing
-                        Revision
-                        Date</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->drawing_revision_date }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. SPK
-                        /LOI/DIE
-                        GO</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->sldg_number }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Tanggal
-                        Terima SPK/LOI/DIE
-                        GO</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->receive_date_sldg }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">QTY/Year</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->qty }}" readonly>
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Target
-                        Masspro</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->masspro_target }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Material
-                        on
-                        Drawing</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->material_on_drawing }}" readonly>
-                </div>
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor
-                        Change</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->minor_change }}" readonly>
-                </div>
-                <div class="input-group">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Remark</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->remark }}" readonly>
-                </div>
-            </div>
-            <div class="modal-footer bg-primary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-            </form>
-        </div>
-    </div>
+    @include('engineering.projects.partials.data-project-modal', ['project' => $project])
     <x-toast />
-@endsection
-
-@section('scripts')
-    <script type="module"></script>
 @endsection

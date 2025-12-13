@@ -34,7 +34,7 @@
                                     <td>
                                         @switch($newProject->remark)
                                             @case('new')
-                                                New!
+                                                New
                                             @break
 
                                             @case('not checked')

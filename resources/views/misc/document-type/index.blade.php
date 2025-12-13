@@ -54,7 +54,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="id" name="id">
+                    <input type="hidden" id="code" name="code">
                     <div class="row">
                         <label for="name" class="form-label">Document Type Name</label>
                         <input type="text" class="form-control" id="name" name="name" pattern="^[A-Za-z\s]+$"
@@ -82,7 +82,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to delete the document type named <strong
-                            id="deleteDocumentTypeName"></strong>?</p>
+                            id="deleteDocumentTypeName">?</strong></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -135,24 +135,25 @@
             });
 
             // Delegasi tombol Edit
-            $(document).on('click', '.btn-edit-document-type', function() {
-                const id = $(this).data('id');
-                $('#id').val(id);
+            $(document).on('click', '.btn-edit', function() {
+                const code = $(this).data('code');
+                $('#code').val(code);
                 $('#name').val($(this).data('name'));
 
                 $('#documentTypeModalLabel').text('Edit Document Type');
                 $('#documentTypeForm').attr('action',
-                    `{{ url('documentTypes/update-document-type') }}/${id}`);
+                    `{{ url('document-type/update') }}/${code}`);
                 new bootstrap.Modal(document.getElementById('documentTypeModal')).show();
             });
 
             // Delegasi tombol Delete
-            $(document).on('click', '.btn-delete-document-type', function() {
-                const id = $(this).data('id');
+            $(document).on('click', '.btn-delete', function() {
+                const code = $(this).data('code');
                 const name = $(this).data('name');
-                $('#deleteDocumentType').attr('action',
-                    `{{ url('documentTypes/delete-document-type') }}/${id}`);
-                $('#deleteDocumentType').text(name);
+                console.log(name);
+                $('#deleteDocumentTypeForm').attr('action',
+                    `{{ url('document-type/delete') }}/${code}`);
+                $('#deleteDocumentTypeName').text(name);
             });
 
             // Form Validation
