@@ -15,7 +15,7 @@ return new class extends Migration
             $table->char('id', 5)->primary();
             $table->string('name');
             $table->string('password');
-            $table->foreignId('department_id')->constrained('departments')->onDelete('cascade');
+            $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
             $table->string('whatsapp', 15);
             $table->string('email')->unique();
             $table->boolean('approved')->default(false);

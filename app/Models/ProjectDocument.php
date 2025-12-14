@@ -15,8 +15,10 @@ class ProjectDocument extends Model
         'customer_stage_id',
         'due_date',
         'actual_date',
+        'file_name',
         'checked',
         'approved',
+        'remark',
     ];
 
     protected $casts = [

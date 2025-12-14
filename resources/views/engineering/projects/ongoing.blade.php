@@ -1,0 +1,192 @@
+@extends('layouts.app-projects')
+@section('title', 'ON-GOING PROJECT')
+@section('customer', $project->customer->name)
+@section('content')
+    @php
+        $stages = [];
+    @endphp
+    <div class="container-fluid mt-2">
+        <div class="row justify-content-center mb-2">
+            <div class="col-md-4">
+                <div class="input-group mb-1">
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
+                        value="{{ $project->model }}" id="model" placeholder="Model Part" aria-label="Model"
+                        aria-describedby="model" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group mb-1">
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-number"
+                        placeholder="Nomor Part" aria-label="No. Part" aria-describedby="part-number"
+                        value="{{ $project->part_number }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group mb-1">
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
+                        Name</span>
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-name"
+                        placeholder="Nama Part" aria-label="Part Name" aria-describedby="part-name"
+                        value="{{ $project->part_name }}" readonly>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered m-0 text-start align-middle">
+                <thead class="table-primary sticky-top">
+                    <tr>
+                        <th class="text-center">Stage</th>
+                        <th>Document</th>
+                        <th class="text-center">Due Date</th>
+                        <th class="text-center">Actual Date</th>
+                        <th class="text-center">File Name Upload</th>
+                        <th class="text-center">Action</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($projectDocuments as $stageId => $docs)
+                        @foreach ($docs as $index => $pd)
+                            <tr>
+                                @if ($index === 0)
+                                    <td rowspan="{{ $docs->count() }}" class="text-center">
+                                        Stage {{ $pd->stage->stage_number }}
+                                    </td>
+                                @endif
+
+                                <td class="text-wrap w-25">
+                                    {{ $pd->documentType->name }}
+                                </td>
+
+                                <td class="text-center">
+                                    {{ \Carbon\Carbon::parse($pd->due_date)->locale('id')->translatedFormat('d/m/Y') }}
+                                </td>
+                                <td class="text-center">
+                                    @if ($pd->actual_date)
+                                        {{ \Carbon\Carbon::parse($pd->actual_date)->locale('id')->translatedFormat('d/m/Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if ($pd->file_name)
+                                        {{ $pd->file_name }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ route('engineering.project-documents.view', ['projectDocument' => $pd->id]) }}"
+                                        class="btn btn-sm btn-primary">
+                                        View
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-primary border-3 border-light-subtle"
+                                        id="btn-upload-{{ $pd->id }}">Upload</button>
+                                    <input type="file" class="form-control bg-secondary-subtle border-secondary border"
+                                        id="upload-{{ $pd->id }}" hidden>
+                                </td>
+                                <td class="text-center" id="status-{{ $pd->id }}">
+                                    @php
+                                        $now = now();
+                                        if (!$pd->file_name && $pd->due_date && $now->gt($pd->due_date)) {
+                                            $status = 'Not Submitted';
+                                        } elseif (
+                                            $pd->file_name &&
+                                            $pd->actual_date &&
+                                            $pd->due_date &&
+                                            $pd->actual_date->gt($pd->due_date)
+                                        ) {
+                                            $status = 'Delay';
+                                        } elseif ($pd->file_name && !$pd->checked) {
+                                            $status = 'Not Yet Checked';
+                                        } elseif ($pd->checked && !$pd->approved) {
+                                            $status = 'Not Yet Approved';
+                                        } elseif ($pd->approved) {
+                                            $status = 'Finish';
+                                        } else {
+                                            $status = '-';
+                                        }
+                                    @endphp
+                                    {{ $status }}
+                                </td>
+                                <td>
+                                    <input type="text" id="remark-{{ $pd->id }}"
+                                        class="form-control form-control-sm border-0" value="{{ $pd->remark }}">
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+            <div class="col-auto">
+                <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
+            </div>
+        </div>
+    </div>
+    <x-toast />
+@endsection
+
+@section('scripts')
+    <script type="module">
+        $(document).ready(function() {
+
+            // Trigger file input
+            $('button[id^="btn-upload-"]').on('click', function() {
+                const id = $(this).attr('id').replace('btn-upload-', '');
+                $('#upload-' + id).click();
+            });
+
+            // Upload file AJAX
+            $('input[type="file"]').on('change', function() {
+                const id = $(this).attr('id').replace('upload-', '');
+                const file = this.files[0];
+
+                if (!file) return;
+
+                let formData = new FormData();
+                formData.append('file', file);
+
+                $.ajax({
+                    url: `/engineering/project-documents/${id}/upload`,
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        location.reload();
+                    },
+                    error: function() {
+                        alert('File upload failed. Please try again.');
+                    }
+                });
+            });
+
+            // Auto save remark
+            $('input[id^="remark-"]').on('blur', function() {
+                const id = $(this).attr('id').replace('remark-', '');
+                const remark = $(this).val();
+
+                $.ajax({
+                    url: `/engineering/project-documents/${id}/remark`,
+                    method: 'POST',
+                    data: {
+                        remark
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+            });
+
+        });
+    </script>
+@endsection

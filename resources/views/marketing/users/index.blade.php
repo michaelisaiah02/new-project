@@ -34,10 +34,18 @@
                 </tbody>
             </table>
         </div>
+        @php
+            $backUrl = match (auth()->user()->department->type()) {
+                'management' => route('management'),
+                'engineering' => route('engineering'),
+                'marketing' => route('marketing'),
+                default => route('login'),
+            };
+        @endphp
         <div
             class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
             <div class="col-auto">
-                <a href="{{ route('marketing') }}" class="btn btn-primary fs-5">Back</a>
+                <a href="{{ $backUrl }}" class="btn btn-primary fs-5">Back</a>
             </div>
             <div class="col-auto">
                 <button class="btn btn-primary btn-lg text-white rounded-pill m-0 py-2" data-bs-toggle="modal"
@@ -208,12 +216,14 @@
 
                 $checkedWrapper.addClass('d-none');
                 $approvedWrapper.addClass('d-none');
+                return;
 
             } else if (normalized.includes('management')) {
                 $checked.prop('checked', true).prop('disabled', true);
                 $checkedWrapper.addClass('d-none');
 
                 $approved.prop('checked', true).prop('disabled', true);
+                return;
             }
 
             $checked.prop('checked', checked);
@@ -226,6 +236,7 @@
                 $('#userForm').trigger('reset');
                 $('#userModalLabel').text('Add User');
                 $('#userForm').attr('action', "{{ route('marketing.users.store') }}");
+                $('#password').prop('required', true);
             });
 
             $('#department').change(function() {
@@ -237,7 +248,7 @@
             $(document).on('click', '.btn-edit-user', function() {
                 const id = $(this).data('id');
                 $('#id').val(id);
-                $('#password').val('');
+                $('#password').val('').prop('required', false);
                 $('#name').val($(this).data('name'));
                 $('#department').val($(this).data('department'));
                 checkDepartment($(this).data('department'), $(this).data('approved'), $(this).data(
@@ -268,6 +279,7 @@
                 if (!this.checkValidity()) {
                     e.preventDefault();
                     e.stopPropagation();
+                    return;
                 }
                 $(this).addClass('was-validated');
                 $('#checked, #approved').prop('disabled', false);

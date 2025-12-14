@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('part_number')->primary();
             $table->string('part_name');
             $table->string('part_type');
-            $table->string('customer_code');
+            $table->string('customer_code')->nullable();
             $table->string('model');
             $table->string('drawing_2d')->comment('2D Drawing File Name');
             $table->string('drawing_3d')->nullable()->comment('3D Drawing File Name');
@@ -29,12 +29,10 @@ return new class extends Migration
             $table->string('sldg_number')->comment('SPK/LOI/DIE GO Number');
             $table->string('masspro_target');
             $table->string('minor_change');
-            $table->enum('remark', ['new', 'not checked', 'not approved', 'on going', 'completed'])->default('new');
-            $table->boolean('checked')->default(false);
-            $table->boolean('approved')->default(false);
+            $table->enum('remark', ['new', 'not checked', 'not approved', 'not approved management', 'approved', 'on going', 'completed'])->default('new');
             $table->timestamps();
 
-            $table->foreign('customer_code')->references('code')->on('customers')->onDelete('cascade');
+            $table->foreign('customer_code')->references('code')->on('customers')->nullOnDelete();
         });
     }
 

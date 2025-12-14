@@ -10,8 +10,8 @@ class DepartmentSeeder extends Seeder
     public function run(): void
     {
         $departmentNames = [
-            'Marketing',
             'Management',
+            'Marketing',
             'Engineering 2',
             'Engineering 3',
             'Engineering 9',

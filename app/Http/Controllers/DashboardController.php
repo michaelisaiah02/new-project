@@ -25,10 +25,23 @@ class DashboardController extends Controller
 
     public function engineering()
     {
+        $department = auth()->user()->department->type();
+
+        if ($department === 'management') {
+            $newProjects = Project::with('customer')
+                ->whereIn('remark', ['new', 'not checked', 'not approved', 'not approved management', 'approved'])
+                ->get();
+
+            $ongoingProjects = Project::with('customer')
+                ->where('remark', 'on going')
+                ->get();
+
+            return view('engineering', compact('newProjects', 'ongoingProjects'));
+        }
         $newProjects = Project::with('customer')
             ->whereHas('customer', function ($q) {
                 $q->where('department_id', auth()->user()->department_id);
-            })->whereIn('remark', ['new', 'not checked', 'not approved'])
+            })->whereIn('remark', ['new', 'not checked', 'not approved', 'not approved management', 'approved'])
             ->get();
 
         $ongoingProjects = Project::with('customer')

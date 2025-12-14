@@ -208,39 +208,38 @@
         </div>
     </div>
 </div>
-@section('scripts')
-    <script type="module">
-        const viewerModal = new bootstrap.Modal('#fileViewerModal')
-        const container = document.getElementById('fileViewerContainer')
-        const titleEl = document.getElementById('fileViewerTitle')
+<script type="module">
+    const viewerModal = new bootstrap.Modal('#fileViewerModal')
+    const container = document.getElementById('fileViewerContainer')
+    const titleEl = document.getElementById('fileViewerTitle')
 
-        document.querySelectorAll('.view-file').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const file = btn.dataset.file
-                const title = btn.dataset.title
-                console.log('title', title)
-                const ext = file.split('.').pop().toLowerCase()
+    document.querySelectorAll('.view-file').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const file = btn.dataset.file
+            const title = btn.dataset.title
+            console.log('title', title)
+            const ext = file.split('.').pop().toLowerCase()
 
-                titleEl.innerText = title
-                container.innerHTML = ''
+            titleEl.innerText = title
+            container.innerHTML = ''
 
-                // IMAGE
-                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-                    container.innerHTML = `
+            // IMAGE
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                container.innerHTML = `
                 <img src="${file}" class="img-fluid" style="max-height:100%;" />
             `
-                }
+            }
 
-                // PDF
-                else if (ext === 'pdf') {
-                    container.innerHTML = `
+            // PDF
+            else if (ext === 'pdf') {
+                container.innerHTML = `
                 <iframe src="${file}" style="width:100%; height:100%; border:none;"></iframe>
             `
-                }
+            }
 
-                // 3D FILE
-                else if (['stp', 'step', 'iges', 'igs', 'stl'].includes(ext)) {
-                    container.innerHTML = `
+            // 3D FILE
+            else if (['stp', 'step', 'iges', 'igs', 'stl'].includes(ext)) {
+                container.innerHTML = `
                 <div class="text-center">
                     <i class="bi bi-cube fs-1 mb-3"></i>
                     <p class="fw-bold">3D File Detected</p>
@@ -249,20 +248,19 @@
                     </a>
                 </div>
             `
-                }
+            }
 
-                // UNKNOWN
-                else {
-                    container.innerHTML = `
+            // UNKNOWN
+            else {
+                container.innerHTML = `
                 <div class="text-center text-danger">
                     <p>File format not supported for preview</p>
                     <a href="${file}" class="btn btn-secondary">Download</a>
                 </div>
             `
-                }
+            }
 
-                viewerModal.show()
-            })
+            viewerModal.show()
         })
-    </script>
-@endsection
+    })
+</script>

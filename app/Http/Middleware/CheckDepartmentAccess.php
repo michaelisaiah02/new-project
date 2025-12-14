@@ -14,20 +14,20 @@ class CheckDepartmentAccess
      */
     public function handle($request, Closure $next)
     {
-        $userDept = auth()->user()->department->type(); // misal "marketing", "engineering", dll
+        // $userDept = auth()->user()->department->type(); // misal "marketing", "engineering", dll
 
-        $routeName = $request->route()->getName();
+        // $routeName = $request->route()->getName();
 
-        $routeParts = explode('.', $routeName);
+        // $routeParts = explode('.', $routeName);
 
-        $group = $routeParts[0] ?? null;
+        // $group = $routeParts[0] ?? null;
 
-        // kalau group adalah departemen (marketing, management, engineering) baru dicek
-        $departments = ['marketing', 'engineering', 'management'];
+        // // kalau group adalah departemen (marketing, management, engineering) baru dicek
+        // $departments = ['marketing', 'engineering', 'management'];
 
-        if (in_array($group, $departments) && $group !== $userDept) {
-            abort(403, 'Access Unauthorized');
-        }
+        // if (in_array($group, $departments) && $group !== $userDept) {
+        //     abort(403, 'Access Unauthorized');
+        // }
 
         return $next($request);
     }

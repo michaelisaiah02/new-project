@@ -35,8 +35,6 @@ class Project extends Model
         'masspro_target',
         'minor_change',
         'remark',
-        'approved',
-        'checked',
     ];
 
     public function customer()
@@ -47,5 +45,10 @@ class Project extends Model
     public function documents()
     {
         return $this->hasMany(ProjectDocument::class, 'project_part_number', 'part_number');
+    }
+
+    public function approvalStatus()
+    {
+        return $this->hasOne(ApprovalStatus::class, 'part_number', 'part_number');
     }
 }

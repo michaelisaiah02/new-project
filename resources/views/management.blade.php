@@ -32,7 +32,7 @@
         </div>
         <div class="row justify-content-center align-items-center">
             <div class="col-5" style="height: 8rem">
-                <a href="{{ route('marketing.users.index') }}"
+                <a href="{{ route('engineering') }}"
                     class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
                     ENGINEERINGS
                 </a>

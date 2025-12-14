@@ -20,13 +20,24 @@ class FileHelper
         string $partNumber,
         string $filename
     ) {
-        // Folder tujuan
         $folder = "{$customerCode}/{$model}/{$partNumber}";
+        $disk = Storage::disk('public');
 
-        // Simpan file
-        Storage::disk('public')->putFileAs($folder, $file, $filename);
+        // pastiin folder ada
+        $disk->makeDirectory($folder);
 
-        // Yang masuk DB hanya filename
+        $path = "{$folder}/{$filename}";
+
+        // kalau file sudah ada → hapus
+        if ($disk->exists($path)) {
+            $disk->delete($path);
+        }
+
+        // upload baru
+        if (! $disk->putFileAs($folder, $file, $filename)) {
+            throw new \Exception("Upload failed: {$filename}");
+        }
+
         return $filename;
     }
 }

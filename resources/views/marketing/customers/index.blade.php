@@ -30,10 +30,18 @@
                 </tbody>
             </table>
         </div>
+        @php
+            $backUrl = match (auth()->user()->department->type()) {
+                'management' => route('management'),
+                'engineering' => route('engineering'),
+                'marketing' => route('marketing'),
+                default => route('login'),
+            };
+        @endphp
         <div
             class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
             <div class="col-auto">
-                <a href="{{ route('marketing') }}" class="btn btn-primary fs-5">Back</a>
+                <a href="{{ $backUrl }}" class="btn btn-primary fs-5">Back</a>
             </div>
             <div class="col-auto">
                 <a href="{{ route('marketing.customers.create') }}"

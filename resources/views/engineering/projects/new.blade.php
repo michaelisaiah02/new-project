@@ -1,5 +1,5 @@
 @extends('layouts.app-projects')
-@section('title', 'New Project')
+@section('title', 'NEW PROJECT')
 @section('customer', $project->customer->name)
 @section('content')
     <div class="container-fluid mt-2">
@@ -54,9 +54,9 @@
                             <div class="row gap-2">
                                 @foreach ($stage->documents as $doc)
                                     @php
-                                        $isChecked =
-                                            isset($selectedDocs[$stage->id]) &&
-                                            in_array($doc->code, $selectedDocs[$stage->id]);
+                                        $stageSelections = $selectedDocs[$stage->id] ?? [];
+                                        $hasSelections = !empty($stageSelections);
+                                        $isChecked = $hasSelections ? in_array($doc->code, $stageSelections) : true;
                                     @endphp
 
                                     <div class="card col-auto">
@@ -89,6 +89,12 @@
                 class="row justify-content-between align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
                 <div class="col-auto">
                     <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
+                </div>
+                <div class="col-auto">
+                    <a class="btn btn-primary"
+                        href="{{ route('engineering.projects.assignDueDates', ['project' => $project->part_number]) }}">
+                        View Assign Due Dates
+                    </a>
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-primary" type="submit">

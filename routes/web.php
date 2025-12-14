@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\Engineering\ProjectDocumentController;
 use App\Http\Controllers\Engineering\ProjectEngineerController;
 use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Marketing\ProjectController;
@@ -75,11 +76,21 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
     Route::prefix('engineering')->as('engineering.')->group(function () {
         Route::prefix('projects')->as('projects.')->controller(ProjectEngineerController::class)->group(function () {
             Route::get('/{project}', 'new')->name('new');
-            Route::post('/{project}', 'saveNew')->name('saveNew');
+            Route::post('/{project}/new', 'saveNew')->name('saveNew');
             Route::get('/{project}/assign-due-date', 'assignDueDates')->name('assignDueDates');
-            Route::post('/{project}/assign-due-date', 'saveAssignDueDates')->name('saveAssignDueDates');
+            Route::post('/{project}/save-due-date', 'saveDueDates')->name('saveDueDates');
+            Route::post('/update-due-date', 'updateDueDate')->name('updateDueDate');
+            Route::post('/approval', 'approval')->name('approval');
+            Route::post('/{project}/update-to-on-going', 'updateToOnGoing')->name('updateToOnGoing');
             Route::get('/{project}/on-going', 'onGoing')->name('onGoing');
             Route::post('/{project}/on-going', 'updateOnGoing')->name('updateOnGoing');
+        });
+        Route::prefix('project-documents')->as('project-documents.')->controller(ProjectDocumentController::class)->group(function () {
+            Route::get('/{projectDocument}/view', 'view')->name('view');
+            Route::post('/{projectDocument}/upload', 'upload')->name('upload');
+            Route::post('/{projectDocument}/remark', 'updateRemark')->name('remark');
+            Route::post('/{projectDocument}/checked', 'checked')->name('checked');
+            Route::post('/{projectDocument}/approved', 'approved')->name('approved');
         });
     });
 });

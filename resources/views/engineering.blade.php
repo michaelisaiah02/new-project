@@ -45,6 +45,14 @@
                                                 Not Yet Approved
                                             @break
 
+                                            @case('not approved management')
+                                                Not Yet Approved by Management
+                                            @break
+
+                                            @case('approved')
+                                                Approved
+                                            @break
+
                                             @default
                                         @endswitch
                                     </td>
@@ -78,8 +86,13 @@
                                     <td scope="row">{{ $loop->iteration }}</td>
                                     <td>{{ $ongoingProject->customer_code }}</td>
                                     <td>{{ $ongoingProject->model }}</td>
-                                    <td>{{ $ongoingProject->part_number }} - {{ $ongoingProject->part_name }} -
-                                        {{ $ongoingProject->part_type }}</td>
+                                    <td>
+                                        <a
+                                            href="{{ route('engineering.projects.onGoing', ['project' => $ongoingProject->part_number]) }}">
+                                            {{ $ongoingProject->part_number }} - {{ $ongoingProject->part_name }} -
+                                            {{ $ongoingProject->part_type }}
+                                        </a>
+                                    </td>
                                     <td>{{ $ongoingProject->created_at->format('d-m-Y') }}</td>
                                     <td>On Going</td> {{-- Harusnya Persentase dari document yg udah di upload --}}
                                 </tr>

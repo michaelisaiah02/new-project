@@ -40,10 +40,10 @@
                         <div
                             class="col-md-3 customer-title p-0 my-auto border-3 border-light-subtle border-dotted rounded-2 text-uppercase bg-secondary-subtle text-dark">
                             <p class="p-0 m-0 fs-5">
-                                {{ $project->customer_code }}
+                                {{ $project->customer_code ?? $projectDocument->project->customer->code }}
                             </p>
                             <p class="p-0 m-0 fs-6">
-                                {{ $project->customer->name }}
+                                {{ $project->customer->name ?? $projectDocument->project->customer->name }}
                             </p>
                         </div>
                         <div class="col-md-auto user-title">

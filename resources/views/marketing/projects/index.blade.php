@@ -101,9 +101,9 @@
                     <div class="input-group">
                         <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-start">No.
                             Drawing</span>
-                        <input class="form-control bg-warning-subtle border-warning border" type="date"
-                            aria-label="dd/mm/yyyy" aria-describedby="drawing-number" id="drawing-number"
-                            name="drawing_number" value="{{ old('drawing_number') }}">
+                        <input class="form-control bg-warning-subtle border-warning border" type="text"
+                            aria-label="Nomor Drawing" aria-describedby="drawing-number" id="drawing-number"
+                            placeholder="Nomor Drawing" name="drawing_number" value="{{ old('drawing_number') }}">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -209,10 +209,18 @@
                     </div>
                 </div>
             </div>
+            @php
+                $backUrl = match (auth()->user()->department->type()) {
+                    'management' => route('management'),
+                    'engineering' => route('engineering'),
+                    'marketing' => route('marketing'),
+                    default => route('login'),
+                };
+            @endphp
             <div
                 class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-2 mx-4">
                 <div class="col-auto">
-                    <a href="{{ route('marketing') }}" class="btn btn-primary">Back</a>
+                    <a href="{{ $backUrl }}" class="btn btn-primary">Back</a>
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-primary" type="submit">

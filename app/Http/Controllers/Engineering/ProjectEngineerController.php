@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Engineering;
 
-use App\Models\Project;
-use Illuminate\Http\Request;
-use App\Models\CustomerStage;
-use App\Models\ProjectDocument;
 use App\Http\Controllers\Controller;
+use App\Models\ApprovalStatus;
+use App\Models\CustomerStage;
+use App\Models\Project;
+use App\Models\ProjectDocument;
+use Illuminate\Http\Request;
+
+use function Symfony\Component\Clock\now;
 
 class ProjectEngineerController extends Controller
 {
@@ -55,7 +58,7 @@ class ProjectEngineerController extends Controller
             $stageNumber = $stage->stage_number;
 
             if (
-                !isset($docGroups[$stageNumber]) ||
+                ! isset($docGroups[$stageNumber]) ||
                 empty($docGroups[$stageNumber])
             ) {
                 $errors["documents_codes.$stageNumber"] =
@@ -63,7 +66,7 @@ class ProjectEngineerController extends Controller
             }
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             return back()
                 ->withErrors($errors)
                 ->withInput();
@@ -82,14 +85,36 @@ class ProjectEngineerController extends Controller
             foreach ($selectedDocs as $docCode) {
                 ProjectDocument::create([
                     'project_part_number' => $project->part_number,
-                    'document_type_code'  => $docCode,
-                    'customer_stage_id'   => $stage->id,
+                    'document_type_code' => $docCode,
+                    'customer_stage_id' => $stage->id,
                 ]);
             }
         }
 
+        ApprovalStatus::where('part_number', $project->part_number)->updateOrCreate([
+            'part_number' => $project->part_number,
+        ], [
+            'created_by_id' => auth()->id(),
+            'created_by_name' => auth()->user()->name,
+            'created_date' => now(),
+            'checked_by_id' => null,
+            'checked_by_name' => null,
+            'checked_date' => null,
+            'approved_by_id' => null,
+            'approved_by_name' => null,
+            'approved_date' => null,
+            'management_approved_by_id' => null,
+            'management_approved_by_name' => null,
+            'management_approved_date' => null,
+        ]);
+
+        Project::where('part_number', $project->part_number)
+            ->update([
+                'remark' => 'not checked',
+            ]);
+
         return redirect()->route('engineering.projects.assignDueDates', [
-            'project' => $project->part_number
+            'project' => $project->part_number,
         ])->with('success', 'Documents updated successfully.');
     }
 
@@ -97,37 +122,108 @@ class ProjectEngineerController extends Controller
     {
         $projectDocuments = ProjectDocument::with([
             'stage:id,stage_number',
-            'documentType:code,name'
+            'documentType:code,name',
         ])
             ->where('project_part_number', $project->part_number)
             ->orderBy('customer_stage_id')
             ->get()
             ->groupBy('customer_stage_id');
 
+        $user = auth()->user();
+
+        $canCheck = $user->checked === true && $project->approvalStatus->checked_date === null;
+        $canApprove = $user->approved === true && auth()->user()->department->type() === 'engineering' && $project->approvalStatus->checked_date !== null
+            && $project->approvalStatus->approved_date === null;
+        $canApproveManagement = $user->approved === true && auth()->user()->department->type() === 'management' && $project->approvalStatus->approved_date !== null
+            && $project->approvalStatus->management_approved_date === null;
+
         return view('engineering.projects.assign-due-dates', compact(
             'project',
-            'projectDocuments'
+            'projectDocuments',
+            'canCheck',
+            'canApprove',
+            'canApproveManagement'
         ));
     }
 
-    public function saveAssignDueDates(Request $request, Project $project)
+    public function updateDueDate(Request $request)
     {
-        $dueDates = $request->input('due_dates', []);
+        ProjectDocument::where('id', $request->project_document_id)
+            ->update(['due_date' => $request->due_date]);
 
-        if (empty($dueDates)) {
-            return back()->with('error', 'No due dates submitted.');
+        return response()->json(['status' => 'success']);
+    }
+
+    public function approval(Request $request)
+    {
+        $status = ApprovalStatus::firstOrCreate([
+            'part_number' => $request->project_part_number,
+        ]);
+
+        $user = auth()->user();
+
+        if ($request->action === 'checked' && $user->checked) {
+            $status->update([
+                'checked_by_id' => $user->id,
+                'checked_by_name' => $user->name,
+                'checked_date' => now(),
+            ]);
         }
 
-        foreach ($dueDates as $projectDocumentId => $date) {
-            ProjectDocument::where('id', $projectDocumentId)
-                ->where('project_part_number', $project->part_number)
-                ->update([
-                    'due_date' => $date ?: null,
-                ]);
+        if ($request->action === 'approved' && $user->approved) {
+            $status->update([
+                'approved_by_id' => $user->id,
+                'approved_by_name' => $user->name,
+                'approved_date' => now(),
+            ]);
         }
+
+        if ($request->action === 'approved_management' && $user->approved) {
+            $status->update([
+                'management_approved_by_id' => $user->id,
+                'management_approved_by_name' => $user->name,
+                'management_approved_date' => now(),
+            ]);
+        }
+
+        Project::where('part_number', $request->project_part_number)
+            ->update([
+                'remark' => match ($request->action) {
+                    'checked' => 'not approved',
+                    'approved' => 'not approved management',
+                    'approved_management' => 'approved',
+                    default => 'new',
+                },
+            ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function updateToOnGoing(Project $project)
+    {
+        $project->update([
+            'remark' => 'on going',
+        ]);
 
         return redirect()
-            ->route('engineering.projects.detail', ['project' => $project->part_number])
+            ->route('engineering')
             ->with('success', 'Due dates assigned successfully.');
+    }
+
+    public function ongoing(Project $project)
+    {
+        $projectDocuments = ProjectDocument::with([
+            'stage:id,stage_number',
+            'documentType:code,name',
+        ])
+            ->where('project_part_number', $project->part_number)
+            ->orderBy('customer_stage_id')
+            ->get()
+            ->groupBy('customer_stage_id');
+
+        return view('engineering.projects.ongoing', compact(
+            'project',
+            'projectDocuments'
+        ));
     }
 }

@@ -27,9 +27,12 @@ return new class extends Migration
 
             $table->date('due_date')->nullable();
             $table->date('actual_date')->nullable();
+            $table->string('file_name')->nullable();
 
             $table->boolean('checked')->default(false);
             $table->boolean('approved')->default(false);
+
+            $table->string('remark')->nullable();
 
             $table->timestamps();
 
