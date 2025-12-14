@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -29,7 +28,7 @@ return new class extends Migration
             $table->string('sldg_number')->comment('SPK/LOI/DIE GO Number');
             $table->string('masspro_target');
             $table->string('minor_change');
-            $table->enum('remark', ['new', 'not checked', 'not approved', 'not approved management', 'approved', 'on going', 'completed'])->default('new');
+            $table->enum('remark', ['new', 'not checked', 'not approved', 'not approved management', 'on going', 'completed'])->default('new');
             $table->timestamps();
 
             $table->foreign('customer_code')->references('code')->on('customers')->nullOnDelete();

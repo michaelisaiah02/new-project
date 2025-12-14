@@ -15,11 +15,18 @@ class ProjectEngineerController extends Controller
 {
     public function new(Project $project)
     {
+        if (auth()->user()->approved || auth()->user()->checked) {
+            return redirect()->route('engineering.projects.assignDueDates', [
+                'project' => $project->part_number,
+            ]);
+        }
         // Ambil semua stage + dokumen master
         $stages = $project->customer->stages()
-            ->with(['documents' => function ($q) {
-                $q->orderBy('name');
-            }])
+            ->with([
+                'documents' => function ($q) {
+                    $q->orderBy('name');
+                }
+            ])
             ->orderBy('stage_number')
             ->get();
 
@@ -58,7 +65,7 @@ class ProjectEngineerController extends Controller
             $stageNumber = $stage->stage_number;
 
             if (
-                ! isset($docGroups[$stageNumber]) ||
+                !isset($docGroups[$stageNumber]) ||
                 empty($docGroups[$stageNumber])
             ) {
                 $errors["documents_codes.$stageNumber"] =
@@ -66,23 +73,41 @@ class ProjectEngineerController extends Controller
             }
         }
 
-        if (! empty($errors)) {
+        if (!empty($errors)) {
             return back()
                 ->withErrors($errors)
                 ->withInput();
         }
 
+        $hasChanges = false;
+
         foreach ($stages as $stage) {
             $stageNumber = $stage->stage_number;
             $selectedDocs = $docGroups[$stageNumber] ?? [];
 
-            // Hapus semua dulu untuk stage ini
-            ProjectDocument::where('project_part_number', $project->part_number)
+            $existingDocs = ProjectDocument::where('project_part_number', $project->part_number)
                 ->where('customer_stage_id', $stage->id)
-                ->delete();
+                ->pluck('document_type_code')
+                ->toArray();
 
-            // Insert ulang sesuai pilihan user
-            foreach ($selectedDocs as $docCode) {
+            $toInsert = array_diff($selectedDocs, $existingDocs);
+            $toDelete = array_diff($existingDocs, $selectedDocs);
+
+            // 🔴 kalau ada perubahan → tandai
+            if (!empty($toInsert) || !empty($toDelete)) {
+                $hasChanges = true;
+            }
+
+            // hapus
+            if ($toDelete) {
+                ProjectDocument::where('project_part_number', $project->part_number)
+                    ->where('customer_stage_id', $stage->id)
+                    ->whereIn('document_type_code', $toDelete)
+                    ->delete();
+            }
+
+            // insert
+            foreach ($toInsert as $docCode) {
                 ProjectDocument::create([
                     'project_part_number' => $project->part_number,
                     'document_type_code' => $docCode,
@@ -91,27 +116,24 @@ class ProjectEngineerController extends Controller
             }
         }
 
-        ApprovalStatus::where('part_number', $project->part_number)->updateOrCreate([
-            'part_number' => $project->part_number,
-        ], [
-            'created_by_id' => auth()->id(),
-            'created_by_name' => auth()->user()->name,
-            'created_date' => now(),
-            'checked_by_id' => null,
-            'checked_by_name' => null,
-            'checked_date' => null,
-            'approved_by_id' => null,
-            'approved_by_name' => null,
-            'approved_date' => null,
-            'management_approved_by_id' => null,
-            'management_approved_by_name' => null,
-            'management_approved_date' => null,
-        ]);
 
-        Project::where('part_number', $project->part_number)
-            ->update([
-                'remark' => 'not checked',
+
+        if ($hasChanges) {
+            ApprovalStatus::where('part_number', $project->part_number)->update([
+                'checked_by_id' => null,
+                'checked_by_name' => null,
+                'checked_date' => null,
+                'approved_by_id' => null,
+                'approved_by_name' => null,
+                'approved_date' => null,
+                'management_approved_by_id' => null,
+                'management_approved_by_name' => null,
+                'management_approved_date' => null,
             ]);
+
+            Project::where('part_number', $project->part_number)
+                ->update(['remark' => 'not checked']);
+        }
 
         return redirect()->route('engineering.projects.assignDueDates', [
             'project' => $project->part_number,
@@ -146,12 +168,30 @@ class ProjectEngineerController extends Controller
         ));
     }
 
-    public function updateDueDate(Request $request)
+    public function updateDueDates(Request $request, Project $project)
     {
-        ProjectDocument::where('id', $request->project_document_id)
-            ->update(['due_date' => $request->due_date]);
+        $project = Project::where('part_number', $project->part_number)->firstOrFail();
+        $request->validate([
+            'due_dates.*' => 'nullable|date',
+        ]);
 
-        return response()->json(['status' => 'success']);
+        foreach ($request->due_dates ?? [] as $pdId => $date) {
+            ProjectDocument::where('id', $pdId)
+                ->where('project_part_number', $project->part_number)
+                ->update([
+                    'due_date' => $date,
+                ]);
+        }
+
+        // 🔴 setelah save, status balik ke not checked
+        Project::where('part_number', $project->part_number)
+            ->update([
+                'remark' => 'not checked',
+            ]);
+
+        return redirect()
+            ->route('engineering')
+            ->with('success', 'Due dates saved successfully.');
     }
 
     public function approval(Request $request)
@@ -191,7 +231,7 @@ class ProjectEngineerController extends Controller
                 'remark' => match ($request->action) {
                     'checked' => 'not approved',
                     'approved' => 'not approved management',
-                    'approved_management' => 'approved',
+                    'approved_management' => 'on going',
                     default => 'new',
                 },
             ]);

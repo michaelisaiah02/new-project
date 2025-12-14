@@ -2,242 +2,266 @@
 @section('title', 'NEW PROJECT')
 @section('customer', $project->customer->name)
 @section('content')
-    @php
-        $stages = [];
-    @endphp
-    <div class="container-fluid mt-2">
-        <div class="row justify-content-center mb-2">
-            <div class="col-md-4">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->model }}" id="model" placeholder="Model Part" aria-label="Model"
-                        aria-describedby="model" readonly>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-number"
-                        placeholder="Nomor Part" aria-label="No. Part" aria-describedby="part-number"
-                        value="{{ $project->part_number }}" readonly>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
-                        Name</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-name"
-                        placeholder="Nama Part" aria-label="Part Name" aria-describedby="part-name"
-                        value="{{ $project->part_name }}" readonly>
-                </div>
-            </div>
+  @php
+    $stages = [];
+  @endphp
+  <div class="container-fluid mt-2">
+    <div class="row justify-content-center mb-2">
+      <div class="col-md-4">
+        <div class="input-group mb-1">
+          <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
+          <input type="text" class="form-control bg-secondary-subtle border-secondary border"
+            value="{{ $project->model }}" id="model" placeholder="Model Part" aria-label="Model" aria-describedby="model"
+            readonly>
         </div>
-        <div class="row mb-2 ms-0 justify-content-between">
-            <div class="col-auto border-0 shadow-sm bg-secondary-subtle bg-gradient rounded-2">
-                <p class="fs-4 p-0 m-0 fw-bold">Assign Due Dates</p>
-            </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
-                    data-bs-target="#showProjectModal">
-                    Show Details
-                </button>
-            </div>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group mb-1">
+          <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
+          <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-number"
+            placeholder="Nomor Part" aria-label="No. Part" aria-describedby="part-number"
+            value="{{ $project->part_number }}" readonly>
         </div>
-        <form action="{{ route('engineering.projects.updateToOnGoing', ['project' => $project->part_number]) }}"
-            method="post">
-            @csrf
-
-            <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 320px; overflow-y: auto;">
-                <table class="table table-sm table-bordered m-0 text-start align-middle">
-                    <thead class="table-primary sticky-top">
-                        <tr>
-                            <th class="text-center">Stage</th>
-                            <th>Document</th>
-                            <th class="text-center">Due Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($projectDocuments as $stageId => $docs)
-                            @foreach ($docs as $index => $pd)
-                                <tr>
-                                    @if ($index === 0)
-                                        <td rowspan="{{ $docs->count() }}" class="text-center">
-                                            Stage {{ $pd->stage->stage_number }}
-                                        </td>
-                                    @endif
-
-                                    <td class="w-75">
-                                        {{ $pd->documentType->name }}
-                                    </td>
-
-                                    <td>
-                                        <input type="date" name="due_dates[{{ $pd->id }}]"
-                                            value="{{ $pd->due_date?->toDateString() }}" data-id="{{ $pd->id }}"
-                                            class="form-control form-control-sm due-date-input bg-secondary-subtle border-3 border-dark"
-                                            min="{{ now()->toDateString() }}">
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
-                <div class="col-md">
-                    <ul class="list-group list-group-horizontal position-relative text-center">
-                        <li class="list-group-item px-1 py-0">
-                            <div class="mx-1">
-                                <div class="fw-bold">Created By</div>
-                                {{ $project->approvalStatus->created_by_name }} -
-                                {{ Carbon\Carbon::parse($project->approvalStatus->created_date)->locale('id')->translatedFormat('d/M/Y') }}
-                            </div>
-                        </li>
-                        <li class="list-group-item px-1 py-0">
-                            <div class="mx-1">
-                                <div class="fw-bold">Checked By</div>
-                                {{ $project->approvalStatus->checked_by_name }} -
-                                @if ($project->approvalStatus->checked_date)
-                                    {{ \Carbon\Carbon::parse($project->approvalStatus->checked_date)->locale('id')->translatedFormat('d/M/Y') }}
-                                @endif
-                            </div>
-                        </li>
-                        <li class="list-group-item px-1 py-0">
-                            <div class="mx-1">
-                                <div class="fw-bold">Approved By</div>
-                                {{ $project->approvalStatus->approved_by_name }} -
-                                @if ($project->approvalStatus->approved_date)
-                                    {{ \Carbon\Carbon::parse($project->approvalStatus->approved_date)->locale('id')->translatedFormat('d/M/Y') }}
-                                @endif
-                            </div>
-                        </li>
-                        <li class="list-group-item px-1 py-0">
-                            <div class="mx-1">
-                                <div class="fw-bold">Management Approved By</div>
-                                {{ $project->approvalStatus->management_approved_by_name }} -
-                                @if ($project->approvalStatus->management_approved_date)
-                                    {{ \Carbon\Carbon::parse($project->approvalStatus->management_approved_date)->locale('id')->translatedFormat('d/M/Y') }}
-                                @endif
-                            </div>
-                        </li>
-                        <span class="position-absolute translate-middle badge rounded-3 bg-primary fs-6"
-                            style="bottom: 65% !important; left: 8% !important;">
-                            Approval History
-                            <span class="visually-hidden">unread messages</span>
-                        </span>
-                    </ul>
-                </div>
-                <div class="col-auto">
-                    <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
-                </div>
-                @if ($canCheck)
-                    <div class="col-auto">
-                        <button type="button" id="btnChecked" class="btn btn-primary" disabled>Checked</button>
-                    </div>
-                @endif
-
-                @if ($canApprove)
-                    <div class="col-auto">
-                        <button type="button" id="btnApproved" class="btn btn-primary" disabled>Approved</button>
-                    </div>
-                @endif
-
-                @if ($canApproveManagement)
-                    <div class="col-auto">
-                        <button type="button" id="btnApprovedManagement" class="btn btn-primary" disabled>Approved</button>
-                    </div>
-                @endif
-
-                <div class="col-auto">
-                    <button id="btnSave" class="btn btn-primary" type="submit" disabled>
-                        Save
-                    </button>
-                </div>
-            </div>
-        </form>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group mb-1">
+          <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
+            Name</span>
+          <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-name"
+            placeholder="Nama Part" aria-label="Part Name" aria-describedby="part-name" value="{{ $project->part_name }}"
+            readonly>
+        </div>
+      </div>
     </div>
-    @include('engineering.projects.partials.data-project-modal', ['project' => $project])
-    <x-toast />
+    <div class="row mb-2 ms-0 justify-content-between">
+      <div class="col-auto border-0 shadow-sm bg-secondary-subtle bg-gradient rounded-2">
+        <p class="fs-4 p-0 m-0 fw-bold">Assign Due Dates</p>
+      </div>
+      <div class="col-auto">
+        <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
+          data-bs-target="#showProjectModal">
+          Show Details
+        </button>
+      </div>
+    </div>
+    <form action="{{ route('engineering.projects.updateDueDates', ['project' => $project->part_number]) }}"
+      method="post">
+      @csrf
+
+      <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 320px; overflow-y: auto;">
+        <table class="table table-sm table-bordered m-0 text-start align-middle">
+          <thead class="table-primary sticky-top">
+            <tr>
+              <th class="text-center">Stage</th>
+              <th>Document</th>
+              <th class="text-center">Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach ($projectDocuments as $stageId => $docs)
+              @foreach ($docs as $index => $pd)
+                <tr>
+                  @if ($index === 0)
+                    <td rowspan="{{ $docs->count() }}" class="text-center">
+                      Stage {{ $pd->stage->stage_number }}
+                    </td>
+                  @endif
+
+                  <td class="w-75">
+                    {{ $pd->documentType->name }}
+                  </td>
+
+                  <td>
+                    <input type="date" name="due_dates[{{ $pd->id }}]"
+                      value="{{ $pd->due_date?->toDateString() }}" data-id="{{ $pd->id }}"
+                      class="form-control form-control-sm due-date-input bg-secondary-subtle border-3 border-dark"
+                      min="{{ now()->toDateString() }}">
+                  </td>
+                </tr>
+              @endforeach
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+        <div class="col-md">
+          <ul class="list-group list-group-horizontal position-relative text-center">
+            <li class="list-group-item px-1 py-0">
+              <div class="mx-1">
+                <div class="fw-bold">Created By</div>
+                {{ $project->approvalStatus->created_by_name }} -
+                {{ Carbon\Carbon::parse($project->approvalStatus->created_date)->locale('id')->translatedFormat('d/M/Y') }}
+              </div>
+            </li>
+            <li class="list-group-item px-1 py-0">
+              <div class="mx-1">
+                <div class="fw-bold">Checked By</div>
+                {{ $project->approvalStatus->checked_by_name }} -
+                @if ($project->approvalStatus->checked_date)
+                  {{ \Carbon\Carbon::parse($project->approvalStatus->checked_date)->locale('id')->translatedFormat('d/M/Y') }}
+                @endif
+              </div>
+            </li>
+            <li class="list-group-item px-1 py-0">
+              <div class="mx-1">
+                <div class="fw-bold">Approved By</div>
+                {{ $project->approvalStatus->approved_by_name }} -
+                @if ($project->approvalStatus->approved_date)
+                  {{ \Carbon\Carbon::parse($project->approvalStatus->approved_date)->locale('id')->translatedFormat('d/M/Y') }}
+                @endif
+              </div>
+            </li>
+            <li class="list-group-item px-1 py-0">
+              <div class="mx-1">
+                <div class="fw-bold">Management Approved By</div>
+                {{ $project->approvalStatus->management_approved_by_name }} -
+                @if ($project->approvalStatus->management_approved_date)
+                  {{ \Carbon\Carbon::parse($project->approvalStatus->management_approved_date)->locale('id')->translatedFormat('d/M/Y') }}
+                @endif
+              </div>
+            </li>
+            <span class="position-absolute translate-middle badge rounded-3 bg-primary fs-6"
+              style="bottom: 65% !important; left: 8% !important;">
+              Approval History
+              <span class="visually-hidden">unread messages</span>
+            </span>
+          </ul>
+        </div>
+        <div class="col-auto">
+          <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
+        </div>
+        @if ($canCheck)
+          <div class="col-auto">
+            <button type="button" id="btnChecked" class="btn btn-primary">Checked</button>
+          </div>
+        @endif
+
+        @if ($canApprove)
+          <div class="col-auto">
+            <button type="button" id="btnApproved" class="btn btn-primary">Approved</button>
+          </div>
+        @endif
+
+        @if ($canApproveManagement)
+          <div class="col-auto">
+            <button type="button" id="btnApprovedManagement" class="btn btn-primary">Approved</button>
+          </div>
+        @endif
+
+        <div class="col-auto">
+          <button id="btnSave" class="btn btn-primary" type="submit" disabled>
+            Save
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  @include('engineering.projects.partials.data-project-modal', ['project' => $project])
+  <x-toast />
 @endsection
 
 @section('scripts')
-    <script type="module">
-        function checkAllDueDatesFilled() {
-            let allFilled = true;
+  <script type="module">
+    function setInputDateReadOnlyForCheckedOrApproved() {
+      @if (
+          $project->approvalStatus->checked ||
+              $project->approvalStatus->approved ||
+              $project->approvalStatus->management_approved)
+        $('.due-date-input').attr('readonly', true);
+      @endif
+    }
 
-            $('.due-date-input').each(function() {
-                if (!$(this).val()) {
-                    allFilled = false;
-                }
-            });
+    function getFirstEmptyDueDate() {
+      let emptyInput = null;
 
-            if (allFilled) {
-                $('#btnChecked, #btnApproved, #btnApprovedManagement').prop('disabled', false);
-            } else {
-                $('#btnChecked, #btnApproved, #btnApprovedManagement').prop('disabled', true);
-            }
+      $('.due-date-input').each(function() {
+        if (!$(this).val() && !emptyInput) {
+          emptyInput = $(this);
         }
+      });
 
-        function approvalAction(type) {
-            const PROJECT_PART_NUMBER = @json($project->part_number);
-            $.ajax({
-                url: "{{ route('engineering.projects.approval') }}",
-                method: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    project_part_number: PROJECT_PART_NUMBER,
-                    action: type
-                },
-                success: function() {
-                    location.reload(); // simple & aman
-                }
-            });
+      return emptyInput;
+    }
+
+    function showDueDateWarning() {
+      window.dispatchEvent(new CustomEvent('toast', {
+        detail: {
+          type: 'warning',
+          message: 'Masih ada Due Date yang belum diisi. Silakan lengkapi terlebih dahulu.'
         }
+      }));
+    }
 
-        function toggleSaveButton() {
-            const checkedDone = @json($project->approvalStatus->checked_date);
-            const approvedDone = @json($project->approvalStatus->approved_date);
-            const managementApprovedDone = @json($project->approvalStatus->management_approved_date);
+    function scrollToInput(input) {
+      $('html, body').animate({
+        scrollTop: input.offset().top - 150
+      }, 400);
 
-            $('#btnSave').prop('disabled', !(checkedDone && approvedDone && managementApprovedDone));
+      input.focus();
+    }
+
+    function approvalAction(type) {
+      const PROJECT_PART_NUMBER = @json($project->part_number);
+      $.ajax({
+        url: "{{ route('engineering.projects.approval') }}",
+        method: 'POST',
+        data: {
+          _token: $('meta[name="csrf-token"]').attr('content'),
+          project_part_number: PROJECT_PART_NUMBER,
+          action: type
+        },
+        success: function() {
+          location.reload(); // simple & aman
         }
+      });
+    }
 
+    function toggleSaveButton() {
+      // save boleh selalu aktif ATAU
+      // aktif kalau ada perubahan — pilihan UX
+      $('#btnSave').prop('disabled', false);
+    }
 
-        $(document).ready(function() {
-            $('.due-date-input').on('change', function() {
-                const projectDocumentId = $(this).data('id');
-                const dueDate = $(this).val();
+    $(document).ready(function() {
+      $('#btnChecked').on('click', function() {
+        const emptyInput = getFirstEmptyDueDate();
 
-                $.ajax({
-                    url: "{{ route('engineering.projects.updateDueDate') }}",
-                    method: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        project_document_id: projectDocumentId,
-                        due_date: dueDate
-                    },
-                    success: function() {
-                        console.log('Due date saved');
-                        checkAllDueDatesFilled();
-                    }
-                });
-            });
+        if (emptyInput) {
+          showDueDateWarning();
+          scrollToInput(emptyInput);
+          return;
+        }
+        approvalAction('checked');
+      });
 
-            $('#btnChecked').on('click', function() {
-                approvalAction('checked');
-            });
+      $('#btnApproved').on('click', function() {
+        const emptyInput = getFirstEmptyDueDate();
 
-            $('#btnApproved').on('click', function() {
-                approvalAction('approved');
-            });
+        if (emptyInput) {
+          showDueDateWarning();
+          scrollToInput(emptyInput);
+          return;
+        }
+        approvalAction('approved');
+      });
 
-            $('#btnApprovedManagement').on('click', function() {
-                approvalAction('approved_management');
-            });
+      $('#btnApprovedManagement').on('click', function() {
+        const emptyInput = getFirstEmptyDueDate();
 
-            checkAllDueDatesFilled();
-            toggleSaveButton();
-        });
-    </script>
+        if (emptyInput) {
+          showDueDateWarning();
+          scrollToInput(emptyInput);
+          return;
+        }
+        approvalAction('approved_management');
+      });
+
+      $('.due-date-input').on('change', function() {
+        toggleSaveButton();
+      });
+
+      setInputDateReadOnlyForCheckedOrApproved();
+    });
+  </script>
 @endsection

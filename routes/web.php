@@ -79,7 +79,7 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
             Route::post('/{project}/new', 'saveNew')->name('saveNew');
             Route::get('/{project}/assign-due-date', 'assignDueDates')->name('assignDueDates');
             Route::post('/{project}/save-due-date', 'saveDueDates')->name('saveDueDates');
-            Route::post('/update-due-date', 'updateDueDate')->name('updateDueDate');
+            Route::post('/{project}/update-due-dates', 'updateDueDates')->name('updateDueDates');
             Route::post('/approval', 'approval')->name('approval');
             Route::post('/{project}/update-to-on-going', 'updateToOnGoing')->name('updateToOnGoing');
             Route::get('/{project}/on-going', 'onGoing')->name('onGoing');
