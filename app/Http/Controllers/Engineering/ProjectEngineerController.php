@@ -119,17 +119,23 @@ class ProjectEngineerController extends Controller
 
 
         if ($hasChanges) {
-            ApprovalStatus::where('part_number', $project->part_number)->update([
-                'checked_by_id' => null,
-                'checked_by_name' => null,
-                'checked_date' => null,
-                'approved_by_id' => null,
-                'approved_by_name' => null,
-                'approved_date' => null,
-                'management_approved_by_id' => null,
-                'management_approved_by_name' => null,
-                'management_approved_date' => null,
-            ]);
+            ApprovalStatus::updateOrCreate(
+                ['part_number' => $project->part_number],
+                [
+                    'created_by_id' => auth()->id(),
+                    'created_by_name' => auth()->user()->name,
+                    'created_date' => now(),
+                    'checked_by_id' => null,
+                    'checked_by_name' => null,
+                    'checked_date' => null,
+                    'approved_by_id' => null,
+                    'approved_by_name' => null,
+                    'approved_date' => null,
+                    'management_approved_by_id' => null,
+                    'management_approved_by_name' => null,
+                    'management_approved_date' => null,
+                ]
+            );
 
             Project::where('part_number', $project->part_number)
                 ->update(['remark' => 'not checked']);
@@ -143,7 +149,7 @@ class ProjectEngineerController extends Controller
     public function assignDueDates(Project $project)
     {
         $projectDocuments = ProjectDocument::with([
-            'stage:id,stage_number',
+            'stage',
             'documentType:code,name',
         ])
             ->where('project_part_number', $project->part_number)

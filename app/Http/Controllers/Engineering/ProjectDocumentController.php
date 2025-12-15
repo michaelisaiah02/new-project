@@ -17,9 +17,24 @@ class ProjectDocumentController extends Controller
 
     public function upload(Request $request, ProjectDocument $projectDocument)
     {
-        $request->validate([
-            'file' => 'required|file|max:10240',
-        ]);
+        $validator = validator(
+            $request->all(),
+            [
+                'file' => 'required|file|mimes:pdf|max:5120', // max 5MB
+            ],
+            [
+                'file.required' => 'File wajib diunggah.',
+                'file.file' => 'File tidak valid.',
+                'file.mimes' => 'File harus berformat PDF.',
+                'file.max' => 'Ukuran file maksimal 5MB.',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first('file'),
+            ], 422);
+        }
 
         $file = $request->file('file');
 

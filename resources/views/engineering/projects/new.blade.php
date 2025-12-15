@@ -47,10 +47,12 @@
                 @foreach ($stages as $stage)
                     <div class="row mb-2 mx-0">
                         <div class="col-auto my-auto">
-                            <span class="card border-dark border-3 bg-secondary-subtle adjust-width p-1">Stage
+                            <span class="card border-dark border-3 bg-secondary-subtle adjust-width p-1 text-center">Stage
                                 {{ $stage->stage_number }}</span>
+                            <span class="card border-dark border adjust-width mt-1 px-1 text-center">
+                                {{ $stage->stage_name }}</span>
                         </div>
-                        <div class="col-md-10">
+                        <div class="col-md-10 my-auto">
                             <div class="row gap-2">
                                 @foreach ($stage->documents as $doc)
                                     @php
@@ -89,12 +91,6 @@
                 class="row justify-content-between align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
                 <div class="col-auto">
                     <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
-                </div>
-                <div class="col-auto">
-                    <a class="btn btn-primary"
-                        href="{{ route('engineering.projects.assignDueDates', ['project' => $project->part_number]) }}">
-                        View Assign Due Dates
-                    </a>
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-primary" type="submit">

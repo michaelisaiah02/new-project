@@ -9,3 +9,4 @@ window.bootstrap = bootstrap;
 // window.flatpickr = flatpickr;
 import selectize from '@selectize/selectize';
 window.selectize = selectize;
+

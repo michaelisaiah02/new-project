@@ -64,7 +64,7 @@
             <div
                 class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
                 <div class="col-auto">
-                    <a href="{{ route('marketing.customers.index') }}"
+                    <a id="btn-back" href="{{ route('marketing.customers.index') }}"
                         class="btn btn-primary border-3 border-light-subtle">Back</a>
                 </div>
                 <div class="col-auto">
@@ -103,7 +103,7 @@
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button type="submit" name="action" value="finish"
+                    <button id="btn-finish" type="submit" name="action" value="finish"
                         class="btn btn-primary border-3 border-light-subtle">
                         Finish
                     </button>
@@ -133,158 +133,219 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="massproModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Required Document</h5>
+                </div>
+                <div class="modal-body">
+                    Declaration Masspro belum dipilih.
+                    Dokumen ini **wajib** untuk melanjutkan.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="forceMasspro">
+                        Lanjutkan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <x-toast />
 @endsection
 @section('scripts')
     <script type="module">
         $(function() {
-            const $btn = $('#delete-stage-btn');
-            if (!$btn.length) return;
 
-            $btn.on('click', function() {
-                const $trigger = $(this);
+            // =========================
+            // DELETE STAGE (confirm modal)
+            // =========================
+            const $deleteBtn = $('#delete-stage-btn');
 
-                if (!$trigger.data('confirmed')) {
-                    let $modal = $('#confirmDeleteStageModal');
+            if ($deleteBtn.length) {
+                $deleteBtn.on('click', function() {
+                    const $trigger = $(this);
 
-                    const modal = bootstrap.Modal.getOrCreateInstance($modal[0]);
+                    if (!$trigger.data('confirmed')) {
+                        const $modal = $('#confirmDeleteStageModal');
+                        const modal = bootstrap.Modal.getOrCreateInstance($modal[0]);
 
-                    $modal.off('click.confirmDelete').on('click.confirmDelete', '#confirm-delete-stage',
-                        function() {
-                            $trigger.data('confirmed', true);
-                            modal.hide();
-                            $trigger.trigger('click');
-                        });
+                        // bind sekali tiap mau show
+                        $modal.off('click.confirmDelete')
+                            .on('click.confirmDelete', '#confirm-delete-stage', function() {
+                                $trigger.data('confirmed', true);
+                                modal.hide();
+                                $trigger.trigger('click');
+                            });
 
-                    modal.show();
-                    return;
-                }
+                        modal.show();
+                        return;
+                    }
 
-                $trigger.data('confirmed', false);
+                    // reset flag
+                    $trigger.data('confirmed', false);
 
-                $('<form>', {
-                        method: 'POST',
-                        action: @json(route('marketing.customers.destroyStage', ['customer' => $customer->code, 'stageNumber' => $stageNumber]))
-                    })
-                    .css('display', 'none')
-                    .append($('<input>', {
-                        type: 'hidden',
-                        name: '_token',
-                        value: @json(csrf_token())
-                    }))
-                    .append($('<input>', {
-                        type: 'hidden',
-                        name: '_method',
-                        value: 'DELETE'
-                    }))
-                    .appendTo('body')
-                    .trigger('submit');
-            });
+                    // submit delete form
+                    $('<form>', {
+                            method: 'POST',
+                            action: @json(route('marketing.customers.destroyStage', ['customer' => $customer->code, 'stageNumber' => $stageNumber]))
+                        })
+                        .css('display', 'none')
+                        .append($('<input>', {
+                            type: 'hidden',
+                            name: '_token',
+                            value: @json(csrf_token())
+                        }))
+                        .append($('<input>', {
+                            type: 'hidden',
+                            name: '_method',
+                            value: 'DELETE'
+                        }))
+                        .appendTo('body')
+                        .trigger('submit');
+                });
+            }
 
-            // CLICK ON ROW (toggle checkbox)
+            // =========================
+            // DOC ROW CLICK => toggle checkbox
+            // =========================
             $('.doc-row').on('click', function(e) {
-
-                // kalau klik radio -> skip
+                // klik radio -> skip
                 if ($(e.target).is('.qr-option')) return;
 
-                // kalau klik QR cell -> skip (biar handler QR-cell yang jalan)
+                // klik QR cell -> skip (biar handler qr-cell jalan)
                 if ($(e.target).closest('.qr-cell').length) return;
 
-                // kalau klik checkbox -> skip (default behavior)
+                // klik checkbox -> skip
                 if ($(e.target).is('.doc-check')) return;
 
-                // toggle checkbox
                 const $cb = $(this).find('.doc-check');
                 $cb.prop('checked', !$cb.prop('checked')).trigger('change');
             });
 
-            // CLICK QR CELL → AUTO CHECK RADIO
+            // =========================
+            // QR CELL CLICK => auto check checkbox + check radio
+            // =========================
             $('.qr-cell').on('click', function(e) {
-                e.stopPropagation(); // biar klik cell gak nyentuh row-click
+                e.stopPropagation();
 
-                const $radio = $(this).find('.qr-option');
-
-                // enable row first (if needed)
                 const $row = $(this).closest('tr');
                 const $cb = $row.find('.doc-check');
+                const $radio = $(this).find('.qr-option');
 
-                // kalau checkbox belum checked → checklist dulu
                 if (!$cb.prop('checked')) {
                     $cb.prop('checked', true).trigger('change');
                 }
 
-                // sekarang check radio-nya
                 $radio.prop('checked', true).trigger('change');
             });
 
+            // =========================
+            // CHECKBOX CHANGE => enable/disable radios + default pick
+            // =========================
+            function syncRowRadios($row) {
+                const $cb = $row.find('.doc-check');
+                const $radios = $row.find('.qr-option');
 
-            // CHECKBOX CHANGE HANDLER
-            $('.doc-check').on('change', function() {
-                let $row = $(this).closest('tr');
-                let $radios = $row.find('.qr-option');
-
-                if (this.checked) {
+                if ($cb.prop('checked')) {
                     $radios.prop('disabled', false);
 
-                    // kalau belum ada radio yg dipilih → pilih yg pertama
-                    if (!$radios.is(':checked')) {
+                    // kalau belum ada yg dipilih -> pilih pertama
+                    if ($radios.filter(':checked').length === 0) {
                         $radios.first().prop('checked', true);
                     }
-
                 } else {
                     $radios.prop('checked', false).prop('disabled', true);
                 }
-            });
+            }
 
-            // INIT LOAD
-            $('.doc-check').trigger('change');
-        });
-        $(document).ready(function() {
-            // disable semua qr options saat awal
-            $('.doc-check').each(function() {
-                let row = $(this).closest('tr');
-                if ($(this).is(':checked')) {
-                    row.find('.qr-option').prop('disabled', false);
-                } else {
-                    row.find('.qr-option').prop('disabled', true);
-                }
-            });
-
-            // ketika checkbox dokumen di klik
             $('.doc-check').on('change', function() {
-                let row = $(this).closest('tr');
-
-                if ($(this).is(':checked')) {
-                    // enable radio positions
-                    row.find('.qr-option').prop('disabled', false);
-                    row.find('.qr-option').first().prop('checked', true);
-                } else {
-                    // uncheck radio + disable
-                    row.find('.qr-option').prop('checked', false).prop('disabled', true);
-                }
+                syncRowRadios($(this).closest('tr'));
             });
 
-            // handle submit
+            // INIT (sekali aja)
+            $('.doc-row').each(function() {
+                syncRowRadios($(this));
+            });
+
+            // =========================
+            // SUBMIT VALIDATION => tiap dokumen checked harus punya QR
+            // =========================
             $('form').on('submit', function(e) {
                 let valid = true;
-                let message = '';
 
                 $('.doc-check:checked').each(function() {
-                    let row = $(this).closest('tr');
-                    let hasQR = row.find('.qr-option:checked').length > 0;
+                    const $row = $(this).closest('tr');
+                    const hasQR = $row.find('.qr-option:checked').length > 0;
 
                     if (!hasQR) {
                         valid = false;
-                        message = "Setiap dokumen yang dipilih harus punya posisi QR ya 😅";
+                        return false; // break each
                     }
                 });
 
                 if (!valid) {
                     e.preventDefault();
-                    alert(message);
+                    alert("Setiap dokumen yang dipilih harus punya posisi QR ya 😅");
+                }
+            });
+
+            // =========================
+            // MASSPRO REQUIRED (DM) => modal + auto-scroll
+            // =========================
+            function hasMasspro() {
+                return $('input.doc-check[value="DM"]').is(':checked');
+            }
+
+            function forceMassproChecked() {
+                const $dm = $('input.doc-check[value="DM"]');
+                $dm.prop('checked', true).trigger('change');
+            }
+
+            function scrollToMassproRow() {
+                const row = document.querySelector('input.doc-check[value="DM"]')?.closest('tr');
+                if (!row) return;
+
+                row.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+
+                row.classList.add('table-warning');
+                setTimeout(() => row.classList.remove('table-warning'), 2000);
+            }
+
+            const massproModalEl = document.getElementById('massproModal');
+            const massproModal = massproModalEl ?
+                bootstrap.Modal.getOrCreateInstance(massproModalEl) :
+                null;
+
+            let pendingAction = null;
+
+            $('#btn-finish, #btn-back').on('click', function(e) {
+                if (!hasMasspro()) {
+                    e.preventDefault();
+                    pendingAction = this;
+                    massproModal.show();
+                    setTimeout(scrollToMassproRow, 150);
+                }
+            });
+
+            $('#forceMasspro').on('click', function() {
+                forceMassproChecked();
+                massproModal?.hide();
+
+                if (pendingAction) {
+                    pendingAction.click();
+                    pendingAction = null;
                 }
             });
 
         });
     </script>
+
 @endsection

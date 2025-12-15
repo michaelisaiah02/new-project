@@ -152,13 +152,22 @@ class CustomerController extends Controller
             ->where('customer_stages.stage_number', '!=', $stageNumber)
             ->pluck('document_type_code');
 
-        // available docs
-        $availableDocuments = DocumentType::whereNotIn('code', $usedDocs)->get();
-
         // current stage docs
         $currentDocs = $stage->exists
             ? $stage->documents()->pluck('document_type_code')
             : collect();
+
+        // available docs
+        $availableDocuments = DocumentType::whereNotIn('code', $usedDocs)
+            ->orderByRaw("
+                CASE
+                    WHEN code IN (" . $currentDocs->map(fn($c) => "'$c'")->implode(',') . ")
+                    THEN 0 ELSE 1
+                END
+            ")
+            ->orderBy('name')
+            ->get();
+
 
         $maxStage = $customer->stages()->max('stage_number') ?? 0;
 
@@ -273,6 +282,14 @@ class CustomerController extends Controller
         }
 
         if ($action === 'finish') {
+            $selectedDocs = $request->input('document_type_codes', []);
+
+            if (!in_array('DM', $selectedDocs)) {
+                return back()->withErrors([
+                    'document_type_codes' => 'Declaration Masspro is required.'
+                ]);
+            }
+
             return redirect()->route('marketing.customers.index')
                 ->with('success', 'Customer stages updated.');
         }
