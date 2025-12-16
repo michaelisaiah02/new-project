@@ -34,27 +34,36 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'customer_code' => 'required|string|max:10',
-            'model' => 'required|string|max:50',
-            'part_number' => 'required|string|max:50',
-            'part_name' => 'required|string|max:100',
-            'part_type' => 'required|string|in:Hose,Molding,Weatherstrip,Bonding Metal',
-            'drawing_2d' => 'required|file|max:5120',
-            'drawing_label_2d' => 'required|string|max:100',
-            'drawing_3d' => 'nullable|file|max:5120',
-            'drawing_label_3d' => 'nullable|string|max:100',
-            'qty' => 'required|integer|min:1',
-            'eee_number' => 'required|string|max:50',
-            'suffix' => 'required|string|max:20',
-            'drawing_number' => 'required|string|max:50',
-            'drawing_revision_date' => 'required|date',
-            'material_on_drawing' => 'required|string|max:255',
-            'receive_date_sldg' => 'required|date',
-            'sldg_number' => 'required|string|max:50',
-            'masspro_target' => 'required|date',
-            'minor_change' => 'required|string',
-        ]);
+        $validated = $request->validate(
+            [
+                'customer_code' => 'required|string|max:10',
+                'model' => 'required|string|max:50',
+                'part_number' => 'required|string|max:50|unique:projects,part_number',
+                'part_name' => 'required|string|max:100',
+                'part_type' => 'required|string|in:Hose,Molding,Weatherstrip,Bonding Metal',
+                'drawing_2d' => 'required|file|max:5120',
+                'drawing_label_2d' => 'required|string|max:100',
+                'drawing_3d' => 'nullable|file|max:5120',
+                'drawing_label_3d' => 'nullable|string|max:100',
+                'qty' => 'required|integer|min:1',
+                'eee_number' => 'required|string|max:50',
+                'suffix' => 'required|string|max:20',
+                'drawing_number' => 'required|string|max:50',
+                'drawing_revision_date' => 'required|date',
+                'material_on_drawing' => 'required|string|max:255',
+                'receive_date_sldg' => 'required|date',
+                'sldg_number' => 'required|string|max:50',
+                'masspro_target' => 'required|date',
+                'minor_change' => 'required|string',
+            ],
+            [
+                'drawing_2d.required' => 'Masukan kembali File Drawing 2D.',
+                'drawing_2d.max' => 'Ukuran File Drawing 2D maksimal 5MB.',
+                'drawing_3d.max' => 'Ukuran File Drawing 3D maksimal 5MB.',
+                'part_number.unique' => 'Sudah ada Proyek dengan part yang sama di dalam database.',
+                'qty.min' => 'Quantity minimal adalah 1.',
+            ]
+        );
 
         $validated['model'] = strtoupper($validated['model']);
         $validated['part_number'] = strtoupper($validated['part_number']);
