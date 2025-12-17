@@ -17,12 +17,14 @@ class DocumentType extends Model
         'name',
     ];
 
-    public function stages()
+    public function customerStages()
     {
-        return $this->belongsToMany(CustomerStage::class, 'customer_stage_documents')
-            ->withPivot('qr_position')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            CustomerStage::class,
+            'customer_stage_documents'
+        );
     }
+
 
     public function projectDocuments()
     {

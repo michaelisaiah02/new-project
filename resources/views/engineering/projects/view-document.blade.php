@@ -72,7 +72,7 @@
             <div class="col-2 text-center">
                 <button class="btn btn-primary w-100 mb-1" id="btn-check" hidden>Checked</button>
                 <button class="btn btn-primary w-100 mb-1" id="btn-approve" hidden>Approved</button>
-                <a href="{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->part_number]) }}"
+                <a href="{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->id]) }}"
                     class="btn btn-primary w-100">Back</a>
             </div>
         </div>

@@ -83,10 +83,13 @@
                                         class="btn btn-sm btn-primary">
                                         View
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-primary border-3 border-light-subtle"
-                                        id="btn-upload-{{ $pd->id }}">Upload</button>
-                                    <input type="file" class="form-control bg-secondary-subtle border-secondary border"
-                                        id="upload-{{ $pd->id }}" hidden>
+                                    @if (!(auth()->user()->approved || auth()->user()->checked))
+                                        <button type="button" class="btn btn-sm btn-primary border-3 border-light-subtle"
+                                            id="btn-upload-{{ $pd->id }}">Upload</button>
+                                        <input type="file"
+                                            class="form-control bg-secondary-subtle border-secondary border"
+                                            id="upload-{{ $pd->id }}" hidden>
+                                    @endif
                                 </td>
                                 <td class="text-center" id="status-{{ $pd->id }}">
                                     @php
@@ -127,20 +130,29 @@
             <div class="col-auto">
                 <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
             </div>
-            <div class="col-auto ms-auto">
-                <a href="{{ route('engineering') }}" class="btn btn-primary">Cancel Project</a>
-            </div>
             <div class="col-auto">
-                <a href="{{ route('engineering') }}" class="btn btn-primary">Checked</a>
+                <a href="{{ route('engineering') }}" class="btn btn-danger">Cancel Project</a>
             </div>
-            <div class="col-auto">
-                <a href="{{ route('engineering') }}" class="btn btn-primary">Approved</a>
+            <div class="col-auto mx-auto">
+                <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
+                    data-bs-target="#showProjectModal">
+                    Show Details
+                </button>
             </div>
-            <div class="col-auto">
-                <a href="{{ route('engineering') }}" class="btn btn-primary">Finish Project</a>
-            </div>
+            @if ($project->canShowCheckedButton(auth()->user()))
+                <div class="col-auto">
+                    <button class="btn btn-primary" id="btn-check">Checked</button>
+                </div>
+            @endif
+            @if ($project->canShowApprovedButton(auth()->user()))
+                <div class="col-auto">
+                    <button class="btn btn-primary"
+                        {{ auth()->user()->department->type() === 'management' ? 'id=btn-approve-management' : 'id=btn-approve' }}>Approved</button>
+                </div>
+            @endif
         </div>
     </div>
+    @include('engineering.projects.partials.data-project-modal', ['project' => $project])
     <x-toast />
 @endsection
 
@@ -162,19 +174,19 @@
             const toastId = `toast-${Date.now()}`;
 
             const toastHtml = `
-      <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
-        <div id="${toastId}" class="toast align-items-center ${bg[type]} border-0" role="alert">
-          <div class="toast-header">
-            <i class="bi ${icons[type]} me-1"></i>
-            <strong class="me-auto">{{ config('app.name') }} - ${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-          </div>
-          <div class="toast-body">
-            ${message}
-          </div>
-        </div>
-      </div>
-    `;
+                <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
+                    <div id="${toastId}" class="toast align-items-center ${bg[type]} border-0" role="alert">
+                    <div class="toast-header">
+                        <i class="bi ${icons[type]} me-1"></i>
+                        <strong class="me-auto">{{ config('app.name') }} - ${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    </div>
+                </div>
+            `;
 
             document.body.insertAdjacentHTML('beforeend', toastHtml);
 
@@ -248,6 +260,29 @@
                 });
             });
 
+            // Checked button
+            $('#btn-check').on('click', function() {
+                $.post(
+                    `/engineering/projects/{{ $project->id }}/checked/ongoing`, {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    () => {
+                        location.reload();
+                    }
+                ).fail(res => alert(res.responseJSON.message));
+            });
+
+            // Approved button
+            $('#btn-approve, #btn-approve-management').on('click', function() {
+                $.post(
+                    `/engineering/projects/{{ $project->id }}/approved/ongoing`, {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    () => {
+                        location.reload();
+                    }
+                ).fail(res => alert(res.responseJSON.message));
+            });
         });
     </script>
 @endsection

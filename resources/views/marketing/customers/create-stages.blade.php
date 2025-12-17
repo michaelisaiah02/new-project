@@ -59,7 +59,7 @@
             <div
                 class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
                 <div class="col-auto">
-                    <a href="{{ route('marketing.customers.index') }}"
+                    <a id="btn-back" href="{{ route('marketing.customers.index') }}"
                         class="btn btn-primary border-3 border-light-subtle">Back</a>
                 </div>
                 <div class="col-auto ms-auto">
@@ -69,13 +69,34 @@
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button type="submit" name="decision" value="finish"
+                    <button id="btn-finish" type="submit" name="decision" value="finish"
                         class="btn btn-primary border-3 border-light-subtle">
                         Finish
                     </button>
                 </div>
             </div>
         </form>
+    </div>
+    <div class="modal fade" id="massproModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Required Document</h5>
+                </div>
+                <div class="modal-body">
+                    Declaration Masspro belum dipilih.
+                    Dokumen ini **wajib** untuk melanjutkan.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="forceMasspro">
+                        Lanjutkan
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
     <x-toast />
 @endsection
@@ -183,6 +204,57 @@
                 }
             });
 
+            // =========================
+            // MASSPRO REQUIRED (DM) => modal + auto-scroll
+            // =========================
+            function hasMasspro() {
+                return $('input.doc-check[value="DM"]').is(':checked');
+            }
+
+            function forceMassproChecked() {
+                const $dm = $('input.doc-check[value="DM"]');
+                $dm.prop('checked', true).trigger('change');
+            }
+
+            function scrollToMassproRow() {
+                const row = document.querySelector('input.doc-check[value="DM"]')?.closest('tr');
+                if (!row) return;
+
+                row.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+
+                row.classList.add('table-warning');
+                setTimeout(() => row.classList.remove('table-warning'), 2000);
+            }
+
+            const massproModalEl = document.getElementById('massproModal');
+            const massproModal = massproModalEl ?
+                bootstrap.Modal.getOrCreateInstance(massproModalEl) :
+                null;
+
+            let pendingAction = null;
+
+            $('#btn-finish, #btn-back').on('click', function(e) {
+                if (!hasMasspro()) {
+                    e.preventDefault();
+                    pendingAction = this;
+                    massproModal.show();
+                    setTimeout(scrollToMassproRow, 150);
+                }
+            });
+
+            $('#forceMasspro').on('click', function() {
+                forceMassproChecked();
+                massproModal?.hide();
+
+                if (pendingAction) {
+                    pendingAction.click();
+                    pendingAction = null;
+                }
+            });
         });
     </script>
 @endsection

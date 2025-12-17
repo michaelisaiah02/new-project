@@ -40,4 +40,34 @@ class FileHelper
 
         return $filename;
     }
+
+    public static function storeTempDrawing(UploadedFile $file): string
+    {
+        return $file->store('temp/drawings', 'public');
+    }
+
+    public static function moveTempToFinal(
+        string $tempPath,
+        string $customerCode,
+        string $model,
+        string $partNumber,
+        string $filename
+    ): string {
+        $disk = Storage::disk('public');
+
+        $folder = "{$customerCode}/{$model}/{$partNumber}";
+        $disk->makeDirectory($folder);
+
+        $finalPath = "{$folder}/{$filename}";
+
+        if ($disk->exists($finalPath)) {
+            $disk->delete($finalPath);
+        }
+
+        if (! $disk->move($tempPath, $finalPath)) {
+            throw new \Exception("Move failed: {$filename}");
+        }
+
+        return $filename;
+    }
 }

@@ -16,22 +16,30 @@ class ProjectEngineerController extends Controller
     public function new(Project $project)
     {
         if (auth()->user()->approved || auth()->user()->checked) {
-            return redirect()->route('engineering.projects.assignDueDates', [
-                'project' => $project->part_number,
-            ]);
+            if (! $project->approvalStatus) {
+                if (auth()->user()->approved) {
+                    return redirect()->back()->with('error', 'Belum bisa approve karena proyek belum di-setup.');
+                } else {
+                    return redirect()->back()->with('error', 'Belum bisa check karena proyek belum di-setup.');
+                }
+            } else {
+                return redirect()->route('engineering.projects.assignDueDates', [
+                    'project' => $project->id,
+                ]);
+            }
         }
         // Ambil semua stage + dokumen master
         $stages = $project->customer->stages()
             ->with([
                 'documents' => function ($q) {
                     $q->orderBy('name');
-                }
+                },
             ])
             ->orderBy('stage_number')
             ->get();
 
         // Ambil dokumen yang SUDAH dipilih project
-        $selectedDocs = ProjectDocument::where('project_part_number', $project->part_number)
+        $selectedDocs = ProjectDocument::where('project_id', $project->id)
             ->get()
             ->groupBy('customer_stage_id')
             ->map(function ($rows) {
@@ -65,7 +73,7 @@ class ProjectEngineerController extends Controller
             $stageNumber = $stage->stage_number;
 
             if (
-                !isset($docGroups[$stageNumber]) ||
+                ! isset($docGroups[$stageNumber]) ||
                 empty($docGroups[$stageNumber])
             ) {
                 $errors["documents_codes.$stageNumber"] =
@@ -73,7 +81,7 @@ class ProjectEngineerController extends Controller
             }
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             return back()
                 ->withErrors($errors)
                 ->withInput();
@@ -85,7 +93,7 @@ class ProjectEngineerController extends Controller
             $stageNumber = $stage->stage_number;
             $selectedDocs = $docGroups[$stageNumber] ?? [];
 
-            $existingDocs = ProjectDocument::where('project_part_number', $project->part_number)
+            $existingDocs = ProjectDocument::where('project_id', $project->id)
                 ->where('customer_stage_id', $stage->id)
                 ->pluck('document_type_code')
                 ->toArray();
@@ -94,13 +102,13 @@ class ProjectEngineerController extends Controller
             $toDelete = array_diff($existingDocs, $selectedDocs);
 
             // 🔴 kalau ada perubahan → tandai
-            if (!empty($toInsert) || !empty($toDelete)) {
+            if (! empty($toInsert) || ! empty($toDelete)) {
                 $hasChanges = true;
             }
 
             // hapus
             if ($toDelete) {
-                ProjectDocument::where('project_part_number', $project->part_number)
+                ProjectDocument::where('project_id', $project->id)
                     ->where('customer_stage_id', $stage->id)
                     ->whereIn('document_type_code', $toDelete)
                     ->delete();
@@ -109,18 +117,16 @@ class ProjectEngineerController extends Controller
             // insert
             foreach ($toInsert as $docCode) {
                 ProjectDocument::create([
-                    'project_part_number' => $project->part_number,
+                    'project_id' => $project->id,
                     'document_type_code' => $docCode,
                     'customer_stage_id' => $stage->id,
                 ]);
             }
         }
 
-
-
         if ($hasChanges) {
             ApprovalStatus::updateOrCreate(
-                ['part_number' => $project->part_number],
+                ['project_id' => $project->id],
                 [
                     'created_by_id' => auth()->id(),
                     'created_by_name' => auth()->user()->name,
@@ -137,12 +143,12 @@ class ProjectEngineerController extends Controller
                 ]
             );
 
-            Project::where('part_number', $project->part_number)
+            Project::find($project->id)
                 ->update(['remark' => 'not checked']);
         }
 
         return redirect()->route('engineering.projects.assignDueDates', [
-            'project' => $project->part_number,
+            'project' => $project->id,
         ])->with('success', 'Documents updated successfully.');
     }
 
@@ -152,7 +158,7 @@ class ProjectEngineerController extends Controller
             'stage',
             'documentType:code,name',
         ])
-            ->where('project_part_number', $project->part_number)
+            ->where('project_id', $project->id)
             ->orderBy('customer_stage_id')
             ->get()
             ->groupBy('customer_stage_id');
@@ -176,24 +182,22 @@ class ProjectEngineerController extends Controller
 
     public function updateDueDates(Request $request, Project $project)
     {
-        $project = Project::where('part_number', $project->part_number)->firstOrFail();
         $request->validate([
             'due_dates.*' => 'nullable|date',
         ]);
 
         foreach ($request->due_dates ?? [] as $pdId => $date) {
-            ProjectDocument::where('id', $pdId)
-                ->where('project_part_number', $project->part_number)
+            ProjectDocument::where('project_id', $pdId)
+                ->where('project_id', $project->id)
                 ->update([
                     'due_date' => $date,
                 ]);
         }
 
         // 🔴 setelah save, status balik ke not checked
-        Project::where('part_number', $project->part_number)
-            ->update([
-                'remark' => 'not checked',
-            ]);
+        $project->update([
+            'remark' => 'not checked',
+        ]);
 
         return redirect()
             ->route('engineering')
@@ -203,7 +207,7 @@ class ProjectEngineerController extends Controller
     public function approval(Request $request)
     {
         $status = ApprovalStatus::firstOrCreate([
-            'part_number' => $request->project_part_number,
+            'project_id' => $request->project_id,
         ]);
 
         $user = auth()->user();
@@ -232,7 +236,7 @@ class ProjectEngineerController extends Controller
             ]);
         }
 
-        Project::where('part_number', $request->project_part_number)
+        Project::findOrFail($request->project_id)
             ->update([
                 'remark' => match ($request->action) {
                     'checked' => 'not approved',
@@ -262,7 +266,7 @@ class ProjectEngineerController extends Controller
             'stage:id,stage_number',
             'documentType:code,name',
         ])
-            ->where('project_part_number', $project->part_number)
+            ->where('project_id', $project->id)
             ->orderBy('customer_stage_id')
             ->get()
             ->groupBy('customer_stage_id');
@@ -271,5 +275,42 @@ class ProjectEngineerController extends Controller
             'project',
             'projectDocuments'
         ));
+    }
+
+    public function checkedOngoing(Project $project)
+    {
+        $project->approvalStatus->update([
+            'ongoing_checked_by_id' => auth()->id(),
+            'ongoing_checked_by_name' => auth()->user()->name,
+            'ongoing_checked_date' => now(),
+        ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function approvedOngoing(Project $project)
+    {
+        if (auth()->user()->department->type() === 'management') {
+            $project->approvalStatus->update([
+                'ongoing_management_approved_by_id' => auth()->id(),
+                'ongoing_management_approved_by_name' => auth()->user()->name,
+                'ongoing_management_approved_date' => now(),
+            ]);
+
+            // Set project as completed
+            $project->update([
+                'remark' => 'completed',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } else {
+            $project->approvalStatus->update([
+                'ongoing_approved_by_id' => auth()->id(),
+                'ongoing_approved_by_name' => auth()->user()->name,
+                'ongoing_approved_date' => now(),
+            ]);
+        }
+
+        return response()->json(['status' => 'success']);
     }
 }

@@ -39,8 +39,9 @@ class Customer extends Model
 
     public function documentTypes()
     {
-        return DocumentType::whereHas('stages', function ($q) {
-            $q->where('customer_code', $this->code);
-        });
+        return DocumentType::query()
+            ->whereHas('customerStages', function ($q) {
+                $q->where('customer_code', $this->code);
+            });
     }
 }

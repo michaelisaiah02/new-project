@@ -297,6 +297,8 @@
             // MASSPRO REQUIRED (DM) => modal + auto-scroll
             // =========================
             function hasMasspro() {
+                // check if DM field is appeared and checked
+                if ($('input.doc-check[value="DM"]').length == 0) return true;
                 return $('input.doc-check[value="DM"]').is(':checked');
             }
 

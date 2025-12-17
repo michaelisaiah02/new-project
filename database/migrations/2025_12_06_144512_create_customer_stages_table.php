@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('stage_name')->nullable();
             $table->timestamps();
 
-            $table->foreign('customer_code')->references('code')->on('customers')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('customer_code')->references('code')->on('customers')->cascadeOnDelete()->cascadeOnUpdate();
         });
     }
 

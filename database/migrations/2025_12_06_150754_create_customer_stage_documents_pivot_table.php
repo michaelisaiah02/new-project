@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('customer_stage_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_stage_id')->constrained('customer_stages')->onDelete('cascade');
+            $table->foreignId('customer_stage_id')->constrained('customer_stages')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('document_type_code');
             $table->enum('qr_position', ['top_left', 'top_right', 'bottom_left', 'bottom_right']);
             $table->timestamps();
 
-            $table->foreign('document_type_code')->references('code')->on('document_types')->onDelete('cascade');
+            $table->foreign('document_type_code')->references('code')->on('document_types')->cascadeOnDelete()->cascadeOnUpdate();
         });
     }
 

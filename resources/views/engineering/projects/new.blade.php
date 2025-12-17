@@ -41,7 +41,8 @@
                 </button>
             </div>
         </div>
-        <form action="{{ route('engineering.projects.saveNew', ['project' => $project->part_number]) }}" method="post">
+        <form id="new-project-form" action="{{ route('engineering.projects.saveNew', ['project' => $project->id]) }}"
+            method="post">
             @csrf
             <div class="container-fluid mb-5 pb-3 pt-1" style="max-height: 350px; overflow-y: auto;">
                 @foreach ($stages as $stage)
@@ -102,4 +103,14 @@
     </div>
     @include('engineering.projects.partials.data-project-modal', ['project' => $project])
     <x-toast />
+@endsection
+@section('scripts')
+    <script type="module">
+        $(document).ready(function() {
+            $('input[type="checkbox"][value="DM"]').prop('disabled', true);
+            $('#new-project-form').on('submit', function() {
+                $('input[type="checkbox"][value="DM"]').prop('disabled', false);
+            });
+        });
+    </script>
 @endsection

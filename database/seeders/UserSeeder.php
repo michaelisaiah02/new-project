@@ -23,7 +23,6 @@ class UserSeeder extends Seeder
             'department_id' => 2,
             'whatsapp' => '6281234567890',
             'email' => fake()->unique()->safeEmail(),
-            'approved' => true,
         ]);
         User::factory()->create([
             'name' => 'Freddy',
@@ -41,7 +40,7 @@ class UserSeeder extends Seeder
             'department_id' => 1,
             'whatsapp' => '6281234567891',
             'email' => fake()->unique()->safeEmail(),
-            'checked' => true,
+            'approved' => true,
         ]);
         User::factory()->create([
             'name' => 'Wow',
@@ -51,6 +50,14 @@ class UserSeeder extends Seeder
             'whatsapp' => '6281234567891',
             'email' => fake()->unique()->safeEmail(),
             'checked' => true,
+        ]);
+        User::factory()->create([
+            'name' => 'Amazing',
+            'id' => '10002',
+            'password' => Hash::make($password),
+            'department_id' => 3,
+            'whatsapp' => '6281234567891',
+            'email' => fake()->unique()->safeEmail(),
         ]);
     }
 }

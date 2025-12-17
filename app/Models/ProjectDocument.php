@@ -10,7 +10,7 @@ class ProjectDocument extends Model
     use HasFactory;
 
     protected $fillable = [
-        'project_part_number',
+        'project_id',
         'document_type_code',
         'customer_stage_id',
         'due_date',
@@ -30,7 +30,7 @@ class ProjectDocument extends Model
 
     public function project()
     {
-        return $this->belongsTo(Project::class, 'project_part_number', 'part_number');
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function documentType()

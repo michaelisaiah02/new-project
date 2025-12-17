@@ -44,7 +44,7 @@ class ProjectDocumentController extends Controller
         $ext = strtolower($file->getClientOriginalExtension());
 
         // document_type_code-part_number.ext
-        $filename = "{$projectDocument->document_type_code}-{$projectDocument->project_part_number}.{$ext}";
+        $filename = "{$projectDocument->document_type_code}-{$project->part_name}-{$project->suffix}-{$project->minor_change}.{$ext}";
 
         // SIMPAN FILE VIA HELPER
         FileHelper::storeDrawingFile(

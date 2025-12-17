@@ -20,9 +20,11 @@
                             <option value="" selected disabled>Kode Customer</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->code }}" data-department="{{ $customer->department->name }}"
-                                    {{ old('customer_code') == $customer->code ? 'selected' : '' }}>
+                                    {{ old('customer_code') == $customer->code ? 'selected' : '' }}
+                                    {{ $customer->documentTypes()->where('code', 'DM')->exists() ? '' : 'disabled' }}>
                                     {{ $customer->code }} -
-                                    {{ $customer->name }}</option>
+                                    {{ $customer->documentTypes()->where('code', 'DM')->exists() ? $customer->name : '(Deklarasi Masspro belum ada)' }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -237,7 +239,10 @@
         function checkFilledForm() {
             const customerSelected = $('#customer').val() !== null;
             const partNumFilled = $('#part-num').val().trim() !== '';
-            if (customerSelected && partNumFilled) {
+            const suffixFilled = $('#suffix').val().trim() !== '';
+            const minorFilled = $('#minor-change').val().trim() !== '';
+
+            if (customerSelected && partNumFilled && suffixFilled && minorFilled) {
                 $('#btn-upload-2d').prop('disabled', false);
                 $('#btn-upload-3d').prop('disabled', false);
             } else {
@@ -253,8 +258,13 @@
                 $('#department').val(department);
             });
 
+            if ($('#customer').val() !== null) {
+                const department = $('#customer').find('option:selected').data('department');
+                $('#department').val(department);
+            }
+
             // disable upload buttons kalau customer dan nomor part belum diisi
-            $('#customer, #part-num').on('input change', function() {
+            $('#customer, #part-num, #suffix, #minor-change').on('input change', function() {
                 checkFilledForm();
             });
 
@@ -268,6 +278,8 @@
             $('#upload-2d, #upload-3d').change(function() {
                 const customerCode = $('#customer').val();
                 const partNum = $('#part-num').val().trim();
+                const suffix = $('#suffix').val().trim();
+                const minor = $('#minor-change').val().trim();
 
                 const is2D = $(this).attr('id') === 'upload-2d';
                 const fileInput = is2D ? $('#upload-2d')[0] : $('#upload-3d')[0];
@@ -275,7 +287,7 @@
                 const extension = fileInput.files.length > 0 ? fileInput.files[0].name.split('.').pop() :
                     '';
 
-                const label = `Dwg${is2D ? '2D' : '3D'}-${partNum}.${extension}`;
+                const label = `Dwg${is2D ? '2D' : '3D'}-${partNum}-${suffix}-${minor}.${extension}`;
                 if (fileInput.files.length > 0) {
                     $(drawingLabelInput).val(label);
                 }

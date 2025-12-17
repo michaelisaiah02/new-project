@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Customer;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
@@ -34,17 +36,66 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
+        /**
+         * ==========================
+         * 1. HANDLE TEMP UPLOAD
+         * ==========================
+         */
+        if ($request->hasFile('drawing_2d')) {
+
+            // hapus temp lama kalau ada
+            if (session()->has('drawing_2d_temp')) {
+                Storage::disk('public')->delete(session('drawing_2d_temp'));
+            }
+
+            session([
+                'drawing_2d_temp' => FileHelper::storeTempDrawing($request->file('drawing_2d')),
+                'drawing_2d_name' => $request->input('drawing_label_2d'),
+            ]);
+        }
+
+        if ($request->hasFile('drawing_3d')) {
+
+            if (session()->has('drawing_3d_temp')) {
+                Storage::disk('public')->delete(session('drawing_3d_temp'));
+            }
+
+            session([
+                'drawing_3d_temp' => FileHelper::storeTempDrawing($request->file('drawing_3d')),
+                'drawing_3d_name' => $request->input('drawing_label_3d'),
+            ]);
+        }
+
+        /**
+         * ==========================
+         * 2. VALIDATION
+         * ==========================
+         */
         $validated = $request->validate(
             [
                 'customer_code' => 'required|string|max:10',
                 'model' => 'required|string|max:50',
-                'part_number' => 'required|string|max:50|unique:projects,part_number',
+
+                'part_number' => [
+                    'required',
+                    'string',
+                    'max:50',
+                    Rule::unique('projects')->where(
+                        fn($q) => $q->where('suffix', $request->suffix)
+                            ->where('minor_change', $request->minor_change)
+                    ),
+                ],
+
                 'part_name' => 'required|string|max:100',
-                'part_type' => 'required|string|in:Hose,Molding,Weatherstrip,Bonding Metal',
-                'drawing_2d' => 'required|file|max:5120',
+                'part_type' => 'required|in:Hose,Molding,Weatherstrip,Bonding Metal',
+
+                // 🔥 FILE TIDAK REQUIRED LAGI
+                'drawing_2d' => 'nullable|file|max:5120',
                 'drawing_label_2d' => 'required|string|max:100',
+
                 'drawing_3d' => 'nullable|file|max:5120',
                 'drawing_label_3d' => 'nullable|string|max:100',
+
                 'qty' => 'required|integer|min:1',
                 'eee_number' => 'required|string|max:50',
                 'suffix' => 'required|string|max:20',
@@ -57,59 +108,63 @@ class ProjectController extends Controller
                 'minor_change' => 'required|string',
             ],
             [
-                'drawing_2d.required' => 'Masukan kembali File Drawing 2D.',
+                'part_number.unique' => 'Part number dengan suffix dan minor change yang sama sudah ada.',
                 'drawing_2d.max' => 'Ukuran File Drawing 2D maksimal 5MB.',
                 'drawing_3d.max' => 'Ukuran File Drawing 3D maksimal 5MB.',
-                'part_number.unique' => 'Sudah ada Proyek dengan part yang sama di dalam database.',
-                'qty.min' => 'Quantity minimal adalah 1.',
             ]
         );
 
+        /**
+         * ==========================
+         * 3. NORMALISASI
+         * ==========================
+         */
         $validated['model'] = strtoupper($validated['model']);
         $validated['part_number'] = strtoupper($validated['part_number']);
         $validated['part_name'] = ucwords(strtolower($validated['part_name']));
+        $validated['customer_name_snapshot'] = Customer::where('code', $validated['customer_code'])
+            ->value('name');
 
-        $customerCode = $validated['customer_code'];
-
-        // === 2D FILE ===
-        if ($request->hasFile('drawing_2d')) {
-
-            $name2d = $validated['drawing_label_2d']
-                ?: $request->file('drawing_2d')->getClientOriginalName();
-
-            // Simpan file via helper
-            $validated['drawing_2d'] = FileHelper::storeDrawingFile(
-                $request->file('drawing_2d'),
-                $customerCode,
+        /**
+         * ==========================
+         * 4. MOVE TEMP → FINAL
+         * ==========================
+         */
+        if (session()->has('drawing_2d_temp')) {
+            $validated['drawing_2d'] = FileHelper::moveTempToFinal(
+                session('drawing_2d_temp'),
+                $validated['customer_code'],
                 $validated['model'],
                 $validated['part_number'],
-                $name2d
+                session('drawing_2d_name')
             );
-
-            unset($validated['drawing_label_2d']);
         }
 
-        // === 3D FILE ===
-        if ($request->hasFile('drawing_3d')) {
-
-            $name3d = $validated['drawing_label_3d']
-                ?: $request->file('drawing_3d')->getClientOriginalName();
-
-            // Simpan file via helper
-            $validated['drawing_3d'] = FileHelper::storeDrawingFile(
-                $request->file('drawing_3d'),
-                $customerCode,
+        if (session()->has('drawing_3d_temp')) {
+            $validated['drawing_3d'] = FileHelper::moveTempToFinal(
+                session('drawing_3d_temp'),
+                $validated['customer_code'],
                 $validated['model'],
                 $validated['part_number'],
-                $name3d
+                session('drawing_3d_name')
             );
-
-            unset($validated['drawing_label_3d']);
         }
 
+        session()->forget([
+            'drawing_2d_temp',
+            'drawing_2d_name',
+            'drawing_3d_temp',
+            'drawing_3d_name',
+        ]);
+
+        /**
+         * ==========================
+         * 5. SAVE
+         * ==========================
+         */
         Project::create($validated);
 
-        return redirect()->back()->with('success', 'New project created successfully.');
+        return back()->with('success', 'New project created successfully.');
     }
 
     /**

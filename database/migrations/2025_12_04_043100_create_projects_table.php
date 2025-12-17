@@ -4,17 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('projects', function (Blueprint $table) {
-            $table->string('part_number')->primary();
+            $table->id();
+            $table->string('part_number');
             $table->string('part_name');
             $table->string('part_type');
             $table->string('customer_code')->nullable();
+            $table->string('customer_name_snapshot')->nullable();
             $table->string('model');
             $table->string('drawing_2d')->comment('2D Drawing File Name');
             $table->string('drawing_3d')->nullable()->comment('3D Drawing File Name');
@@ -28,10 +31,11 @@ return new class extends Migration {
             $table->string('sldg_number')->comment('SPK/LOI/DIE GO Number');
             $table->string('masspro_target');
             $table->string('minor_change');
-            $table->enum('remark', ['new', 'not checked', 'not approved', 'not approved management', 'on going', 'completed'])->default('new');
+            $table->enum('remark', ['new', 'not checked', 'not approved', 'not approved management', 'on going', 'completed', 'canceled'])->default('new');
             $table->timestamps();
 
-            $table->foreign('customer_code')->references('code')->on('customers')->nullOnDelete();
+            $table->foreign('customer_code')->references('code')->on('customers')->nullOnDelete()->cascadeOnUpdate();
+            $table->unique(['part_number', 'suffix', 'minor_change'], 'project_unique_part');
         });
     }
 

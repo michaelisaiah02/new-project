@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
 
             // FK ke projects (PK = part_number)
-            $table->string('project_part_number');
+            $table->foreignId('project_id')
+                ->constrained('projects')
+                ->cascadeOnDelete()->cascadeOnUpdate();
 
             // FK ke document_types (PK = code)
             $table->string('document_type_code');
@@ -36,15 +38,10 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('project_part_number')
-                ->references('part_number')
-                ->on('projects')
-                ->onDelete('cascade');
-
             $table->foreign('document_type_code')
                 ->references('code')
                 ->on('document_types')
-                ->onDelete('cascade');
+                ->cascadeOnDelete()->cascadeOnUpdate();
         });
     }
 

@@ -44,8 +44,7 @@
                 </button>
             </div>
         </div>
-        <form action="{{ route('engineering.projects.updateDueDates', ['project' => $project->part_number]) }}"
-            method="post">
+        <form action="{{ route('engineering.projects.updateDueDates', ['project' => $project->id]) }}" method="post">
             @csrf
 
             <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 320px; overflow-y: auto;">
@@ -78,8 +77,9 @@
                                     <td>
                                         <input type="date" name="due_dates[{{ $pd->id }}]"
                                             value="{{ $pd->due_date?->toDateString() }}" data-id="{{ $pd->id }}"
-                                            class="form-control form-control-sm due-date-input bg-secondary-subtle border-3 border-dark"
-                                            min="{{ now()->toDateString() }}">
+                                            class="form-control form-control-sm due-date-input bg-secondary-subtle border-3 border-dark text-center"
+                                            min="{{ now()->toDateString() }}"
+                                            {{ auth()->user()->approved || auth()->user()->checked ? 'readonly' : '' }}>
                                     </td>
                                 </tr>
                             @endforeach
@@ -206,13 +206,13 @@
         }
 
         function approvalAction(type) {
-            const PROJECT_PART_NUMBER = @json($project->part_number);
+            const PROJECT_ID = @json($project->id);
             $.ajax({
                 url: "{{ route('engineering.projects.approval') }}",
                 method: 'POST',
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
-                    project_part_number: PROJECT_PART_NUMBER,
+                    project_id: PROJECT_ID,
                     action: type
                 },
                 success: function() {

@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Marketing;
 
-use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\Customer;
-use App\Models\CustomerStage;
 use App\Models\Department;
 use App\Models\DocumentType;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\CustomerStage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 
 class CustomerController extends Controller
 {
@@ -64,6 +65,12 @@ class CustomerController extends Controller
 
         $customer->update($validated);
 
+        // kalau nama customer berubah, update juga di semua project terkait
+        if ($customer->wasChanged('name')) {
+            Project::where('customer_code', $customer->code)
+                ->update(['customer_name_snapshot' => $customer->name]);
+        }
+
         return redirect()->route('marketing.customers.index')
             ->with('success', 'Customer updated successfully.');
     }
@@ -71,7 +78,21 @@ class CustomerController extends Controller
     public function destroy($code)
     {
         $customer = Customer::findOrFail($code);
-        $customer->delete();
+        DB::transaction(function () use ($customer) {
+            // Hapus project yang BELUM completed
+            Project::where('customer_code', $customer->code)
+                ->where('remark', '!=', 'completed')
+                ->delete();
+
+            // Project completed → customer_code jadi null
+            Project::where('customer_code', $customer->code)
+                ->where('remark', 'completed')
+                ->update(['customer_code' => null]);
+
+            // Baru hapus customer
+            $customer->delete();
+        });
+
 
         return redirect()->route('marketing.customers.index')->with('success', 'Customer has been successfully deleted.');
     }
@@ -157,17 +178,25 @@ class CustomerController extends Controller
             ? $stage->documents()->pluck('document_type_code')
             : collect();
 
-        // available docs
-        $availableDocuments = DocumentType::whereNotIn('code', $usedDocs)
-            ->orderByRaw("
-                CASE
-                    WHEN code IN (" . $currentDocs->map(fn($c) => "'$c'")->implode(',') . ")
-                    THEN 0 ELSE 1
-                END
-            ")
+        $availableDocuments = DocumentType::whereNotIn('code', $usedDocs);
+
+        if ($currentDocs->isNotEmpty()) {
+            $inList = $currentDocs
+                ->map(fn($c) => "'" . addslashes($c) . "'")
+                ->implode(',');
+
+            $availableDocuments->orderByRaw("
+        CASE
+            WHEN code IN ($inList) THEN 0
+            ELSE 1
+        END
+    ");
+        }
+
+        // tetap rapihin by name
+        $availableDocuments = $availableDocuments
             ->orderBy('name')
             ->get();
-
 
         $maxStage = $customer->stages()->max('stage_number') ?? 0;
 
@@ -284,9 +313,9 @@ class CustomerController extends Controller
         if ($action === 'finish') {
             $selectedDocs = $request->input('document_type_codes', []);
 
-            if (!in_array('DM', $selectedDocs)) {
+            if (! in_array('DM', $selectedDocs)) {
                 return back()->withErrors([
-                    'document_type_codes' => 'Declaration Masspro is required.'
+                    'document_type_codes' => 'Declaration Masspro is required.',
                 ]);
             }
 

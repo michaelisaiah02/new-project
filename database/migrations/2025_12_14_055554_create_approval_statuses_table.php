@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('approval_statuses', function (Blueprint $table) {
             $table->id();
 
-            $table->string('part_number');
+            $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete()->cascadeOnUpdate();
 
             $table->string('created_by_id')->nullable();
             $table->string('created_by_name')->nullable();
@@ -32,12 +32,18 @@ return new class extends Migration
             $table->string('management_approved_by_name')->nullable();
             $table->date('management_approved_date')->nullable();
 
-            $table->timestamps();
+            $table->string('ongoing_checked_by_id')->nullable();
+            $table->string('ongoing_checked_by_name')->nullable();
+            $table->date('ongoing_checked_date')->nullable();
 
-            $table->foreign('part_number')
-                ->references('part_number')
-                ->on('projects')
-                ->onDelete('cascade');
+            $table->string('ongoing_approved_by_id')->nullable();
+            $table->string('ongoing_approved_by_name')->nullable();
+            $table->date('ongoing_approved_date')->nullable();
+
+            $table->string('ongoing_management_approved_by_id')->nullable();
+            $table->string('ongoing_management_approved_by_name')->nullable();
+            $table->date('ongoing_management_approved_date')->nullable();
+            $table->timestamps();
         });
     }
 
