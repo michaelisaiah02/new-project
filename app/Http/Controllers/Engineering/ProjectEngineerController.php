@@ -187,8 +187,7 @@ class ProjectEngineerController extends Controller
         ]);
 
         foreach ($request->due_dates ?? [] as $pdId => $date) {
-            ProjectDocument::where('project_id', $pdId)
-                ->where('project_id', $project->id)
+            ProjectDocument::findOrFail($pdId)
                 ->update([
                     'due_date' => $date,
                 ]);
@@ -197,6 +196,18 @@ class ProjectEngineerController extends Controller
         // 🔴 setelah save, status balik ke not checked
         $project->update([
             'remark' => 'not checked',
+        ]);
+
+        $project->approvalStatus->update([
+            'checked_by_id' => null,
+            'checked_by_name' => null,
+            'checked_date' => null,
+            'approved_by_id' => null,
+            'approved_by_name' => null,
+            'approved_date' => null,
+            'management_approved_by_id' => null,
+            'management_approved_by_name' => null,
+            'management_approved_date' => null,
         ]);
 
         return redirect()
@@ -312,5 +323,16 @@ class ProjectEngineerController extends Controller
         }
 
         return response()->json(['status' => 'success']);
+    }
+
+    public function cancel(Project $project)
+    {
+        $project->update([
+            'remark' => 'cancelled',
+        ]);
+
+        return redirect()
+            ->route('engineering')
+            ->with('success', 'Project has been cancelled.');
     }
 }

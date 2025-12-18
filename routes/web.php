@@ -86,6 +86,7 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
             Route::post('/{project}/on-going', 'updateOnGoing')->name('updateOnGoing');
             Route::post('/{project}/checked/ongoing', 'checkedOngoing')->name('checkedOngoing');
             Route::post('/{project}/approved/ongoing', 'approvedOngoing')->name('approvedOngoing');
+            Route::post('/{project}/cancel', 'cancel')->name('cancel');
         });
         Route::prefix('project-documents')->as('project-documents.')->controller(ProjectDocumentController::class)->group(function () {
             Route::get('/{projectDocument}/view', 'view')->name('view');

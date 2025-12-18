@@ -208,6 +208,7 @@
             // MASSPRO REQUIRED (DM) => modal + auto-scroll
             // =========================
             function hasMasspro() {
+                if ($('input.doc-check[value="DM"]').length == 0) return true;
                 return $('input.doc-check[value="DM"]').is(':checked');
             }
 

@@ -80,7 +80,7 @@
                                 </td>
                                 <td class="text-center">
                                     <a href="{{ route('engineering.project-documents.view', ['projectDocument' => $pd->id]) }}"
-                                        class="btn btn-sm btn-primary">
+                                        class="btn btn-sm btn-primary btn-view" data-filename="{{ $pd->file_name }}">
                                         View
                                     </a>
                                     @if (!(auth()->user()->approved || auth()->user()->checked))
@@ -131,6 +131,8 @@
                 <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
             </div>
             <div class="col-auto">
+                <form action="{{ route('engineering.projects.cancel', ['project' => $project->id]) }}" method="post">
+                </form>
                 <a href="{{ route('engineering') }}" class="btn btn-danger">Cancel Project</a>
             </div>
             <div class="col-auto mx-auto">
@@ -202,7 +204,16 @@
         }
 
         $(document).ready(function() {
-
+            // Kalau belum ada file yang diupload, tombol view disable
+            $('a.btn-view').each(function() {
+                const row = $(this).closest('tr');
+                const fileName = $(this).data('filename');
+                if (!fileName) {
+                    $(this).addClass('disabled');
+                } else {
+                    $(this).removeClass('disabled');
+                }
+            });
             // Trigger file input
             $('button[id^="btn-upload-"]').on('click', function() {
                 const id = $(this).attr('id').replace('btn-upload-', '');

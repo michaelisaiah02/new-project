@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
             'department_id' => 3,
             'whatsapp' => '6281234567891',
             'email' => fake()->unique()->safeEmail(),
-            'checked' => true,
+            'approved' => true,
         ]);
         User::factory()->create([
             'name' => 'Oke Deh',
