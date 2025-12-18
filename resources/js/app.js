@@ -10,3 +10,10 @@ window.bootstrap = bootstrap;
 import selectize from '@selectize/selectize';
 window.selectize = selectize;
 
+$(document).ready(function () {
+    $('button[type=submit]').on('click', function () {
+        $(this).attr('disabled', 'disabled');
+        $(this).text('Processing...');
+        $(this).closest('form').trigger('submit');
+    });
+});
