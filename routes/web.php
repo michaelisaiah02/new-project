@@ -1,15 +1,16 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MassproController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Middleware\CheckDepartmentAccess;
 use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\Marketing\UserController;
+use App\Http\Controllers\Marketing\ProjectController;
+use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Engineering\ProjectDocumentController;
 use App\Http\Controllers\Engineering\ProjectEngineerController;
-use App\Http\Controllers\Marketing\CustomerController;
-use App\Http\Controllers\Marketing\ProjectController;
-use App\Http\Controllers\Marketing\UserController;
-use App\Http\Middleware\CheckDepartmentAccess;
-use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true]);
@@ -95,5 +96,10 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
             Route::post('/{projectDocument}/checked', 'checked')->name('checked');
             Route::post('/{projectDocument}/approved', 'approved')->name('approved');
         });
+    });
+
+    Route::prefix('masspro')->as('masspro.')->controller(MassproController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/view/{project}', 'massproView')->name('view');
     });
 });

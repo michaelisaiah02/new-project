@@ -25,9 +25,9 @@ class UserController extends Controller
             'id' => ['required', 'size:5', 'unique:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
-            'whatsapp' => ['required', 'string', 'max:13'],  // validasi custom nanti
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
+            'whatsapp' => ['required', 'string', 'max:15', 'unique:users,whatsapp'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:8'],
             'approved' => ['boolean'],
             'checked' => ['boolean'],
         ]);
@@ -96,9 +96,9 @@ class UserController extends Controller
             'id' => ['required', 'size:5', Rule::unique('users', 'id')->ignore($user->id)],
             'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
-            'whatsapp' => ['required', 'string'],  // validasi custom nanti
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'string', 'min:6'],
+            'whatsapp' => ['required', 'string', Rule::unique('users', 'whatsapp')->ignore($user->id)],
+            'email' => ['required', 'email'],
+            'password' => ['nullable', 'string', 'min:8'],
             'approved' => ['boolean'],
             'checked' => ['boolean'],
         ]);
@@ -170,7 +170,6 @@ class UserController extends Controller
                     'error' => 'Checked & Approved tidak boleh aktif bersamaan',
                 ]);
             }
-
         }
 
         switch ($deptType) {

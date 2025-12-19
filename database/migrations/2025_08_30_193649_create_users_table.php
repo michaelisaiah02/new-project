@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('password');
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete()->cascadeOnUpdate();
-            $table->string('whatsapp', 15);
-            $table->string('email')->unique();
+            $table->string('whatsapp', 15)->unique();
+            $table->string('email');
             $table->boolean('approved')->default(false);
             $table->boolean('checked')->default(false);
             $table->timestamps();

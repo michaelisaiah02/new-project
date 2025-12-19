@@ -25,7 +25,6 @@ class DocumentType extends Model
         );
     }
 
-
     public function projectDocuments()
     {
         return $this->hasMany(ProjectDocument::class, 'document_type_code', 'code');

@@ -1,0 +1,89 @@
+<table class="table table-sm table-bordered m-0 text-start align-middle">
+                <thead class="table-primary sticky-top">
+                    <tr>
+                        <th class="text-center">Stage</th>
+                        <th>Document</th>
+                        <th class="text-center">File Name Upload</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($projectDocuments as $stageId => $docs)
+                        @foreach ($docs as $index => $pd)
+                            <tr>
+                                @if ($index === 0)
+                                    <td rowspan="{{ $docs->count() }}" class="text-center">
+                                        <p>Stage
+                                            {{ $pd->stage->stage_number }}</p>
+                                        <p>
+                                            {{ $pd->stage->stage_name }}</p>
+                                    </td>
+                                @endif
+
+                                <td class="text-wrap w-25">
+                                    {{ $pd->documentType->name }}
+                                </td>
+
+                                <td class="text-center">
+                                    {{ \Carbon\Carbon::parse($pd->due_date)->locale('id')->translatedFormat('d/m/Y') }}
+                                </td>
+                                <td class="text-center">
+                                    @if ($pd->actual_date)
+                                        {{ \Carbon\Carbon::parse($pd->actual_date)->locale('id')->translatedFormat('d/m/Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if ($pd->file_name)
+                                        {{ $pd->file_name }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ route('engineering.project-documents.view', ['projectDocument' => $pd->id]) }}"
+                                        class="btn btn-sm btn-primary btn-view" data-filename="{{ $pd->file_name }}">
+                                        View
+                                    </a>
+                                    @if (!(auth()->user()->approved || auth()->user()->checked))
+                                        <button type="button" class="btn btn-sm btn-primary border-3 border-light-subtle"
+                                            id="btn-upload-{{ $pd->id }}">Upload</button>
+                                        <input type="file"
+                                            class="form-control bg-secondary-subtle border-secondary border"
+                                            id="upload-{{ $pd->id }}" accept="application/pdf" hidden>
+                                    @endif
+                                </td>
+                                <td class="text-center" id="status-{{ $pd->id }}">
+                                    @php
+                                        $now = now();
+
+                                        if (!$pd->file_name) {
+                                            // belum submit
+                                            if ($pd->due_date && $now->gt($pd->due_date)) {
+                                                $status = 'Delay';
+                                            } else {
+                                                $status = 'Not Yet Submitted';
+                                            }
+                                        } else {
+                                            // sudah submit
+                                            if ($pd->approved_date !== null) {
+                                                $status = 'Finish';
+                                            } elseif (!$pd->checked_date) {
+                                                $status = 'Not Yet Checked';
+                                            } else {
+                                                $status = 'Not Yet Approved';
+                                            }
+                                        }
+                                    @endphp
+                                    {{ $status }}
+                                </td>
+                                <td>
+                                    <input type="text" id="remark-{{ $pd->id }}"
+                                        class="form-control form-control-sm border-0" value="{{ $pd->remark }}">
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endforeach
+                </tbody>
+            </table>

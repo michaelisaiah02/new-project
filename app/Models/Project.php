@@ -49,7 +49,7 @@ class Project extends Model
 
     public function allDocumentsApproved(): bool
     {
-        return ! $this->documents()->where('approved', false)->exists();
+        return ! $this->documents()->where('approved_date', null)->exists();
     }
 
     public function canShowCheckedButton(User $user): bool

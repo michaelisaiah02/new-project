@@ -114,7 +114,8 @@
                 </div>
             @endif
             <div class="col-auto px-0">
-                <a href="#" class="btn btn-primary border-3 border-light-subtle ms-auto">List Mass Production Part</a>
+                <a href="{{ route('masspro.index') }}" class="btn btn-primary border-3 border-light-subtle ms-auto">List
+                    Mass Production Part</a>
             </div>
         </div>
     </div>

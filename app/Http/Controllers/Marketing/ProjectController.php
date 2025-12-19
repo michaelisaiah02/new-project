@@ -81,7 +81,7 @@ class ProjectController extends Controller
                     'string',
                     'max:50',
                     Rule::unique('projects')->where(
-                        fn($q) => $q->where('suffix', $request->suffix)
+                        fn ($q) => $q->where('suffix', $request->suffix)
                             ->where('minor_change', $request->minor_change)
                     ),
                 ],

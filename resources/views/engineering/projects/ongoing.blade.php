@@ -2,9 +2,6 @@
 @section('title', 'ON-GOING PROJECT')
 @section('customer', $project->customer->name)
 @section('content')
-    @php
-        $stages = [];
-    @endphp
     <div class="container-fluid mt-2">
         <div class="row justify-content-center mb-2">
             <div class="col-md-4">
@@ -53,7 +50,10 @@
                             <tr>
                                 @if ($index === 0)
                                     <td rowspan="{{ $docs->count() }}" class="text-center">
-                                        Stage {{ $pd->stage->stage_number }}
+                                        <p>Stage
+                                            {{ $pd->stage->stage_number }}</p>
+                                        <p>
+                                            {{ $pd->stage->stage_name }}</p>
                                     </td>
                                 @endif
 
@@ -88,7 +88,7 @@
                                             id="btn-upload-{{ $pd->id }}">Upload</button>
                                         <input type="file"
                                             class="form-control bg-secondary-subtle border-secondary border"
-                                            id="upload-{{ $pd->id }}" hidden>
+                                            id="upload-{{ $pd->id }}" accept="application/pdf" hidden>
                                     @endif
                                 </td>
                                 <td class="text-center" id="status-{{ $pd->id }}">
@@ -104,9 +104,9 @@
                                             }
                                         } else {
                                             // sudah submit
-                                            if ($pd->approved) {
+                                            if ($pd->approved_date !== null) {
                                                 $status = 'Finish';
-                                            } elseif (!$pd->checked) {
+                                            } elseif (!$pd->checked_date) {
                                                 $status = 'Not Yet Checked';
                                             } else {
                                                 $status = 'Not Yet Approved';

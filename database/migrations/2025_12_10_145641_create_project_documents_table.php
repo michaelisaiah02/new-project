@@ -31,8 +31,17 @@ return new class extends Migration
             $table->date('actual_date')->nullable();
             $table->string('file_name')->nullable();
 
-            $table->boolean('checked')->default(false);
-            $table->boolean('approved')->default(false);
+            $table->string('created_by_id')->nullable();
+            $table->string('created_by_name')->nullable();
+            $table->date('created_date')->nullable();
+
+            $table->string('checked_by_id')->nullable();
+            $table->string('checked_by_name')->nullable();
+            $table->date('checked_date')->nullable();
+
+            $table->string('approved_by_id')->nullable();
+            $table->string('approved_by_name')->nullable();
+            $table->date('approved_date')->nullable();
 
             $table->string('remark')->nullable();
 

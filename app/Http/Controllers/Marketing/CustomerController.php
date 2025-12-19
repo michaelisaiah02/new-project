@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Marketing;
 
-use App\Models\Project;
+use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\CustomerStage;
 use App\Models\Department;
 use App\Models\DocumentType;
+use App\Models\Project;
 use Illuminate\Http\Request;
-use App\Models\CustomerStage;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
+use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -92,7 +92,6 @@ class CustomerController extends Controller
             // Baru hapus customer
             $customer->delete();
         });
-
 
         return redirect()->route('marketing.customers.index')->with('success', 'Customer has been successfully deleted.');
     }
@@ -182,7 +181,7 @@ class CustomerController extends Controller
 
         if ($currentDocs->isNotEmpty()) {
             $inList = $currentDocs
-                ->map(fn($c) => "'" . addslashes($c) . "'")
+                ->map(fn ($c) => "'".addslashes($c)."'")
                 ->implode(',');
 
             $availableDocuments->orderByRaw("

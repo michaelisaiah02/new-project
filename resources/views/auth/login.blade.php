@@ -57,7 +57,7 @@
 @section('scripts')
     {{-- Script idle-timeout Anda tetap di sini, tidak perlu diubah --}}
     <script>
-        const MAX_IDLE_TIME = 15 * 60 * 1000; // 15 menit
+        const MAX_IDLE_TIME = 5 * 60 * 1000; // 15 menit
         let lastActivity = Date.now();
 
         function resetActivityTimer() {

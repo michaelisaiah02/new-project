@@ -16,16 +16,24 @@ class ProjectDocument extends Model
         'due_date',
         'actual_date',
         'file_name',
-        'checked',
-        'approved',
+        'created_by_id',
+        'created_by_name',
+        'created_date',
+        'checked_by_id',
+        'checked_by_name',
+        'checked_date',
+        'approved_by_id',
+        'approved_by_name',
+        'approved_date',
         'remark',
     ];
 
     protected $casts = [
         'due_date' => 'date',
         'actual_date' => 'date',
-        'checked' => 'boolean',
-        'approved' => 'boolean',
+        'created_date' => 'date',
+        'checked_date' => 'date',
+        'approved_date' => 'date',
     ];
 
     public function project()
