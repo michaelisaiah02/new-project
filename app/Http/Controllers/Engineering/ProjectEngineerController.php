@@ -328,11 +328,11 @@ class ProjectEngineerController extends Controller
     public function cancel(Project $project)
     {
         $project->update([
-            'remark' => 'cancelled',
+            'remark' => 'canceled',
         ]);
 
         return redirect()
             ->route('engineering')
-            ->with('success', 'Project has been cancelled.');
+            ->with('success', 'Project has been canceled.');
     }
 }
