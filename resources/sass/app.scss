@@ -77,6 +77,11 @@ img.icon {
     background-color: var(--bs-primary);
 }
 
+.custom-tooltip {
+    --bs-tooltip-bg: var(--bs-primary);
+    --bs-tooltip-color: var(--bs-white);
+}
+
 // 5) Responsive
 @include down("md") {
     .sub-judul {

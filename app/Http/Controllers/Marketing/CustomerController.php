@@ -273,8 +273,8 @@ class CustomerController extends Controller
         $stage->documents()->sync($syncData);
 
         // --- HANDLE ACTION ---
-        $action = $request->input('action');
-
+        $action = $request->input('form_action');
+        // dd($request->all(), $action);
         if ($action === 'save') {
             return back()->with('success', 'Stage saved.');
         }

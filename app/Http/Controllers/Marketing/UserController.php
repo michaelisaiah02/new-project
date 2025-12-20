@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('department')->get();
+        $users = User::with('department')->orderBy('department_id')->orderBy('id')->get();
         $departments = Department::all();
 
         return view('marketing.users.index', compact('users', 'departments'));
@@ -227,7 +227,7 @@ class UserController extends Controller
                 });
             });
 
-        $users = $query->orderBy('created_at', 'desc')->get();
+        $users = $query->orderBy('department_id')->orderBy('id')->get();
 
         return response()->json([
             'html' => view('marketing.users.partials.table-rows', compact('users'))->render(),

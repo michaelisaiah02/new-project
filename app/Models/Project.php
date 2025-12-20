@@ -103,4 +103,33 @@ class Project extends Model
 
         return false;
     }
+
+    public function statusOngoing(): string
+    {
+        // Mengembalikan status berdasarkan berikut:
+        // Default: On Going
+        // Some Doc Delay: ada beberapa document dengan status Delay
+        // Not Yet Checked: project saat on going belum di cek
+        // Not Yet Approved: project saat on going belum di approve
+
+        $docs = $this->documents;
+
+        if ($docs->whereNull('checked_date')->count() > 0) {
+            return 'Not Yet Checked';
+        }
+
+        if ($docs->whereNull('approved_date')->count() > 0) {
+            return 'Not Yet Approved';
+        }
+
+        if (
+            $docs->where('due_date', '<', now())
+                ->whereNull('actual_date')
+                ->count() > 0
+        ) {
+            return 'Some Doc Delay';
+        }
+
+        return 'On Going';
+    }
 }

@@ -5,13 +5,12 @@ namespace App\Http\Controllers\Engineering;
 use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
 use App\Models\ProjectDocument;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use setasign\Fpdi\Fpdi;
 use Illuminate\Support\Facades\DB;
+use setasign\Fpdi\Fpdi;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ProjectDocumentController extends Controller
 {
@@ -140,113 +139,133 @@ class ProjectDocumentController extends Controller
 
     public function approved(ProjectDocument $projectDocument)
     {
+        // 1. Validasi Awal
         if (! $projectDocument->file_name) {
             return response()->json(['message' => 'No file uploaded'], 422);
         }
+
+        // Folder sesuai dengan format: Model/PartNumber/nama_file.pdf
+        $relativePath = $projectDocument->project->customer_code.'/'.$projectDocument->project->model.'/'.$projectDocument->project->part_number.'/'.$projectDocument->file_name;
+        $fullPath = storage_path('app/public/'.$relativePath);
+
+        if (! file_exists($fullPath)) {
+            return response()->json(['message' => 'File PDF fisik tidak ditemukan di server.'.$fullPath], 404);
+        }
+
         if (! $projectDocument->checked_by_id || ! $projectDocument->checked_date) {
             return response()->json(['message' => 'Not checked yet'], 422);
         }
 
+        // 2. Update Database Dulu (Supaya data 'Approved By' masuk)
         $user = auth()->user();
+        $now = now();
+
         $projectDocument->update([
             'approved_by_id' => (string) $user->id,
             'approved_by_name' => $user->name,
-            'approved_date' => now()->toDateString(),
+            'approved_date' => $now->toDateString(),
         ]);
 
-        // attach QR to file
-        $ext = strtolower(pathinfo($projectDocument->file_name, PATHINFO_EXTENSION));
-        if ($ext === 'pdf') {
-            $this->stampQrToPdf($projectDocument->fresh());
-        }
+        // 3. Siapkan Konten QR Code
+        // Format tanggal: d-m-Y (sesuai request)
+        // Gunakan Carbon::parse() untuk jaga-jaga kalau format di DB string/date
+        $createdDate = Carbon::parse($projectDocument->created_date)->format('d-m-Y');
+        $checkedDate = Carbon::parse($projectDocument->checked_date)->format('d-m-Y');
+        $approvedDate = $now->format('d-m-Y');
 
-        return response()->json(['message' => 'Approved ok']);
-    }
+        $qrContent = "Dibuat oleh {$projectDocument->created_by_name} - {$createdDate}\n";
+        $qrContent .= "Diperiksa oleh {$projectDocument->checked_by_name} - {$checkedDate}\n";
+        $qrContent .= "Disetujui oleh {$user->name} - {$approvedDate}";
 
-    private function makeQrPng(string $text, string $relPath): string
-    {
-        $qr = new QrCode(data: $text, size: 220, margin: 1);
+        // 4. Cari Posisi QR dari Tabel Pivot
+        // Kita query manual ke tabel pivot karena lebih cepet daripada lewat relasi complex
+        $qrPosition = DB::table('customer_stage_documents')
+            ->where('customer_stage_id', $projectDocument->customer_stage_id)
+            ->where('document_type_code', $projectDocument->document_type_code)
+            ->value('qr_position'); // Mengembalikan string 'top_left', 'bottom_right', dll.
 
-        $png = (new PngWriter())->write($qr)->getString();
+        // Default posisi kalau di setting gak ketemu
+        $qrPosition = $qrPosition ?? 'bottom_right';
 
-        Storage::disk('public')->put($relPath, $png);
+        // 5. Generate QR Code Image (Temp)
+        $qrTempPath = sys_get_temp_dir().'/qr_'.uniqid().'.png';
 
-        return storage_path("app/public/{$relPath}");
-    }
+        // Karena Imagick aktif, kita bisa pake format 'png' dengan aman
+        QrCode::format('png')
+            ->size(400) // Resolusi tinggi biar tajem pas dikecilin di PDF
+            ->margin(1)
+            ->errorCorrection('L')
+            ->backgroundColor(255, 255, 255) // Putih biar kontras
+            ->color(0, 0, 0)
+            ->generate($qrContent, $qrTempPath);
 
-    private function qrText(ProjectDocument $pd): string
-    {
-        $fmt = fn($d) => $d ? Carbon::parse($d)->format('d-m-Y') : '-';
+        // 6. Proses Stamping ke PDF (FPDI)
+        try {
+            $pdf = new Fpdi;
+            $pageCount = $pdf->setSourceFile($fullPath);
 
-        return implode("\n", [
-            "Dibuat oleh {$pd->created_by_name} - " . $fmt($pd->created_date),
-            "Diperiksa oleh {$pd->checked_by_name} - " . $fmt($pd->checked_date),
-            "Disetujui oleh {$pd->approved_by_name} - " . $fmt($pd->approved_date),
-        ]);
-    }
+            for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                $templateId = $pdf->importPage($pageNo);
+                $size = $pdf->getTemplateSize($templateId);
 
-    private function stampQrToPdf(ProjectDocument $pd): void
-    {
-        $project = $pd->project;
+                // Tambah halaman & pakai template lama
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($templateId);
 
-        $folder = "{$project->customer->code}/{$project->model}/{$project->part_number}";
-        $relPdf = "{$folder}/{$pd->file_name}";
-        $absPdf = storage_path("app/public/{$relPdf}");
+                // Logika Posisi Dinamis
+                $qrSize = 25; // Ukuran QR di PDF (mm)
+                $margin = 10; // Jarak dari pinggir kertas (mm)
+                $x = 0;
+                $y = 0;
 
-        // 1) isi QR sesuai permintaan klien
-        $qrText = $this->qrText($pd);
+                // Hitung X dan Y berdasarkan konfigurasi DB
+                switch ($qrPosition) {
+                    case 'top_left':
+                        $x = $margin;
+                        $y = $margin;
+                        break;
+                    case 'top_right':
+                        $x = $size['width'] - $qrSize - $margin;
+                        $y = $margin;
+                        break;
+                    case 'bottom_left':
+                        $x = $margin;
+                        $y = $size['height'] - $qrSize - $margin;
+                        break;
+                    case 'bottom_right':
+                    default:
+                        $x = $size['width'] - $qrSize - $margin;
+                        $y = $size['height'] - $qrSize - $margin;
+                        break;
+                }
 
-        // 2) generate QR PNG
-        $qrRel = "qrcodes/{$pd->id}.png";
-        $qrAbs = $this->makeQrPng($qrText, $qrRel);
-
-        // 3) ambil posisi dari DB
-        $pos = $this->getQrPosition($pd);
-
-        $outAbs = storage_path("app/tmp/stamped_{$pd->id}.pdf");
-        if (!is_dir(dirname($outAbs))) mkdir(dirname($outAbs), 0777, true);
-
-        $pdf = new Fpdi();
-        $pageCount = $pdf->setSourceFile($absPdf);
-
-        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-            $tpl = $pdf->importPage($pageNo);
-            $size = $pdf->getTemplateSize($tpl);
-
-            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            $pdf->useTemplate($tpl);
-
-            // biasanya stamp cukup di page terakhir (lebih “approval-ish”)
-            if ($pageNo === $pageCount) {
-                $qrW = 25;   // mm
-                $m   = 8;    // margin mm
-                [$x, $y] = $this->calcQrXY($pos, $size['width'], $size['height'], $qrW, $m);
-
-                $pdf->Image($qrAbs, $x, $y, $qrW, $qrW);
+                // Tempel Image
+                $pdf->Image($qrTempPath, $x, $y, $qrSize, $qrSize);
             }
+
+            // Simpan (Overwrite file asli)
+            $pdf->Output('F', $fullPath);
+        } catch (\Exception $e) {
+            // Hapus file temp kalau gagal biar gak nyampah
+            if (file_exists($qrTempPath)) {
+                unlink($qrTempPath);
+            }
+
+            // Revert database update kalau PDF gagal (Opsional, tapi best practice)
+            $projectDocument->update([
+                'approved_by_id' => null,
+                'approved_by_name' => null,
+                'approved_date' => null,
+            ]);
+
+            return response()->json(['message' => 'Gagal memproses PDF: '.$e->getMessage()], 500);
         }
 
-        $pdf->Output($outAbs, 'F');
+        // 7. Cleanup
+        if (file_exists($qrTempPath)) {
+            unlink($qrTempPath);
+        }
 
-        // overwrite file asli (jadi View/Download udah include QR)
-        Storage::disk('public')->put($relPdf, file_get_contents($outAbs));
-    }
-
-    private function getQrPosition(ProjectDocument $pd): string
-    {
-        return DB::table('customer_stage_documents')
-            ->where('customer_stage_id', $pd->customer_stage_id)
-            ->where('document_type_code', $pd->document_type_code)
-            ->value('qr_position') ?? 'bottom_right';
-    }
-
-    private function calcQrXY(string $pos, float $pageW, float $pageH, float $qrW, float $m): array
-    {
-        return match ($pos) {
-            'top_left'     => [$m, $m],
-            'top_right'    => [$pageW - $qrW - $m, $m],
-            'bottom_left'  => [$m, $pageH - $qrW - $m],
-            default        => [$pageW - $qrW - $m, $pageH - $qrW - $m], // bottom_right
-        };
+        return response()->json(['message' => 'Approved ok & PDF Signed']);
     }
 }

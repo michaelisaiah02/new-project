@@ -23,16 +23,6 @@
             flex-direction: column;
             gap: .5rem;
         }
-
-        .qr-box {
-            flex: 1;
-            border: 2px dashed #c8c8c8;
-            border-radius: .5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-        }
     </style>
 @endsection
 @section('content')
@@ -82,20 +72,36 @@
 
             <div class="col-lg-3">
                 <div class="side-panel">
-                    <div class="qr-box">
-                        {{-- tampilkan QR kalau sudah approved --}}
-                        @php
-                            $qrRel = "qrcodes/{$projectDocument->id}.png";
-                            $qrUrl = \Storage::disk('public')->exists($qrRel) ? \Storage::url($qrRel) : null;
-                        @endphp
-
-                        @if ($projectDocument->approved && $qrUrl)
-                            <img src="{{ $qrUrl }}" class="img-fluid" alt="QR Code">
-                        @else
-                            <div class="text-muted text-center px-2">
-                                QR akan muncul setelah Approved
+                    <div class="row flex-fill">
+                        <div class="col">
+                            <div class="border bg-light-subtle rounded-2 p-2 h-100">
+                                <h5>Document Info</h5>
+                                <p class="mb-1"><strong>Uploaded
+                                        Date:</strong>
+                                    {{ $projectDocument->created_date ? $projectDocument->created_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                                </p>
+                                <p class="mb-1"><strong>Checked
+                                        Date:</strong>
+                                    {{ $projectDocument->checked_date ? $projectDocument->checked_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                                </p>
+                                <p class="mb-1"><strong>Approved
+                                        Date:</strong>
+                                    {{ $projectDocument->approved_date ? $projectDocument->approved_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                                </p>
+                                <p class="mb-1"><strong>Uploaded
+                                        By:</strong>
+                                    {{ $projectDocument->created_by_name ? $projectDocument->created_by_name : '-' }}
+                                </p>
+                                <p class="mb-1"><strong>Checked
+                                        By:</strong>
+                                    {{ $projectDocument->checked_by_name ? $projectDocument->checked_by_name : '-' }}
+                                </p>
+                                <p class="mb-1"><strong>Approved
+                                        By:</strong>
+                                    {{ $projectDocument->approved_by_name ? $projectDocument->approved_by_name : '-' }}
+                                </p>
                             </div>
-                        @endif
+                        </div>
                     </div>
 
                     <button class="btn btn-primary w-100" id="btn-check" hidden>Checked</button>

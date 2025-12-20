@@ -29,6 +29,10 @@
                                             {{ $newProject->part_type }} - {{ $newProject->suffix }} -
                                             {{ $newProject->minor_change }}
                                         </a>
+                                        <button class="ms-1 btn btn-sm btn-primary show-project" data-bs-toggle="modal"
+                                            data-bs-target="#showProjectModal{{ $newProject->id }}">
+                                            Show Detail
+                                        </button>
                                     </td>
                                     <td style="width: 10%">{{ $newProject->created_at->format('d-m-Y') }}</td>
                                     <td style="width: 15%">
@@ -83,15 +87,21 @@
                                     <td style="width: 11%">{{ $ongoingProject->customer_code }}</td>
                                     <td style="width: 10%">{{ $ongoingProject->model }}</td>
                                     <td class="w-50">
-                                        <a
+                                        <a class="align-middle"
                                             href="{{ route('engineering.projects.onGoing', ['project' => $ongoingProject->id]) }}">
                                             {{ $ongoingProject->part_number }} - {{ $ongoingProject->part_name }} -
                                             {{ $ongoingProject->part_type }} - {{ $ongoingProject->suffix }} -
                                             {{ $ongoingProject->minor_change }}
                                         </a>
+                                        <button class="ms-1 btn btn-sm btn-primary show-project" data-bs-toggle="modal"
+                                            data-bs-target="#showProjectModal{{ $ongoingProject->id }}">
+                                            Show Detail
+                                        </button>
                                     </td>
                                     <td style="width: 10%">{{ $ongoingProject->created_at->format('d-m-Y') }}</td>
-                                    <td style="width: 15%">On Going</td> {{-- Harusnya Persentase dari document yg udah di upload --}}
+                                    <td style="width: 15%">
+                                        {{ $ongoingProject->statusOngoing() }}
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -119,5 +129,88 @@
             </div>
         </div>
     </div>
+    @foreach ($newProjects as $newProject)
+        @include('engineering.projects.partials.data-projects-modal', ['project' => $newProject])
+    @endforeach
+    @foreach ($ongoingProjects as $ongoingProject)
+        @include('engineering.projects.partials.data-projects-modal', ['project' => $ongoingProject])
+    @endforeach
+    <div class="modal fade" id="fileViewerModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileViewerTitle">File Viewer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-0" style="height: 80vh;">
+                    <div id="fileViewerContainer"
+                        class="w-100 h-100 d-flex justify-content-center align-items-center bg-light">
+                        <!-- injected by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
     <x-toast />
+@endsection
+@section('scripts')
+    <script type="module">
+        const viewerModal = new bootstrap.Modal('#fileViewerModal')
+        const container = document.getElementById('fileViewerContainer')
+        const titleEl = document.getElementById('fileViewerTitle')
+
+        document.querySelectorAll('.view-file').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const file = btn.dataset.file
+                const title = btn.dataset.title
+                console.log('title', title)
+                const ext = file.split('.').pop().toLowerCase()
+
+                titleEl.innerText = title
+                container.innerHTML = ''
+
+                // IMAGE
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    container.innerHTML = `
+                <img src="${file}" class="img-fluid" style="max-height:100%;" />
+            `
+                }
+
+                // PDF
+                else if (ext === 'pdf') {
+                    container.innerHTML = `
+                <iframe src="${file}" style="width:100%; height:100%; border:none;"></iframe>
+            `
+                }
+
+                // 3D FILE
+                else if (['stp', 'step', 'iges', 'igs', 'stl'].includes(ext)) {
+                    container.innerHTML = `
+                <div class="text-center">
+                    <i class="bi bi-cube fs-1 mb-3"></i>
+                    <p class="fw-bold">3D File Detected</p>
+                    <a href="${file}" class="btn btn-primary" target="_blank">
+                        Download & Open in 3D Viewer
+                    </a>
+                </div>
+            `
+                }
+
+                // UNKNOWN
+                else {
+                    container.innerHTML = `
+                <div class="text-center text-danger">
+                    <p>File format not supported for preview</p>
+                    <a href="${file}" class="btn btn-secondary">Download</a>
+                </div>
+            `
+                }
+
+                viewerModal.show()
+            })
+        })
+    </script>
 @endsection

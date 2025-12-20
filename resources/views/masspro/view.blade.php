@@ -1,47 +1,68 @@
 @extends('layouts.app-projects')
 @section('title', 'ON-GOING PROJECT')
 @section('customer', $project->customer->name)
+@section('styles')
+    <style>
+        .adjust-width {
+            width: 9rem;
+        }
+    </style>
 @section('content')
     <div class="container-fluid mt-2">
         <div class="row justify-content-center mb-2">
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Customer</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $project->model }}" id="model" placeholder="Model Part" aria-label="Model"
-                        aria-describedby="model" readonly>
+                        value="{{ $project->customer_code . '-' . $project->customer->name }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
                     <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-number"
-                        placeholder="Nomor Part" aria-label="No. Part" aria-describedby="part-number"
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->part_number }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group mb-1">
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Suffix</span>
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
+                        value="{{ $project->suffix }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group mb-1">
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
+                        value="{{ $project->model }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
                     <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
                         Name</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-name"
-                        placeholder="Nama Part" aria-label="Part Name" aria-describedby="part-name"
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
+                        value="{{ $project->part_name }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group mb-1">
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No.
+                        ECI/EO/ECN</span>
+                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->part_name }}" readonly>
                 </div>
             </div>
         </div>
-        <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 400px; overflow-y: auto;">
+        <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 350px; overflow-y: auto;">
             <table class="table table-sm table-bordered m-0 text-start align-middle">
                 <thead class="table-primary sticky-top">
                     <tr>
                         <th class="text-center">Stage</th>
                         <th>Document</th>
-                        <th class="text-center">Due Date</th>
-                        <th class="text-center">Actual Date</th>
                         <th class="text-center">File Name Upload</th>
                         <th class="text-center">Action</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-center">Remark</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -60,17 +81,6 @@
                                 <td class="text-wrap w-25">
                                     {{ $pd->documentType->name }}
                                 </td>
-
-                                <td class="text-center">
-                                    {{ \Carbon\Carbon::parse($pd->due_date)->locale('id')->translatedFormat('d/m/Y') }}
-                                </td>
-                                <td class="text-center">
-                                    @if ($pd->actual_date)
-                                        {{ \Carbon\Carbon::parse($pd->actual_date)->locale('id')->translatedFormat('d/m/Y') }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
                                 <td class="text-center">
                                     @if ($pd->file_name)
                                         {{ $pd->file_name }}
@@ -79,45 +89,10 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('engineering.project-documents.view', ['projectDocument' => $pd->id]) }}"
+                                    <a href="{{ route('masspro.document', ['projectDocument' => $pd->id]) }}"
                                         class="btn btn-sm btn-primary btn-view" data-filename="{{ $pd->file_name }}">
                                         View
                                     </a>
-                                    @if (!(auth()->user()->approved || auth()->user()->checked))
-                                        <button type="button" class="btn btn-sm btn-primary border-3 border-light-subtle"
-                                            id="btn-upload-{{ $pd->id }}">Upload</button>
-                                        <input type="file"
-                                            class="form-control bg-secondary-subtle border-secondary border"
-                                            id="upload-{{ $pd->id }}" accept="application/pdf" hidden>
-                                    @endif
-                                </td>
-                                <td class="text-center" id="status-{{ $pd->id }}">
-                                    @php
-                                        $now = now();
-
-                                        if (!$pd->file_name) {
-                                            // belum submit
-                                            if ($pd->due_date && $now->gt($pd->due_date)) {
-                                                $status = 'Delay';
-                                            } else {
-                                                $status = 'Not Yet Submitted';
-                                            }
-                                        } else {
-                                            // sudah submit
-                                            if ($pd->approved_date !== null) {
-                                                $status = 'Finish';
-                                            } elseif (!$pd->checked_date) {
-                                                $status = 'Not Yet Checked';
-                                            } else {
-                                                $status = 'Not Yet Approved';
-                                            }
-                                        }
-                                    @endphp
-                                    {{ $status }}
-                                </td>
-                                <td>
-                                    <input type="text" id="remark-{{ $pd->id }}"
-                                        class="form-control form-control-sm border-0" value="{{ $pd->remark }}">
                                 </td>
                             </tr>
                         @endforeach
@@ -166,8 +141,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <form action="{{ route('engineering.projects.cancel', ['project' => $project->id]) }}"
-                        method="post">
+                    <form action="{{ route('engineering.projects.cancel', ['project' => $project->id]) }}" method="post">
                         @csrf
                         <button type="submit" class="btn btn-primary">Confirm</button>
                     </form>

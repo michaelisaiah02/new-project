@@ -4,7 +4,7 @@
     <div class="container-fluid mt-2">
         <form action="" method="post">
             <div class="row justify-content-center mb-2">
-                <div class="col-md-5">
+                <div class="col-md">
                     <div class="input-group mb-1">
                         <span
                             class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Customer</span>
@@ -19,54 +19,70 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Model</span>
-                        <select class="form-select bg-warning-subtle border-warning border" id="model" name="model"
-                            aria-label="Model" aria-describedby="model">
-                            <option value="">Pilih Model</option>
-                            @foreach ($models as $model)
-                                <option value="{{ $model->model }}" {{ old('model') === $model->model ? 'selected' : '' }}>
-                                    {{ $model->model }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" class="form-control bg-warning-subtle border-warning border"
+                            placeholder="Model Part" aria-label="Model Part" aria-describedby="model" id="model"
+                            name="model" value="{{ old('model') }}">
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">No.
                             Part</span>
-                        <select class="form-select bg-warning-subtle border-warning border" id="part-number"
-                            name="part-number" placeholder="Nomor Part" aria-label="No. Part"
-                            aria-describedby="part-number">
-                            <option value="">Pilih Part Number</option>
-                            @foreach ($partNumbers as $partNumber)
-                                <option value="{{ $partNumber->part_number }}"
-                                    {{ old('part-number') === $partNumber->part_number ? 'selected' : '' }}>
-                                    {{ $partNumber->part_number }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" class="form-control bg-warning-subtle border-warning border"
+                            placeholder="Nomor Part" aria-label="Nomor Part" aria-describedby="part-num-label"
+                            id="part-num" name="part_number" value="{{ old('part_number') }}">
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md">
                     <div class="input-group mb-1">
                         <span
                             class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Suffix</span>
-                        <select class="form-select bg-warning-subtle border-warning border" id="suffix" name="suffix"
-                            aria-label="Suffix" aria-describedby="suffix">
-                            <option value="">Pilih Suffix</option>
-                            @foreach ($suffixes as $suffix)
-                                <option value="{{ $suffix->suffix }}"
-                                    {{ old('suffix') === $suffix->suffix ? 'selected' : '' }}>
-                                    {{ $suffix->suffix }}</option>
-                            @endforeach
-                        </select>
+                        <input class="form-control bg-warning-subtle border-warning border" type="text"
+                            aria-label="Suffix" aria-describedby="suffix" id="suffix" name="suffix" placeholder="..."
+                            value="{{ old('suffix') }}">
                     </div>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary" type="submit">Search</button>
                 </div>
             </div>
         </form>
         <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 400px; overflow-y: auto;">
-
+            <table class="table table-bordered table-hover align-middle text-center">
+                <thead class="table-secondary position-sticky top-0">
+                    <tr>
+                        <th>Model</th>
+                        <th>No. Part</th>
+                        <th>Part Name</th>
+                        <th>Suffix</th>
+                        <th>No. ECI/EO/ECN</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($massproRecords as $index => $record)
+                        <tr>
+                            <td>{{ $record->model }}</td>
+                            <td>{{ $record->part_number }}</td>
+                            <td>{{ $record->part_name }}</td>
+                            <td>{{ $record->suffix }}</td>
+                            <td>{{ $record->eee_number }}</td>
+                            <td>
+                                <a href="{{ route('masspro.view', $record->id) }}" class="btn btn-sm btn-primary">
+                                    View Stage
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9">No Mass Production records found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
         @php
             $backUrl = match (auth()->user()->department->type()) {

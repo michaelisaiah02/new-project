@@ -5,6 +5,10 @@
         .adjust-width {
             width: 10rem;
         }
+
+        button[disabled] {
+            pointer-events: auto !important;
+        }
     </style>
 @endsection
 @section('content')
@@ -53,15 +57,31 @@
                                 class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width rounded-1">Drawing</span>
                         </div>
                         <div class="col">
-                            <button type="button" class="btn btn-primary border-3 border-light-subtle w-100"
-                                id="btn-upload-2d" disabled>Upload 2D</button>
+                            <button type="button"
+                                class="btn btn-primary border-3 border-light-subtle w-100 position-relative"
+                                id="btn-upload-2d" disabled data-bs-toggle="tooltip" data-bs-placement="top"
+                                data-bs-custom-class="custom-tooltip" title="Lengkapi form untuk upload">
+                                Upload 2D
+                                <span id="badge-upload-2d"
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                    !
+                                </span>
+                            </button>
                             <input type="file" class="form-control bg-secondary-subtle border-secondary border"
                                 id="upload-2d" name="drawing_2d" placeholder="Upload 2D" aria-label="Upload 2D"
                                 aria-describedby="upload-2d" hidden>
                         </div>
                         <div class="col">
-                            <button type="button" class="btn btn-primary border-3 border-light-subtle w-100"
-                                id="btn-upload-3d" disabled>Upload 3D</button>
+                            <button type="button"
+                                class="btn btn-primary border-3 border-light-subtle w-100 position-relative"
+                                id="btn-upload-3d" disabled data-bs-toggle="tooltip" data-bs-placement="top"
+                                data-bs-custom-class="custom-tooltip" title="Lengkapi form untuk upload">
+                                Upload 3D
+                                <span id="badge-upload-3d"
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                    !
+                                </span>
+                            </button>
                             <input type="file" class="form-control bg-secondary-subtle border-secondary border"
                                 id="upload-3d" name="drawing_3d" placeholder="Upload 3D" aria-label="Upload 3D"
                                 aria-describedby="upload-3d" hidden value="{{ old('drawing_3d') }}">
@@ -237,18 +257,38 @@
 @section('scripts')
     <script type="module">
         function checkFilledForm() {
-            const customerSelected = $('#customer').val() !== null;
-            const partNumFilled = $('#part-num').val().trim() !== '';
-            const suffixFilled = $('#suffix').val().trim() !== '';
-            const minorFilled = $('#minor-change').val().trim() !== '';
+            const missing = [];
+            let tooltip2D, tooltip3D;
 
-            if (customerSelected && partNumFilled && suffixFilled && minorFilled) {
-                $('#btn-upload-2d').prop('disabled', false);
-                $('#btn-upload-3d').prop('disabled', false);
-            } else {
-                $('#btn-upload-2d').prop('disabled', true);
-                $('#btn-upload-3d').prop('disabled', true);
-            }
+            tooltip2D = new bootstrap.Tooltip(
+                document.getElementById('btn-upload-2d')
+            );
+            tooltip3D = new bootstrap.Tooltip(
+                document.getElementById('btn-upload-3d')
+            );
+
+            if ($('#customer').val() === null) missing.push('Customer');
+            if ($('#part-num').val().trim() === '') missing.push('Part Number');
+            if ($('#suffix').val().trim() === '') missing.push('Suffix');
+            if ($('#minor-change').val().trim() === '') missing.push('Minor Change');
+
+            const isValid = missing.length === 0;
+
+            $('#btn-upload-2d, #btn-upload-3d').prop('disabled', !isValid);
+            $('#badge-upload-2d, #badge-upload-3d').toggle(!isValid);
+
+            const tooltipText = isValid ?
+                '' :
+                'Lengkapi: ' + missing.join(', ');
+
+            const btn2d = document.getElementById('btn-upload-2d');
+            const btn3d = document.getElementById('btn-upload-3d');
+
+            btn2d.setAttribute('data-bs-original-title', tooltipText);
+            btn3d.setAttribute('data-bs-original-title', tooltipText);
+
+            tooltip2D.update();
+            tooltip3D.update();
         }
         $(document).ready(function() {
             const csrfToken = '{{ csrf_token() }}';

@@ -2,7 +2,8 @@
 @section('title', 'ADD NEW CUSTOMER STAGES')
 @section('content')
     <div class="container-fluid">
-        <form action="{{ route('marketing.customers.storeStage', ['customer' => $customer->code]) }}" method="post">
+        <form id="form-stage" action="{{ route('marketing.customers.storeStage', ['customer' => $customer->code]) }}"
+            method="post">
             @csrf
             <input type="hidden" name="customer_code" value="{{ $customer->code }}">
             <input type="hidden" name="stage_number" value="{{ $stageNumber }}">
@@ -26,7 +27,12 @@
                         <thead class="table-primary sticky-top align-middle">
                             <tr>
                                 <th rowspan="2"></th>
-                                <th rowspan="2">Jenis Dokumen</th>
+                                <th rowspan="2">Jenis Dokumen
+                                    <div class="row mx-1">
+                                        <input type="text" id="doc-search" class="form-control form-control-sm"
+                                            placeholder="Cari dokumen... (contoh: NPWP, DM, SIUP)">
+                                    </div>
+                                </th>
                                 <th colspan="4">Posisi QR Code</th>
                             </tr>
                             <tr>
@@ -63,14 +69,12 @@
                         class="btn btn-primary border-3 border-light-subtle">Back</a>
                 </div>
                 <div class="col-auto ms-auto">
-                    <button type="submit" name="decision" value="next"
-                        class="btn btn-primary border-3 border-light-subtle">
+                    <button id="btn-next" type="button" class="btn btn-primary border-3 border-light-subtle">
                         Next Stage
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button id="btn-finish" type="submit" name="decision" value="finish"
-                        class="btn btn-primary border-3 border-light-subtle">
+                    <button id="btn-finish" type="button" class="btn btn-primary border-3 border-light-subtle">
                         Finish
                     </button>
                 </div>
@@ -238,24 +242,65 @@
 
             let pendingAction = null;
 
-            $('#btn-finish, #btn-back').on('click', function(e) {
-                if (!hasMasspro()) {
-                    e.preventDefault();
-                    pendingAction = this;
-                    massproModal.show();
-                    setTimeout(scrollToMassproRow, 150);
-                }
-            });
-
             $('#forceMasspro').on('click', function() {
                 forceMassproChecked();
-                massproModal?.hide();
+                massproModal.hide();
 
                 if (pendingAction) {
-                    pendingAction.click();
+                    allowSubmit = true;
+                    submitForm(pendingAction);
                     pendingAction = null;
                 }
             });
+
+            let allowSubmit = false;
+
+            function submitForm(actionValue) {
+                if (!allowSubmit) return;
+
+                $('<input>')
+                    .attr({
+                        type: 'hidden',
+                        name: 'decision',
+                        value: actionValue
+                    })
+                    .appendTo('form');
+
+                $('#form-stage').submit();
+            }
+
+            $('#btn-finish').on('click', function() {
+                const action = 'finish';
+
+                if (!hasMasspro()) {
+                    pendingAction = action;
+                    massproModal.show();
+                    setTimeout(scrollToMassproRow, 150);
+                    return;
+                }
+
+                allowSubmit = true;
+                submitForm(action);
+            });
+
+            $('#btn-next').on('click', function() {
+                allowSubmit = true;
+                submitForm('next');
+            });
+
+            $('#doc-search').on('keyup', function() {
+                let keyword = $(this).val().toLowerCase().trim();
+
+                $('.doc-row').each(function() {
+                    let docName = $(this)
+                        .find('td:nth-child(2)') // kolom "Jenis Dokumen"
+                        .text()
+                        .toLowerCase();
+
+                    $(this).toggle(docName.includes(keyword));
+                });
+            });
+            $('#doc-search').focus();
         });
     </script>
 @endsection

@@ -29,7 +29,12 @@
                         <thead class="table-primary sticky-top align-middle">
                             <tr>
                                 <th rowspan="2"></th>
-                                <th rowspan="2">Jenis Dokumen</th>
+                                <th rowspan="2">Jenis Dokumen
+                                    <div class="row mx-1">
+                                        <input type="text" id="doc-search" class="form-control form-control-sm"
+                                            placeholder="Cari dokumen... (contoh: NPWP, DM, SIUP)">
+                                    </div>
+                                </th>
                                 <th colspan="4">Posisi QR Code</th>
                             </tr>
                             <tr>
@@ -74,12 +79,12 @@
                 </div>
                 <div class="col-auto ms-auto">
                     <input type="hidden" name="target_stage" id="target_stage" value="{{ $stageNumber }}">
+                    <input type="hidden" name="form_action" id="form_action">
                     <div class="input-group">
                         <span class="input-group-text bg-primary text-light user-select-none">Stage</span>
                         @for ($i = 1; $i <= $maxStage; $i++)
-                            <button type="submit" name="action" value="navigate"
-                                class="btn btn-primary border-light-subtle {{ $i == $stageNumber ? 'active fw-bold' : '' }}"
-                                onclick="document.getElementById('target_stage').value={{ $i }}">
+                            <button type="button" data-action="navigate" data-target-stage="{{ $i }}"
+                                class="btn btn-primary border-light-subtle {{ $i == $stageNumber ? 'active fw-bold' : '' }}">
                                 {{ $i }}
                             </button>
                         @endfor
@@ -87,7 +92,7 @@
                 </div>
                 <div class="col-auto ms-auto">
                     @if ($canAddStage)
-                        <button type="submit" name="action" value="add_stage" class="btn btn-success">
+                        <button type="button" data-action="add_stage" class="btn btn-success">
                             + Add Stage
                         </button>
                     @else
@@ -97,13 +102,12 @@
                     @endif
                 </div>
                 <div class="col-auto">
-                    <button type="submit" name="action" value="save"
-                        class="btn btn-primary border-3 border-light-subtle">
+                    <button type="button" data-action="save" class="btn btn-primary border-3 border-light-subtle">
                         Save
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button id="btn-finish" type="submit" name="action" value="finish"
+                    <button id="btn-finish" type="submit" data-action="finish"
                         class="btn btn-primary border-3 border-light-subtle">
                         Finish
                     </button>
@@ -164,6 +168,20 @@
             // DELETE STAGE (confirm modal)
             // =========================
             const $deleteBtn = $('#delete-stage-btn');
+            const $formAction = $('#form_action');
+            const $targetStageInput = $('#target_stage');
+
+            $('[data-action]').on('click', function() {
+                const $btn = $(this);
+                $formAction.val($btn.data('action') ?? '');
+                const targetStage = $btn.data('target-stage');
+
+                if (typeof targetStage !== 'undefined') {
+                    $targetStageInput.val(targetStage);
+                }
+
+                $(this).closest('form').trigger('submit');
+            });
 
             if ($deleteBtn.length) {
                 $deleteBtn.on('click', function() {
@@ -347,6 +365,19 @@
                 }
             });
 
+            $('#doc-search').on('keyup', function() {
+                let keyword = $(this).val().toLowerCase().trim();
+
+                $('.doc-row').each(function() {
+                    let docName = $(this)
+                        .find('td:nth-child(2)') // kolom "Jenis Dokumen"
+                        .text()
+                        .toLowerCase();
+
+                    $(this).toggle(docName.includes(keyword));
+                });
+            });
+            $('#doc-search').focus();
         });
     </script>
 
