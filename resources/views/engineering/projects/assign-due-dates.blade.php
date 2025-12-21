@@ -153,11 +153,13 @@
                     </div>
                 @endif
 
-                <div class="col-auto">
-                    <button id="btnSave" class="btn btn-primary" type="submit" disabled>
-                        Save
-                    </button>
-                </div>
+                @if (!$canCheck && !$canApprove && !$canApproveManagement)
+                    <div class="col-auto">
+                        <button id="btnSave" class="btn btn-primary" type="submit" disabled>
+                            Save
+                        </button>
+                    </div>
+                @endif
             </div>
         </form>
     </div>

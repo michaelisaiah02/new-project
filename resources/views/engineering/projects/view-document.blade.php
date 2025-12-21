@@ -77,28 +77,22 @@
                             <div class="border bg-light-subtle rounded-2 p-2 h-100">
                                 <h5>Document Info</h5>
                                 <p class="mb-1"><strong>Uploaded
-                                        Date:</strong>
-                                    {{ $projectDocument->created_date ? $projectDocument->created_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                                </p>
-                                <p class="mb-1"><strong>Checked
-                                        Date:</strong>
-                                    {{ $projectDocument->checked_date ? $projectDocument->checked_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                                </p>
-                                <p class="mb-1"><strong>Approved
-                                        Date:</strong>
-                                    {{ $projectDocument->approved_date ? $projectDocument->approved_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                                </p>
-                                <p class="mb-1"><strong>Uploaded
                                         By:</strong>
                                     {{ $projectDocument->created_by_name ? $projectDocument->created_by_name : '-' }}
+                                    -
+                                    {{ $projectDocument->created_date ? $projectDocument->created_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
                                 </p>
                                 <p class="mb-1"><strong>Checked
                                         By:</strong>
                                     {{ $projectDocument->checked_by_name ? $projectDocument->checked_by_name : '-' }}
+                                    -
+                                    {{ $projectDocument->checked_date ? $projectDocument->checked_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
                                 </p>
                                 <p class="mb-1"><strong>Approved
                                         By:</strong>
                                     {{ $projectDocument->approved_by_name ? $projectDocument->approved_by_name : '-' }}
+                                    -
+                                    {{ $projectDocument->approved_date ? $projectDocument->approved_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
                                 </p>
                             </div>
                         </div>

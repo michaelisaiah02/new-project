@@ -159,7 +159,8 @@
                         <span class="input-group-text border-dark border-3 bg-secondary-subtle">Suffix</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="text"
                             aria-label="Suffix" aria-describedby="suffix" id="suffix" name="suffix"
-                            placeholder="..." value="{{ old('suffix') }}">
+                            value="{{ old('suffix', '-') }}" onfocus="if (this.value === '-') this.value='';"
+                            onblur="if (this.value === '') this.value='-';">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -331,6 +332,26 @@
                 if (fileInput.files.length > 0) {
                     $(drawingLabelInput).val(label);
                 }
+            });
+
+            // kalau sudah upload file, tapi customer, part number, suffix, minor diubah, generate ulang nama filenya
+            $('#customer, #part-num, #suffix, #minor-change').on('input change', function() {
+                ['#upload-2d', '#upload-3d'].forEach(function(inputId) {
+                    const is2D = inputId === '#upload-2d';
+                    const fileInput = $(inputId)[0];
+                    const drawingLabelInput = is2D ? $('#drawing-label-2d') : $(
+                    '#drawing-label-3d');
+                    const extension = fileInput.files.length > 0 ? fileInput.files[0].name.split(
+                        '.').pop() : '';
+                    const partNum = $('#part-num').val().trim();
+                    const suffix = $('#suffix').val().trim();
+                    const minor = $('#minor-change').val().trim();
+                    if (fileInput.files.length > 0) {
+                        const label =
+                            `Dwg${is2D ? '2D' : '3D'}-${partNum}-${suffix}-${minor}.${extension}`;
+                        $(drawingLabelInput).val(label);
+                    }
+                });
             });
             checkFilledForm();
         });

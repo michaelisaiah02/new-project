@@ -48,7 +48,7 @@ class ProjectDocumentController extends Controller
         $ext = strtolower($file->getClientOriginalExtension());
 
         // document_type_code-part_number.ext
-        $filename = "{$projectDocument->document_type_code}-{$project->part_name}-{$project->suffix}-{$project->minor_change}.{$ext}";
+        $filename = "{$projectDocument->document_type_code}-{$project->part_number}-{$project->suffix}-{$project->minor_change}.{$ext}";
 
         // SIMPAN FILE VIA HELPER
         FileHelper::storeDrawingFile(
@@ -145,11 +145,11 @@ class ProjectDocumentController extends Controller
         }
 
         // Folder sesuai dengan format: Model/PartNumber/nama_file.pdf
-        $relativePath = $projectDocument->project->customer_code.'/'.$projectDocument->project->model.'/'.$projectDocument->project->part_number.'/'.$projectDocument->file_name;
-        $fullPath = storage_path('app/public/'.$relativePath);
+        $relativePath = $projectDocument->project->customer_code . '/' . $projectDocument->project->model . '/' . $projectDocument->project->part_number . '/' . $projectDocument->file_name;
+        $fullPath = storage_path('app/public/' . $relativePath);
 
         if (! file_exists($fullPath)) {
-            return response()->json(['message' => 'File PDF fisik tidak ditemukan di server.'.$fullPath], 404);
+            return response()->json(['message' => 'File PDF fisik tidak ditemukan di server.' . $fullPath], 404);
         }
 
         if (! $projectDocument->checked_by_id || ! $projectDocument->checked_date) {
@@ -188,7 +188,7 @@ class ProjectDocumentController extends Controller
         $qrPosition = $qrPosition ?? 'bottom_right';
 
         // 5. Generate QR Code Image (Temp)
-        $qrTempPath = sys_get_temp_dir().'/qr_'.uniqid().'.png';
+        $qrTempPath = sys_get_temp_dir() . '/qr_' . uniqid() . '.png';
 
         // Karena Imagick aktif, kita bisa pake format 'png' dengan aman
         QrCode::format('png')
@@ -258,7 +258,7 @@ class ProjectDocumentController extends Controller
                 'approved_date' => null,
             ]);
 
-            return response()->json(['message' => 'Gagal memproses PDF: '.$e->getMessage()], 500);
+            return response()->json(['message' => 'Gagal memproses PDF: ' . $e->getMessage()], 500);
         }
 
         // 7. Cleanup

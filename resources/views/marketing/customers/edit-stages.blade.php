@@ -2,7 +2,7 @@
 @section('title', 'ADD NEW CUSTOMER STAGES')
 @section('content')
     <div class="container-fluid">
-        <form
+        <form id="form-edit-stage"
             action="{{ route('marketing.customers.saveStage', ['customer' => $customer->code, 'stageNumber' => $stageNumber]) }}"
             method="post">
             @csrf
@@ -83,8 +83,8 @@
                     <div class="input-group">
                         <span class="input-group-text bg-primary text-light user-select-none">Stage</span>
                         @for ($i = 1; $i <= $maxStage; $i++)
-                            <button type="button" data-action="navigate" data-target-stage="{{ $i }}"
-                                class="btn btn-primary border-light-subtle {{ $i == $stageNumber ? 'active fw-bold' : '' }}">
+                            <button type="button" data-target-stage="{{ $i }}"
+                                class="btn btn-primary btn-navigate border-light-subtle {{ $i == $stageNumber ? 'active fw-bold' : '' }}">
                                 {{ $i }}
                             </button>
                         @endfor
@@ -92,7 +92,7 @@
                 </div>
                 <div class="col-auto ms-auto">
                     @if ($canAddStage)
-                        <button type="button" data-action="add_stage" class="btn btn-success">
+                        <button id="add-stage" type="button" class="btn btn-success">
                             + Add Stage
                         </button>
                     @else
@@ -102,13 +102,12 @@
                     @endif
                 </div>
                 <div class="col-auto">
-                    <button type="button" data-action="save" class="btn btn-primary border-3 border-light-subtle">
+                    <button id="btn-save" type="button" class="btn btn-primary border-3 border-light-subtle">
                         Save
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button id="btn-finish" type="submit" data-action="finish"
-                        class="btn btn-primary border-3 border-light-subtle">
+                    <button id="btn-finish" type="button" class="btn btn-primary border-3 border-light-subtle">
                         Finish
                     </button>
                 </div>
@@ -171,16 +170,36 @@
             const $formAction = $('#form_action');
             const $targetStageInput = $('#target_stage');
 
-            $('[data-action]').on('click', function() {
-                const $btn = $(this);
-                $formAction.val($btn.data('action') ?? '');
-                const targetStage = $btn.data('target-stage');
+            // navigate stage buttons
+            $('.btn-navigate').on('click', function() {
+                const targetStage = $(this).data('target-stage');
+                $targetStageInput.val(targetStage);
+                $formAction.val('navigate');
+                $('form').trigger('submit');
+            });
 
-                if (typeof targetStage !== 'undefined') {
-                    $targetStageInput.val(targetStage);
+            // add stage button
+            $('#add-stage').on('click', function() {
+                $formAction.val('add_stage');
+                $('form').trigger('submit');
+            });
+
+            // save button
+            $('#btn-save').on('click', function() {
+                $formAction.val('save');
+                $('form').trigger('submit');
+            });
+
+            // finish button
+            $('#btn-finish').on('click', function() {
+                if (!hasMasspro() && pendingAction === null) {
+                    pendingAction = this;
+                    massproModal.show();
+                    setTimeout(scrollToMassproRow, 150);
+                } else {
+                    $formAction.val('finish');
+                    $('form').trigger('submit');
                 }
-
-                $(this).closest('form').trigger('submit');
             });
 
             if ($deleteBtn.length) {
@@ -320,11 +339,6 @@
                 return $('input.doc-check[value="DM"]').is(':checked');
             }
 
-            function forceMassproChecked() {
-                const $dm = $('input.doc-check[value="DM"]');
-                $dm.prop('checked', true).trigger('change');
-            }
-
             function scrollToMassproRow() {
                 const row = document.querySelector('input.doc-check[value="DM"]')?.closest('tr');
                 if (!row) return;
@@ -346,17 +360,7 @@
 
             let pendingAction = null;
 
-            $('#btn-finish, #btn-back').on('click', function(e) {
-                if (!hasMasspro()) {
-                    e.preventDefault();
-                    pendingAction = this;
-                    massproModal.show();
-                    setTimeout(scrollToMassproRow, 150);
-                }
-            });
-
             $('#forceMasspro').on('click', function() {
-                forceMassproChecked();
                 massproModal?.hide();
 
                 if (pendingAction) {

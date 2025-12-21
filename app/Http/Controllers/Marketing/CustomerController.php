@@ -181,7 +181,7 @@ class CustomerController extends Controller
 
         if ($currentDocs->isNotEmpty()) {
             $inList = $currentDocs
-                ->map(fn ($c) => "'".addslashes($c)."'")
+                ->map(fn($c) => "'" . addslashes($c) . "'")
                 ->implode(',');
 
             $availableDocuments->orderByRaw("
@@ -224,7 +224,6 @@ class CustomerController extends Controller
         $stage = CustomerStage::where('customer_code', $customer->code)
             ->where('stage_number', $stageNumber)
             ->first();
-
         $docIds = $request->input('document_type_codes', []);
 
         // 1️⃣ Cegah stage baru tanpa dokumen
@@ -274,11 +273,12 @@ class CustomerController extends Controller
 
         // --- HANDLE ACTION ---
         $action = $request->input('form_action');
-        // dd($request->all(), $action);
+
         if ($action === 'save') {
             return back()->with('success', 'Stage saved.');
         }
 
+        // dd($action);
         if ($action === 'navigate') {
             $target = (int) $request->input('target_stage', $stageNumber);
 
@@ -312,10 +312,16 @@ class CustomerController extends Controller
         if ($action === 'finish') {
             $selectedDocs = $request->input('document_type_codes', []);
 
+            // kalau gak ada dokumen DM, auto tambahin di stage terakhir
             if (! in_array('DM', $selectedDocs)) {
-                return back()->withErrors([
-                    'document_type_codes' => 'Declaration Masspro is required.',
-                ]);
+                $lastStage = CustomerStage::where('customer_code', $customer->code)
+                    ->orderBy('stage_number', 'desc')
+                    ->first();
+                if ($lastStage) {
+                    $lastStage->documents()->attach('DM', [
+                        'qr_position' => 'bottom_right',
+                    ]);
+                }
             }
 
             return redirect()->route('marketing.customers.index')

@@ -117,7 +117,8 @@
                                 </td>
                                 <td>
                                     <input type="text" id="remark-{{ $pd->id }}"
-                                        class="form-control form-control-sm border-0" value="{{ $pd->remark }}">
+                                        class="form-control form-control-sm border-0 bg-warning-subtle" placeholder="..."
+                                        value="{{ $pd->remark }}">
                                 </td>
                             </tr>
                         @endforeach
