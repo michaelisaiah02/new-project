@@ -11,23 +11,36 @@ class MassproController extends Controller
 {
     public function index(Request $request)
     {
-        // ambil data berdasarkan filter jika ada kalau tidak adak ada ambil semua
-        $query = Project::query();
-        if ($request->filled('customer_code')) {
-            $query->where('customer_code', $request->input('customer_code'));
-        }
-        if ($request->filled('model')) {
-            $query->where('model', 'like', '%'.$request->input('model').'%');
-        }
-        if ($request->filled('part_number')) {
-            $query->where('part_number', 'like', '%'.$request->input('part_number').'%');
-        }
-        if ($request->filled('suffix')) {
-            $query->where('suffix', 'like', '%'.$request->input('suffix').'%');
-        }
-        $massproRecords = $query->where('remark', 'completed')->get();
-
+        // 1. Ambil semua data customer untuk pilihan di dropdown (selalu diambil)
         $customers = Customer::orderBy('name')->get();
+
+        // 2. Cek apakah ada filter yang diisi oleh user
+        $hasFilter = $request->filled('customer') ||
+            $request->filled('model') ||
+            $request->filled('part_number') ||
+            $request->filled('suffix');
+
+        // 3. Logika pengambilan data records
+        if ($hasFilter) {
+            // Jika ada filter, jalankan query
+            $massproRecords = Project::query()
+                ->when($request->customer, function ($query, $customer) {
+                    return $query->where('customer_code', $customer);
+                })
+                ->when($request->model, function ($query, $model) {
+                    return $query->where('model', 'like', '%' . $model . '%');
+                })
+                ->when($request->part_number, function ($query, $partNumber) {
+                    return $query->where('part_number', 'like', '%' . $partNumber . '%');
+                })
+                ->when($request->suffix, function ($query, $suffix) {
+                    return $query->where('suffix', 'like', '%' . $suffix . '%');
+                })
+                ->get();
+        } else {
+            // Jika tidak ada filter (awal buka halaman), kirim koleksi kosong
+            $massproRecords = collect();
+        }
 
         return view('masspro.index', compact('customers', 'massproRecords'));
     }

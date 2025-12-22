@@ -2,18 +2,18 @@
 @section('title', 'MASS PRODUCTION')
 @section('content')
     <div class="container-fluid mt-2">
-        <form action="" method="post">
+        <form action="{{ route('masspro.index') }}" method="get">
             <div class="row justify-content-center mb-2">
                 <div class="col-md">
                     <div class="input-group mb-1">
-                        <span
-                            class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Customer</span>
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
+                            style="width: 35%">Customer</span>
                         <select class="form-select bg-warning-subtle border-warning border" id="customer" name="customer"
                             aria-label="Model" aria-describedby="customer">
                             <option value="">Pilih Customer</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->code }}"
-                                    {{ old('customer') === $customer->code ? 'selected' : '' }}>
+                                    {{ old('customer') === $customer->code ? 'selected' : '' }}>{{ $customer->code }} -
                                     {{ $customer->name }}</option>
                             @endforeach
                         </select>
@@ -29,7 +29,8 @@
                 </div>
                 <div class="col-md">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">No.
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
+                            style="width: 30%">No.
                             Part</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Nomor Part" aria-label="Nomor Part" aria-describedby="part-num-label"
@@ -45,7 +46,7 @@
                             value="{{ old('suffix') }}">
                     </div>
                 </div>
-                <div class="col-md-1">
+                <div class="col-md-1 my-auto">
                     <button class="btn btn-primary" type="submit">Search</button>
                 </div>
             </div>
@@ -78,7 +79,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9">No Mass Production records found.</td>
+                            <td colspan="6">
+                                @if (request()->anyFilled(['customer', 'model', 'part_number', 'suffix']))
+                                    No Mass Production records found.
+                                @else
+                                    Silakan masukkan kriteria pencarian untuk menampilkan data.
+                                @endif
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -95,12 +102,6 @@
         <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
             <div class="col-auto">
                 <a href="{{ $backUrl }}" class="btn btn-primary">Back</a>
-            </div>
-            <div class="col-auto mx-auto">
-                <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
-                    data-bs-target="#showProjectModal">
-                    Show Details
-                </button>
             </div>
         </div>
     </div>

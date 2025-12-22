@@ -10,7 +10,7 @@
                 </a>
             </div>
             <div class="col-5" style="height: 8rem">
-                <a href="{{ route('marketing.projects.index') }}"
+                <a href="{{ route('masspro.index') }}"
                     class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
                     LIST MASS PRODUCTION PART
                 </a>
@@ -27,6 +27,12 @@
                 <a href="{{ route('marketing.customers.index') }}"
                     class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
                     MANAGEMENT CUSTOMER
+                </a>
+            </div>
+            <div class="col-5" style="height: 8rem">
+                <a href="#"
+                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
+                    KPI
                 </a>
             </div>
         </div>

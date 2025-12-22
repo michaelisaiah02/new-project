@@ -103,5 +103,6 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/view/{project}', 'view')->name('view');
         Route::get('{projectDocument}/view', 'document')->name('document');
+        Route::get('/filter-options', 'getFilterOptions')->name('filterOptions');
     });
 });
