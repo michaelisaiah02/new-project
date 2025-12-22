@@ -142,7 +142,7 @@
             const partNumber = "{{ $projectDocument->project->part_number }}";
 
             const fileUrl =
-                `/storage/${customerCode}/${model}/${partNumber}/${fileName}#toolbar=0&navpanes=0&scrollbar=0`;
+                `/storage/${customerCode}/${model}/${partNumber}/${fileName}?v={{ time() }}#toolbar=0&navpanes=0&scrollbar=0`;
             const ext = fileName.split('.').pop().toLowerCase();
 
             let $viewer;

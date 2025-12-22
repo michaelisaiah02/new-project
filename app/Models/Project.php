@@ -107,8 +107,8 @@ class Project extends Model
     public function statusOngoing(): string
     {
         // Mengembalikan status berdasarkan berikut:
-        // Default: On Going
-        // Some Doc Delay: ada beberapa document dengan status Delay (actual_date > due_date)
+        // Default: On Going (jika tidak memenuhi kondisi di bawah)
+        // Some Doc Delay: ada beberapa document dengan status Delay (actual_date > due_date) hanya jika semua dokumen belum finish
         // Not Yet Checked: project dengan semua dokumen sudah finish saat on going tapi belum di cek
         // Not Yet Approved: project dengan semua dokumen sudah finish saat on going belum di approve
 
@@ -119,7 +119,8 @@ class Project extends Model
             fn($doc) =>
             $doc->actual_date !== null &&
                 $doc->due_date !== null &&
-                $doc->actual_date->gt($doc->due_date)
+                $doc->actual_date->gt($doc->due_date) &&
+                $doc->approved_date === null
         );
         if ($anyDelay) {
             return 'Some Doc Delay';
