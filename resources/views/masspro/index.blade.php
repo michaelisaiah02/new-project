@@ -4,10 +4,10 @@
     <div class="container-fluid mt-2">
         <form action="{{ route('masspro.index') }}" method="get">
             <div class="row justify-content-center mb-2">
-                <div class="col-md">
+                <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
-                            style="width: 35%">Customer</span>
+                        <span
+                            class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Customer</span>
                         <select class="form-select bg-warning-subtle border-warning border" id="customer" name="customer"
                             aria-label="Model" aria-describedby="customer">
                             <option value="">Pilih Customer</option>
@@ -19,25 +19,47 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md">
+                <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Model</span>
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
+                            style="width: 30%">Model</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Model Part" aria-label="Model Part" aria-describedby="model" id="model"
                             name="model" value="{{ old('model') }}">
                     </div>
                 </div>
-                <div class="col-md">
+                <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
-                            style="width: 30%">No.
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">No.
                             Part</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Nomor Part" aria-label="Nomor Part" aria-describedby="part-num-label"
                             id="part-num" name="part_number" value="{{ old('part_number') }}">
                     </div>
                 </div>
-                <div class="col-md">
+                <div class="col-md-4">
+                    <div class="input-group mb-1">
+                        <span
+                            class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Remark</span>
+                        <select class="form-select bg-warning-subtle border-warning border" id="remark" name="remark"
+                            aria-label="Remark" aria-describedby="remark">
+                            <option value="all">All</option>
+                            <option value="completed">Completed</option>
+                            <option value="canceled">Canceled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group mb-1">
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
+                            style="width: 30%">Minor
+                            Change</span>
+                        <input class="form-control bg-warning-subtle border-warning border" type="text"
+                            aria-label="Minor Change" aria-describedby="minor_change" id="minor_change" name="minor_change"
+                            placeholder="..." value="{{ old('minor_change') }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <div class="input-group mb-1">
                         <span
                             class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Suffix</span>
@@ -51,7 +73,7 @@
                 </div>
             </div>
         </form>
-        <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 400px; overflow-y: auto;">
+        <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 300px; overflow-y: auto;">
             <table class="table table-bordered table-hover align-middle text-center">
                 <thead class="table-secondary position-sticky top-0">
                     <tr>

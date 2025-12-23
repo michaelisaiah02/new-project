@@ -18,7 +18,9 @@ class MassproController extends Controller
         $hasFilter = $request->filled('customer') ||
             $request->filled('model') ||
             $request->filled('part_number') ||
-            $request->filled('suffix');
+            $request->filled('suffix') ||
+            $request->filled('minor_change') ||
+            $request->filled('remark');
 
         // 3. Logika pengambilan data records
         if ($hasFilter) {
@@ -36,6 +38,16 @@ class MassproController extends Controller
                 ->when($request->suffix, function ($query, $suffix) {
                     return $query->where('suffix', 'like', '%' . $suffix . '%');
                 })
+                ->when($request->minor_change, function ($query, $minorChange) {
+                    return $query->where('minor_change', 'like', '%' . $minorChange . '%');
+                })
+                ->when($request->remark, function ($query, $remark) {
+                    if ($remark === 'all') {
+                        $remark = ['completed', 'canceled'];
+                    }
+                    return $query->whereIn('remark', (array) $remark);
+                })
+                ->orderBy('customer_code')
                 ->get();
         } else {
             // Jika tidak ada filter (awal buka halaman), kirim koleksi kosong
