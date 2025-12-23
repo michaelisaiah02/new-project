@@ -9,6 +9,8 @@ window.bootstrap = bootstrap;
 // window.flatpickr = flatpickr;
 import selectize from '@selectize/selectize';
 window.selectize = selectize;
+import Chart from 'chart.js/auto';
+window.Chart = Chart;
 
 $(document).ready(function () {
     $('button[type=submit]').on('click', function () {

@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentTypeController;
 use App\Http\Controllers\Engineering\ProjectDocumentController;
 use App\Http\Controllers\Engineering\ProjectEngineerController;
+use App\Http\Controllers\KPIController;
 use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Marketing\ProjectController;
 use App\Http\Controllers\Marketing\UserController;
@@ -105,4 +106,10 @@ Route::middleware(['auth', CheckDepartmentAccess::class])->group(function () {
         Route::get('{projectDocument}/view', 'document')->name('document');
         Route::get('/filter-options', 'getFilterOptions')->name('filterOptions');
     });
+});
+Route::prefix('kpi')->as('kpi.')->controller(KPIController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('/api/get-models', [KPIController::class, 'getModels'])->name('api.models');
+    Route::get('/api/get-parts', [KPIController::class, 'getParts'])->name('api.parts');
+    Route::get('/api/get-variants', [KPIController::class, 'getVariants'])->name('api.variants');
 });

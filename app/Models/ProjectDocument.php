@@ -50,4 +50,17 @@ class ProjectDocument extends Model
     {
         return $this->belongsTo(CustomerStage::class, 'customer_stage_id');
     }
+
+    public function getStatusTextAttribute()
+    {
+        if (is_null($this->actual_date)) {
+            return 'Not Submitted';
+        }
+
+        if ($this->actual_date <= $this->due_date) {
+            return 'On-Time';
+        }
+
+        return 'Delay';
+    }
 }
