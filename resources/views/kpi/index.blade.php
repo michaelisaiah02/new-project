@@ -1,5 +1,21 @@
 @extends('layouts.app')
 @section('title', 'KPI NEW PROJECT')
+@section('styles')
+    <style>
+        .selectize-input,
+        .selectize-input.full,
+        .selectize-control.single .selectize-input.input-active {
+            background-color: #fff3cc;
+            border: 0;
+        }
+
+
+
+        .selectize-dropdown-content {
+            background-color: #fff3cc;
+        }
+    </style>
+@endsection
 @section('content')
     <div class="container-fluid mt-2">
         <form action="{{ route('kpi.index') }}" method="get" id="form-kpi">
@@ -9,11 +25,12 @@
                 <div class="col-md-5">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Customer</span>
-                        <select class="form-select border-warning border selectize-control" id="customer" name="customer">
+                        <select class="form-select border-warning border selectize-control rounded-end-3" id="customer"
+                            name="customer">
                             <option value="">Pilih Customer</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->code }}"
-                                    {{ old('customer') == $customer->code ? 'selected' : '' }}>
+                                    {{ request('customer') == $customer->code ? 'selected' : '' }}> {{-- Ganti old() jadi request() disini juga --}}
                                     {{ $customer->code }} - {{ $customer->name }}
                                 </option>
                             @endforeach
@@ -25,8 +42,8 @@
                 <div class="col-md-5">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Model</span>
-                        <select class="form-select border-warning border selectize-control" id="model" name="model"
-                            disabled>
+                        <select class="form-select border-warning border selectize-control rounded-end-3" id="model"
+                            name="model" disabled>
                             <option value="">Pilih Model</option>
                             {{-- Opsi akan diisi via AJAX --}}
                         </select>
@@ -37,7 +54,7 @@
                 <div class="col-md-5">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Part No.</span>
-                        <select class="form-select border-warning border selectize-control" id="part_number"
+                        <select class="form-select border-warning border selectize-control rounded-end-3" id="part_number"
                             name="part_number" disabled>
                             <option value="">Pilih Part Number</option>
                             {{-- Opsi akan diisi via AJAX --}}
@@ -50,7 +67,7 @@
                 <div class="col-md-5">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Suffix/MC</span>
-                        <select class="form-select border-warning border selectize-control" id="variant_combo"
+                        <select class="form-select border-warning border selectize-control rounded-end-3" id="variant_combo"
                             name="variant_combo" disabled>
                             <option value="">Pilih Suffix - MC</option>
                             {{-- Opsi akan diisi via AJAX --}}
@@ -171,54 +188,151 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
+            // --- 0. AMBIL OLD VALUES DARI LARAVEL ---
+            // Kita simpan di variabel JS agar bersih
+            var oldCustomer = "{{ request('customer') }}";
+            var oldModel = "{{ request('model') }}";
+            var oldPart = "{{ request('part_number') }}";
+
+            // Ambil Suffix dan MC
+            var oldSuffix = "{{ request('suffix') }}";
+            var oldMc = "{{ request('minor_change') }}";
+            // Cek apakah ada data old, jika ada gabung pakai '|'
+            var oldVariant = (oldSuffix || oldMc) ? (oldSuffix || '') + '|' + (oldMc || '') : null;
+
             // --- 1. Inisialisasi Selectize ---
-            // Kita simpan instance selectize ke variabel agar bisa dikontrol (clearOptions, addOption, dll)
             var $selectCustomer = $('#customer').selectize({
                 create: false,
                 sortField: 'text'
             });
-
             var $selectModel = $('#model').selectize({
                 valueField: 'model',
                 labelField: 'model',
                 searchField: 'model',
                 create: false
             });
-
             var $selectPart = $('#part_number').selectize({
                 valueField: 'part_number',
-                labelField: 'part_number', // Bisa diganti formatting custom nanti
+                labelField: 'part_number',
                 searchField: ['part_number', 'part_name'],
                 create: false,
                 render: {
                     option: function(item, escape) {
-                        return '<div>' +
-                            '<span class="fw-bold">' + escape(item.part_number) + '</span>' +
-                            '<span class="text-muted small ms-2">(' + escape(item.part_name || '-') +
-                            ')</span>' +
-                            '</div>';
+                        return '<div><span class="fw-bold">' + escape(item.part_number) +
+                            '</span><span class="text-muted small ms-2">(' + escape(item.part_name ||
+                                '-') + ')</span></div>';
                     }
                 }
             });
-
             var $selectVariant = $('#variant_combo').selectize({
-                valueField: 'value_string', // Kita buat string unik kombinasi
+                valueField: 'value_string',
                 labelField: 'label_string',
                 searchField: ['label_string'],
                 create: false
             });
 
-            // Ambil instance control selectize
             var controlCustomer = $selectCustomer[0].selectize;
             var controlModel = $selectModel[0].selectize;
             var controlPart = $selectPart[0].selectize;
             var controlVariant = $selectVariant[0].selectize;
 
-            // --- 2. Logic Dependent Dropdown ---
+            // --- 2. LOGIKA RE-POPULATE (MENGEMBALIKAN NILAI LAMA) ---
+            // Ini dijalankan SAAT HALAMAN LOAD
 
-            // A. Ketika Customer Berubah
+            if (oldCustomer) {
+                // A. Load Model berdasarkan Old Customer
+                $.ajax({
+                    url: '{{ route('kpi.api.models') }}',
+                    type: 'GET',
+                    data: {
+                        customer_code: oldCustomer
+                    },
+                    success: function(res) {
+                        controlModel.enable();
+                        controlModel.addOption(res); // Masukkan opsi ke dropdown
+
+                        if (oldModel) {
+                            controlModel.setValue(oldModel,
+                                true); // true = silent (jangan trigger event change)
+
+                            // B. Load Part berdasarkan Old Model
+                            $.ajax({
+                                url: '{{ route('kpi.api.parts') }}',
+                                type: 'GET',
+                                data: {
+                                    customer_code: oldCustomer,
+                                    model: oldModel
+                                },
+                                success: function(res) {
+                                    controlPart.enable();
+                                    controlPart.addOption(res);
+
+                                    if (oldPart) {
+                                        controlPart.setValue(oldPart,
+                                            true); // true = silent
+
+                                        // C. Load Variant berdasarkan Old Part
+                                        $.ajax({
+                                            url: '{{ route('kpi.api.variants') }}',
+                                            type: 'GET',
+                                            data: {
+                                                customer_code: oldCustomer,
+                                                model: oldModel,
+                                                part_number: oldPart
+                                            },
+                                            success: function(res) {
+                                                var options = res.map(function(
+                                                    item) {
+                                                    var s = item
+                                                        .suffix ? item
+                                                        .suffix : '-';
+                                                    var mc = item
+                                                        .minor_change ?
+                                                        item
+                                                        .minor_change :
+                                                        '-';
+                                                    return {
+                                                        value_string: (
+                                                                item
+                                                                .suffix ||
+                                                                '') +
+                                                            '|' + (item
+                                                                .minor_change ||
+                                                                ''),
+                                                        label_string: 'Suffix: ' +
+                                                            s +
+                                                            ' | MC: ' +
+                                                            mc,
+                                                        suffix: item
+                                                            .suffix,
+                                                        minor_change: item
+                                                            .minor_change
+                                                    };
+                                                });
+
+                                                controlVariant.enable();
+                                                controlVariant.addOption(
+                                                    options);
+
+                                                if (oldVariant) {
+                                                    // Kita set value variant, TAPI silent (true) agar tidak auto-submit lagi
+                                                    controlVariant.setValue(
+                                                        oldVariant, true);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            // --- 3. EVENT LISTENER (INTERAKSI USER) ---
+            // Kode di bawah ini sama seperti sebelumnya, untuk handle perubahan manual user
+
             controlCustomer.on('change', function(value) {
-                // Reset anak-anaknya
                 controlModel.clear();
                 controlModel.clearOptions();
                 controlModel.disable();
@@ -228,9 +342,7 @@
                 controlVariant.clear();
                 controlVariant.clearOptions();
                 controlVariant.disable();
-
                 if (!value) return;
-
                 controlModel.load(function(callback) {
                     $.ajax({
                         url: '{{ route('kpi.api.models') }}',
@@ -249,7 +361,6 @@
                 });
             });
 
-            // B. Ketika Model Berubah
             controlModel.on('change', function(value) {
                 controlPart.clear();
                 controlPart.clearOptions();
@@ -257,10 +368,8 @@
                 controlVariant.clear();
                 controlVariant.clearOptions();
                 controlVariant.disable();
-
                 var customerCode = controlCustomer.getValue();
                 if (!value || !customerCode) return;
-
                 controlPart.load(function(callback) {
                     $.ajax({
                         url: '{{ route('kpi.api.parts') }}',
@@ -280,18 +389,15 @@
                 });
             });
 
-            // C. Ketika Part Number Berubah
             controlPart.on('change', function(value) {
                 controlVariant.clear();
                 controlVariant.clearOptions();
                 controlVariant.disable();
-                // Reset hidden inputs
                 $('#hidden_suffix').val('');
                 $('#hidden_minor_change').val('');
 
                 var customerCode = controlCustomer.getValue();
                 var modelVal = controlModel.getValue();
-
                 if (!value || !customerCode || !modelVal) return;
 
                 controlVariant.load(function(callback) {
@@ -304,22 +410,19 @@
                             part_number: value
                         },
                         success: function(res) {
-                            // Format data untuk Selectize
-                            // Kita gabung suffix dan MC jadi satu string unik untuk value dropdown
                             var options = res.map(function(item) {
                                 var s = item.suffix ? item.suffix : '-';
                                 var mc = item.minor_change ? item.minor_change :
                                     '-';
                                 return {
-                                    value_string: item.suffix + '|' + item
-                                        .minor_change, // Pemisah pakai pipa |
+                                    value_string: (item.suffix || '') + '|' + (
+                                        item.minor_change || ''),
                                     label_string: 'Suffix: ' + s + ' | MC: ' +
                                         mc,
                                     suffix: item.suffix,
                                     minor_change: item.minor_change
                                 };
                             });
-
                             controlVariant.enable();
                             callback(options);
                         },
@@ -330,24 +433,19 @@
                 });
             });
 
-            // D. Ketika Variant Berubah (Pecah string balik ke hidden input & AUTO SUBMIT)
+            // AUTO SUBMIT
             controlVariant.on('change', function(value) {
                 if (value) {
-                    // 1. Pecah value string "suffix|mc"
                     var parts = value.split('|');
                     var suffixVal = parts[0] === 'null' ? '' : parts[0];
                     var mcVal = parts[1] === 'null' ? '' : parts[1];
-
-                    // 2. Isi hidden input
                     $('#hidden_suffix').val(suffixVal);
                     $('#hidden_minor_change').val(mcVal);
 
-                    // 3. AUTO SUBMIT DISINI
-                    // Kita beri sedikit delay 100ms biar kerasa "klik"-nya baru loading
+                    // Delay sedikit untuk UX
                     setTimeout(function() {
                         $('#form-kpi').submit();
                     }, 100);
-
                 } else {
                     $('#hidden_suffix').val('');
                     $('#hidden_minor_change').val('');
