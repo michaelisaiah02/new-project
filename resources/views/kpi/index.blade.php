@@ -87,69 +87,74 @@
             </div>
         </form>
         @if ($selectedProject)
-            {{-- CARD UTAMA: CHART & TOMBOL --}}
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    {{-- Judul Project --}}
-                    <h5 class="mb-0">
-                        Performance: {{ $selectedProject->part_name }} ({{ $selectedProject->part_number }})
-                    </h5>
+            {{-- Tentukan lebar kolom dinamis --}}
+            @php
+                $hasDelay = $delayDocuments->count() > 0;
+                // Kalau ada delay, chart pakai 8 kolom, kalau tidak ada delay, chart full 12 kolom
+                $chartCol = $hasDelay ? 'col-lg-8' : 'col-12';
+            @endphp
 
-                    {{-- Tombol Trigger Modal (Hanya muncul jika ada dokumen delay) --}}
-                    @if ($delayDocuments->count() > 0)
-                        <button type="button" class="btn btn-warning btn-sm fw-bold text-dark" data-bs-toggle="modal"
-                            data-bs-target="#delayModal">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                            Lihat List Delay ({{ $delayDocuments->count() }})
-                        </button>
-                    @else
-                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> No Delay</span>
-                    @endif
-                </div>
-
-                <div class="card-body">
-                    {{-- CONTAINER CHART: Atur tinggi disini (height: 300px) agar tidak kegedean --}}
-                    <div style="position: relative; height: 275px; width: 100%;">
-                        <canvas id="kpiChart"></canvas>
+            <div class="row">
+                {{-- KOLOM KIRI: CHART --}}
+                <div class="{{ $chartCol }} mb-4">
+                    <div class="card shadow-sm h-100"> {{-- h-100 biar tingginya sama dengan sebelahnya --}}
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                Performance: {{ $selectedProject->part_number }} - {{ $selectedProject->suffix }} -
+                                {{ $selectedProject->minor_change }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {{-- Container Chart --}}
+                            <div style="position: relative; height: 280px; width: 100%;">
+                                <canvas id="kpiChart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- MODAL POPUP: DETAIL DELAY --}}
-            @if ($delayDocuments->count() > 0)
-                <div class="modal fade" id="delayModal" tabindex="-1" aria-labelledby="delayModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-scrollable"> {{-- modal-lg biar lebar, scrollable biar bisa discroll --}}
-                        <div class="modal-content">
-                            <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title" id="delayModalLabel">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Delayed Documents List
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+                {{-- KOLOM KANAN: LIST DELAY (Hanya muncul jika ada delay) --}}
+                @if ($hasDelay)
+                    <div class="col-lg-4 mb-4">
+                        <div class="card border-danger shadow-sm h-100">
+                            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Late List</h6>
+                                <span class="badge bg-white text-danger">{{ $delayDocuments->count() }} Docs</span>
                             </div>
-                            <div class="modal-body p-0">
-                                {{-- Tabel dipindah kesini --}}
+
+                            {{--
+                        Kita kasih max-height dan overflow-auto
+                        supaya kalau listnya panjang, dia bisa discroll
+                        dan tidak bikin chart di sebelahnya jadi gepeng/kosong bawahnya
+                    --}}
+                            <div class="card-body p-0" style="max-height: 280px; overflow-y: auto;">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-hover mb-0">
+                                    <table class="table table-striped table-hover table-sm mb-0"
+                                        style="font-size: 0.85rem;">
                                         <thead class="table-light sticky-top">
                                             <tr>
-                                                <th>Stage</th>
-                                                <th>Document Type</th>
-                                                <th>Due Date</th>
-                                                <th>Actual Date</th>
-                                                <th>Late</th>
+                                                <th>Doc Type</th>
+                                                <th class="text-center">Late</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach ($delayDocuments as $doc)
                                                 <tr>
-                                                    <td><small>{{ $doc->stage->stage_number ?? '-' }}</small></td>
-                                                    <td>{{ $doc->documentType->name ?? $doc->document_type_code }}</td>
-                                                    <td>{{ \Carbon\Carbon::parse($doc->due_date)->format('d/m/y') }}</td>
-                                                    <td class="text-danger fw-bold">
-                                                        {{ \Carbon\Carbon::parse($doc->actual_date)->format('d/m/y') }}
-                                                    </td>
                                                     <td>
+                                                        <div class="fw-bold text-truncate" style="max-width: 150px;"
+                                                            title="{{ $doc->documentType->name }}">
+                                                            {{ $doc->documentType->name ?? $doc->document_type_code }}
+                                                        </div>
+                                                        <small class="text-muted">
+                                                            Due:
+                                                            {{ \Carbon\Carbon::parse($doc->due_date)->format('d/m/y') }}
+                                                        </small>
+                                                        <small class="text-muted ms-3">
+                                                            Actual:
+                                                            {{ \Carbon\Carbon::parse($doc->actual_date)->format('d/m/y') }}
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center align-middle">
                                                         <span class="badge bg-danger">
                                                             {{ \Carbon\Carbon::parse($doc->actual_date)->diffInDays(\Carbon\Carbon::parse($doc->due_date)) }}
                                                             Hari
@@ -161,13 +166,15 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <div class="card-footer bg-light text-center">
+                                @if ($delayDocuments->count() > 5)
+                                    <small class="text-muted">Scroll untuk melihat lebih banyak</small>
+                                @endif
                             </div>
                         </div>
                     </div>
-                </div>
-            @endif
+                @endif
+            </div>
         @endif
         @php
             $backUrl = match (auth()->user()->department->type()) {
