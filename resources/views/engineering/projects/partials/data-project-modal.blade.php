@@ -159,7 +159,7 @@
                                 Terima SPK/LOI/DIE
                                 GO</span>
                             <input class="form-control bg-warning-subtle border-warning border"
-                                value="{{ \Carbon\Carbon::parse($project->sldg_date)->locale('id')->translatedFormat('d F Y') }}"
+                                value="{{ \Carbon\Carbon::parse($project->receive_date_sldg)->locale('id')->translatedFormat('d F Y') }}"
                                 readonly>
                         </div>
                     </div>

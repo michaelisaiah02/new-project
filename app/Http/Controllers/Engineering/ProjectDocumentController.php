@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Engineering;
 
+use Carbon\Carbon;
+use setasign\Fpdi\Fpdi;
 use App\Helpers\FileHelper;
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\ProjectDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use setasign\Fpdi\Fpdi;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Process;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ProjectDocumentController extends Controller
@@ -201,8 +202,55 @@ class ProjectDocumentController extends Controller
 
         // 6. Proses Stamping ke PDF (FPDI)
         try {
-            $pdf = new Fpdi;
-            $pageCount = $pdf->setSourceFile($fullPath);
+            $pdf = new Fpdi();
+
+            // Coba load file asli dulu
+            try {
+                $pageCount = $pdf->setSourceFile($fullPath);
+            } catch (\Exception $e) {
+                // --- MASUK LOGIC REPAIR GHOSTSCRIPT ---
+
+                // 1. Path EXE & Folder Temp (Sama kayak tadi)
+                $gsBin = 'C:\\Program Files\\gs\\gs10.06.0\\bin\\gswin64c.exe';
+                $tempDir = storage_path('app/temp_pdf'); // Folder temp kita
+
+                if (!file_exists($tempDir)) mkdir($tempDir, 0777, true);
+
+                // 2. Setup Nama File
+                $repairedPath = $tempDir . '/repair_' . time() . '.pdf';
+
+                // 3. Normalisasi Path (Wajib Backslash buat Windows)
+                $fixedGsBin  = str_replace('/', '\\', $gsBin);
+                $fixedOutput = str_replace('/', '\\', $repairedPath);
+                $fixedInput  = str_replace('/', '\\', $fullPath);
+                $fixedTemp   = str_replace('/', '\\', $tempDir); // <--- Path Temp Folder juga dinormalisasi
+
+                // 4. Command Sakti
+                // Tambahan: -sTMPDIR="..." buat maksa GS pake folder temp kita, jangan folder system yg restricted.
+                $command = sprintf(
+                    '"%s" -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sTMPDIR="%s" -sOutputFile="%s" "%s"',
+                    $fixedGsBin,
+                    $fixedTemp, // <--- Param baru
+                    $fixedOutput,
+                    $fixedInput
+                );
+
+                // 5. Eksekusi Pake 'shell_exec' (Lebih Barbar tapi Jujur)
+                // Tambahin '2>&1' di belakang buat nangkep pesan error (stderr) ke output biasa
+                $output = shell_exec($command . ' 2>&1');
+
+                // 6. Validasi
+                // Cek apakah file output beneran jadi?
+                if (!file_exists($repairedPath) || filesize($repairedPath) === 0) {
+                    // Kalau gagal, lempar error beserta output asli dari CMD
+                    // Ini bakal ngasih tau lo error sebenernya apa (misal: Access Denied, dll)
+                    throw new \Exception("Ghostscript Failed! Output CMD: " . $output);
+                }
+
+                // 7. Sukses? Lanjut load pake FPDI
+                $pageCount = $pdf->setSourceFile($repairedPath);
+                $tempRepairedFile = $repairedPath;
+            }
 
             for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                 $templateId = $pdf->importPage($pageNo);
@@ -259,6 +307,14 @@ class ProjectDocumentController extends Controller
             ]);
 
             return response()->json(['message' => 'Gagal memproses PDF: ' . $e->getMessage()], 500);
+        } finally {
+            // CLEANUP
+            if (isset($qrTempPath) && file_exists($qrTempPath)) unlink($qrTempPath);
+
+            // Hapus file hasil repair GS kalau ada
+            if (isset($tempRepairedFile) && file_exists($tempRepairedFile)) {
+                unlink($tempRepairedFile);
+            }
         }
 
         // 7. Cleanup

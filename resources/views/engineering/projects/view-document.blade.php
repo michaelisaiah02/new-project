@@ -167,26 +167,59 @@
             const ONGOING_URL =
                 '{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->id]) }}';
 
+            // Helper biar gak ngetik ulang-ulang
+            const setButtonLoading = ($btn, isLoading, originalContent = '') => {
+                if (isLoading) {
+                    // Simpen konten asli di data attribute biar gak ilang
+                    $btn.data('original-content', $btn.html());
+                    $btn.prop('disabled', true);
+                    // Ganti jadi Spinner (Asumsi pake Bootstrap, kalau FontAwesome ganti <i>)
+                    $btn.html(
+                        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...'
+                        );
+                } else {
+                    $btn.prop('disabled', false);
+                    // Balikin konten asli
+                    $btn.html($btn.data('original-content'));
+                }
+            };
+
             $('#btn-check').on('click', function() {
-                $.post(
-                    `/engineering/project-documents/${docId}/checked`, {
-                        _token: csrf
-                    },
-                    () => {
-                        location.href = ONGOING_URL;
-                    }
-                ).fail(res => alert(res.responseJSON.message));
+                const $btn = $(this);
+
+                // 1. Aktifin Mode Loading
+                setButtonLoading($btn, true);
+
+                $.post(`/engineering/project-documents/${docId}/checked`, {
+                    _token: csrf
+                }, () => {
+                    // Sukses? Redirect. Gak perlu balikin button karena halaman bakal pindah.
+                    location.href = ONGOING_URL;
+                }).fail(res => {
+                    // 2. Gagal? Balikin Tombol biar bisa dicoba lagi
+                    setButtonLoading($btn, false);
+                    alert(res.responseJSON.message);
+                });
             });
 
             $('#btn-approve').on('click', function() {
-                $.post(
-                    `/engineering/project-documents/${docId}/approved`, {
-                        _token: csrf
-                    },
-                    () => {
-                        location.href = ONGOING_URL;
-                    }
-                ).fail(res => console.log(res.responseJSON.message));
+                const $btn = $(this);
+
+                // 1. Aktifin Mode Loading
+                setButtonLoading($btn, true);
+
+                $.post(`/engineering/project-documents/${docId}/approved`, {
+                    _token: csrf
+                }, () => {
+                    location.href = ONGOING_URL;
+                }).fail(res => {
+                    // 2. Gagal? Balikin Tombol + Log Error
+                    setButtonLoading($btn, false);
+
+                    // Alert errornya biar user tau (opsional, daripada cuma console.log)
+                    alert('Gagal approve: ' + (res.responseJSON?.message || 'Unknown Error'));
+                    console.log(res.responseJSON);
+                });
             });
 
             $('#btn-download').on('click', function() {
