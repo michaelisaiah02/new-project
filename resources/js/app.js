@@ -12,10 +12,25 @@ window.selectize = selectize;
 import Chart from 'chart.js/auto';
 window.Chart = Chart;
 
-$(document).ready(function () {
-    $('button[type=submit]').on('click', function () {
-        $(this).attr('disabled', 'disabled');
-        $(this).text('Processing...');
-        $(this).closest('form').trigger('submit');
+$(function () {
+    $('form').on('submit', function (e) {
+        let $form = $(this);
+        let $btn = $form.find('button[type="submit"]');
+
+        // Cek kalau udah pernah disubmit biar nggak double post
+        if ($form.data('is-submitting')) {
+            e.preventDefault();
+            return;
+        }
+
+        // Tandai form lagi proses
+        $form.data('is-submitting', true);
+
+        // Ubah tampilan tombol
+        $btn.prop('disabled', true); // Pake .prop lebih aman daripada .attr
+        $btn.html('Processing...');
+
+        // Biarkan form submit secara natural
+        return true;
     });
 });
