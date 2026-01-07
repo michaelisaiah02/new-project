@@ -10,10 +10,10 @@
                             class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Customer</span>
                         <select class="form-select bg-warning-subtle border-warning border" id="customer" name="customer"
                             aria-label="Model" aria-describedby="customer">
-                            <option value="">Pilih Customer</option>
+                            <option value="">All Customer</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->code }}"
-                                    {{ old('customer') === $customer->code ? 'selected' : '' }}>{{ $customer->code }} -
+                                    {{ request('customer') === $customer->code ? 'selected' : '' }}>{{ $customer->code }} -
                                     {{ $customer->name }}</option>
                             @endforeach
                         </select>
@@ -25,7 +25,7 @@
                             style="width: 30%">Model</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Model Part" aria-label="Model Part" aria-describedby="model" id="model"
-                            name="model" value="{{ old('model') }}">
+                            name="model" value="{{ request('model') }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -34,7 +34,7 @@
                             Part</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Nomor Part" aria-label="Nomor Part" aria-describedby="part-num-label"
-                            id="part-num" name="part_number" value="{{ old('part_number') }}">
+                            id="part-num" name="part_number" value="{{ request('part_number') }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -43,9 +43,11 @@
                             class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Remark</span>
                         <select class="form-select bg-warning-subtle border-warning border" id="remark" name="remark"
                             aria-label="Remark" aria-describedby="remark">
-                            <option value="all">All</option>
-                            <option value="completed">Completed</option>
-                            <option value="canceled">Canceled</option>
+                            <option value="all" {{ request('remark') == 'all' ? 'selected' : '' }}>All</option>
+                            <option value="completed" {{ request('remark') == 'completed' ? 'selected' : '' }}>Completed
+                            </option>
+                            <option value="canceled" {{ request('remark') == 'canceled' ? 'selected' : '' }}>Canceled
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -56,7 +58,7 @@
                             Change</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="text"
                             aria-label="Minor Change" aria-describedby="minor_change" id="minor_change" name="minor_change"
-                            placeholder="..." value="{{ old('minor_change') }}">
+                            placeholder="..." value="{{ request('minor_change') }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -65,7 +67,7 @@
                             class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Suffix</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="text"
                             aria-label="Suffix" aria-describedby="suffix" id="suffix" name="suffix" placeholder="..."
-                            value="{{ old('suffix') }}">
+                            value="{{ request('suffix') }}">
                     </div>
                 </div>
                 <div class="col-md-1 my-auto">
@@ -94,7 +96,8 @@
                             <td>{{ $record->suffix }}</td>
                             <td>{{ $record->eee_number }}</td>
                             <td>
-                                <a href="{{ route('masspro.view', $record->id) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('masspro.view', array_merge(['project' => $record->id], request()->query())) }}"
+                                    class="btn btn-sm btn-primary">
                                     View Stage
                                 </a>
                             </td>

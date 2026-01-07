@@ -104,10 +104,7 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary w-100" id="btn-check" hidden>Checked</button>
-                    <button class="btn btn-success w-100" id="btn-approve" hidden>Approved</button>
-
-                    <a href="{{ route('masspro.view', ['project' => $projectDocument->project->id]) }}"
+                    <a href="{{ route('masspro.view', array_merge(['project' => $projectDocument->project->id], request()->query())) }}"
                         class="btn btn-secondary w-100">Back</a>
                 </div>
             </div>
@@ -119,21 +116,6 @@
 
 @section('scripts')
     <script type="module">
-        function checkApproval() {
-            const userCanCheck = @json(auth()->user()->checked);
-            const userCanApprove = @json(auth()->user()->approved);
-            const userDepartment = @json(auth()->user()->department->type());
-            const isChecked = @json($projectDocument->checked_date !== null);
-            const isApproved = @json($projectDocument->approved_date !== null);
-            console.log(userCanCheck, userCanApprove, userDepartment, isChecked, isApproved);
-            if (userCanCheck && !isChecked && userDepartment === 'engineering') {
-                $('#btn-check').removeAttr('hidden');
-            }
-            if (userCanApprove && isChecked && !isApproved && (userDepartment === 'engineering' || userDepartment ===
-                    'management')) {
-                $('#btn-approve').removeAttr('hidden');
-            }
-        }
         $(function() {
             const fileName = "{{ $projectDocument->file_name }}";
             const $viewerContainer = $('#fileViewerContainer');
@@ -170,30 +152,6 @@
         $(document).ready(function() {
             const csrf = '{{ csrf_token() }}';
             const docId = '{{ $projectDocument->id }}';
-            const ONGOING_URL =
-                '{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->id]) }}';
-
-            $('#btn-check').on('click', function() {
-                $.post(
-                    `/engineering/project-documents/${docId}/checked`, {
-                        _token: csrf
-                    },
-                    () => {
-                        location.href = ONGOING_URL;
-                    }
-                ).fail(res => alert(res.responseJSON.message));
-            });
-
-            $('#btn-approve').on('click', function() {
-                $.post(
-                    `/engineering/project-documents/${docId}/approved`, {
-                        _token: csrf
-                    },
-                    () => {
-                        location.href = ONGOING_URL;
-                    }
-                ).fail(res => console.log(res.responseJSON.message));
-            });
 
             $('#btn-download').on('click', function() {
                 const customerCode = "{{ $projectDocument->project->customer->code }}";
@@ -214,7 +172,6 @@
                 link.click();
                 document.body.removeChild(link);
             });
-            checkApproval();
         });
     </script>
 @endsection

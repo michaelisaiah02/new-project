@@ -1,5 +1,5 @@
 @extends('layouts.app-projects')
-@section('title', 'ON-GOING PROJECT')
+@section('title', 'MASS PRODUCTION')
 @section('customer', $project->customer->name)
 @section('styles')
     <style>
@@ -89,7 +89,7 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('masspro.document', ['projectDocument' => $pd->id]) }}"
+                                    <a href="{{ route('masspro.document', array_merge(['projectDocument' => $pd->id], request()->query())) }}"
                                         class="btn btn-sm btn-primary btn-view" data-filename="{{ $pd->file_name }}">
                                         View
                                     </a>
@@ -103,7 +103,7 @@
 
         <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
             <div class="col-auto">
-                <a href="{{ route('engineering') }}" class="btn btn-primary">Back</a>
+                <a href="{{ route('masspro.index', request()->query()) }}" class="btn btn-primary">Back</a>
             </div>
             <div class="col-auto mx-auto">
                 <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
@@ -111,159 +111,8 @@
                     Show Details
                 </button>
             </div>
-            @if ($project->canShowCheckedButton(auth()->user()))
-                <div class="col-auto">
-                    <button class="btn btn-primary" id="btn-check">Checked</button>
-                </div>
-            @endif
-            @if ($project->canShowApprovedButton(auth()->user()))
-                <div class="col-auto">
-                    <button class="btn btn-primary"
-                        {{ auth()->user()->department->type() === 'management' ? 'id=btn-approve-management' : 'id=btn-approve' }}>Approved</button>
-                </div>
-            @endif
         </div>
     </div>
     @include('engineering.projects.partials.data-project-modal', ['project' => $project])
     <x-toast />
-@endsection
-
-@section('scripts')
-    <script type="module">
-        function showToast(type, message) {
-            const icons = {
-                success: 'bi-check-square-fill text-success',
-                error: 'bi-x-square-fill text-danger',
-                warning: 'bi-exclamation-triangle-fill text-warning'
-            };
-
-            const bg = {
-                success: 'text-bg-success',
-                error: 'text-bg-danger',
-                warning: 'text-bg-warning'
-            };
-
-            const toastId = `toast-${Date.now()}`;
-
-            const toastHtml = `
-                <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
-                    <div id="${toastId}" class="toast align-items-center ${bg[type]} border-0" role="alert">
-                    <div class="toast-header">
-                        <i class="bi ${icons[type]} me-1"></i>
-                        <strong class="me-auto">{{ config('app.name') }} - ${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                    </div>
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.insertAdjacentHTML('beforeend', toastHtml);
-
-            const toastEl = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastEl, {
-                delay: 4000
-            });
-            toast.show();
-
-            toastEl.addEventListener('hidden.bs.toast', () => {
-                toastEl.closest('.toast-container').remove();
-            });
-        }
-
-        $(document).ready(function() {
-            // Kalau belum ada file yang diupload, tombol view disable
-            $('a.btn-view').each(function() {
-                const row = $(this).closest('tr');
-                const fileName = $(this).data('filename');
-                if (!fileName) {
-                    $(this).addClass('disabled');
-                } else {
-                    $(this).removeClass('disabled');
-                }
-            });
-            // Trigger file input
-            $('button[id^="btn-upload-"]').on('click', function() {
-                const id = $(this).attr('id').replace('btn-upload-', '');
-                $('#upload-' + id).click();
-            });
-
-            // Upload file AJAX
-            $('input[type="file"]').on('change', function() {
-                const id = $(this).attr('id').replace('upload-', '');
-                const file = this.files[0];
-
-                if (!file) return;
-
-                let formData = new FormData();
-                formData.append('file', file);
-
-                $.ajax({
-                    url: `/engineering/project-documents/${id}/upload`,
-                    method: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(res) {
-                        location.reload();
-                    },
-                    error: function(xhr) {
-                        let message = 'File upload failed. Please try again.';
-
-                        if (xhr.responseJSON?.message) {
-                            message = xhr.responseJSON.message;
-                        }
-
-                        showToast('error', message);
-                    }
-                });
-            });
-
-            // Auto save remark
-            $('input[id^="remark-"]').on('blur', function() {
-                const id = $(this).attr('id').replace('remark-', '');
-                const remark = $(this).val();
-
-                $.ajax({
-                    url: `/engineering/project-documents/${id}/remark`,
-                    method: 'POST',
-                    data: {
-                        remark
-                    },
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-            });
-
-            // Checked button
-            $('#btn-check').on('click', function() {
-                $.post(
-                    `/engineering/projects/{{ $project->id }}/checked/ongoing`, {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    () => {
-                        location.reload();
-                    }
-                ).fail(res => alert(res.responseJSON.message));
-            });
-
-            // Approved button
-            $('#btn-approve, #btn-approve-management').on('click', function() {
-                $.post(
-                    `/engineering/projects/{{ $project->id }}/approved/ongoing`, {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    () => {
-                        location.reload();
-                    }
-                ).fail(res => alert(res.responseJSON.message));
-            });
-        });
-    </script>
 @endsection
