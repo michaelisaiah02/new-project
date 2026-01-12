@@ -12,7 +12,10 @@ class MassproController extends Controller
     public function index(Request $request)
     {
         // 1. Ambil semua data customer untuk pilihan di dropdown (selalu diambil)
-        $customers = Customer::orderBy('name')->get();
+        // Kalau user bukan marketing atau management, batasi customer berdasarkan department user yang login
+        $customers = Customer::when(!in_array(auth()->user()->department->name, ['Marketing', 'Management']), function ($query) {
+            return $query->where('department_id', '=', auth()->user()->department_id);
+        })->orderBy('name')->get();
 
         // 2. Cek apakah ada filter yang diisi oleh user
         $hasFilter = $request->filled('customer') ||
@@ -46,6 +49,12 @@ class MassproController extends Controller
                         $remark = ['completed', 'canceled'];
                     }
                     return $query->whereIn('remark', (array) $remark);
+                })
+                ->whereHas('customer', function ($query) {
+                    // Batasi customer berdasarkan department user yang login
+                    if (!in_array(auth()->user()->department->name, ['Marketing', 'Management'])) {
+                        $query->where('department_id', '=', auth()->user()->department_id);
+                    }
                 })
                 ->orderBy('customer_code')
                 ->get();
