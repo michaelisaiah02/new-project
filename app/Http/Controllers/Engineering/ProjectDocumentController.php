@@ -22,10 +22,11 @@ class ProjectDocumentController extends Controller
 
     public function upload(Request $request, ProjectDocument $projectDocument)
     {
+        // 1. VALIDASI FORMAT (Bawaan Laravel)
         $validator = validator(
             $request->all(),
             [
-                'file' => 'required|file|mimes:pdf|max:5120', // max 5MB
+                'file' => 'required|file|mimes:pdf|max:5120',
             ],
             [
                 'file.required' => 'File wajib diunggah.',
@@ -43,30 +44,68 @@ class ProjectDocumentController extends Controller
 
         $file = $request->file('file');
 
-        // ambil data project
-        $project = $projectDocument->project;
+        // --- 🚀 LOGIKA BARU: CEK PASSWORD PAKE FPDI (NATIVE PHP) ---
+        // Kita coba buka file-nya pake FPDI.
+        // FPDI Versi Gratis itu GAK BISA baca file password.
+        // Jadi kalau dia gagal baca, kita cek alasan gagalnya apa.
 
+        try {
+            $pdf = new Fpdi();
+            // Coba baca file temp upload langsung
+            $pdf->setSourceFile($file->getPathname());
+
+            // Kalau sampai sini gak error, berarti file-nya PDF Jadul & Polos (Aman)
+
+        } catch (\Exception $e) {
+            $errorMsg = strtolower($e->getMessage()); // Jadiin huruf kecil biar gampang dicek
+
+            // KASUS 1: File Beneran Dipassword (Encrypted)
+            // FPDI biasanya bilang: "File is encrypted!"
+            if (str_contains($errorMsg, 'encrypt') || str_contains($errorMsg, 'password')) {
+                return response()->json([
+                    'message' => 'File PDF terkunci Password. Harap upload file yang tidak dikunci.',
+                ], 422);
+            }
+
+            // KASUS 2: File Versi Baru / Terkompresi (TAPI GAK DIPASSWORD)
+            // Error yang kemarin lo dapet: "probably uses a compression technique"
+            // Kalau errornya ini, BERARTI FILE AMAN (Cuma canggih aja).
+            // Kita BIARKAN LOLOS, karena nanti pas "Approved" bakal kita repair pake Ghostscript.
+            if (str_contains($errorMsg, 'compression') || str_contains($errorMsg, 'parser')) {
+                // Lanjut, gak usah diapa-apain. Ini file baik-baik.
+            } else {
+                // KASUS 3: Error Lain (File Corrupt / Bukan PDF beneran)
+                // Opsional: Mau ditolak atau dilolosin terserah lo.
+                // Gue saranin tolak kalau errornya aneh-aneh.
+                \Illuminate\Support\Facades\Log::error("FPDI Check Error: " . $errorMsg);
+                return response()->json(['message' => 'File PDF corrupt atau tidak valid.'], 422);
+            }
+        }
+        // --- END CEK PASSWORD ---
+
+
+        // 2. LANJUT SIMPAN FILE (Logic Lama)
+        $project = $projectDocument->project;
         $ext = strtolower($file->getClientOriginalExtension());
 
-        // document_type_code-part_number.ext
         $filename = "{$projectDocument->document_type_code}-{$project->part_number}-{$project->suffix}-{$project->minor_change}.{$ext}";
 
-        // SIMPAN FILE VIA HELPER
         FileHelper::storeDrawingFile(
             $file,
-            $project->customer->code,   // customer_code
-            $project->model,            // model
-            $project->part_number,      // part_number
+            $project->customer->code,
+            $project->model,
+            $project->part_number,
             $filename
         );
 
-        // UPDATE DATABASE
+        // 3. UPDATE DATABASE
         $projectDocument->update([
             'file_name' => $filename,
             'actual_date' => now(),
             'created_by_id' => auth()->id(),
             'created_by_name' => auth()->user()->name,
             'created_date' => now()->toDateString(),
+            // Reset status approval karena upload file baru
             'checked_by_id' => null,
             'checked_by_name' => null,
             'checked_date' => null,
@@ -260,35 +299,36 @@ class ProjectDocumentController extends Controller
                 $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
                 $pdf->useTemplate($templateId);
 
-                // Logika Posisi Dinamis
-                $qrSize = 25; // Ukuran QR di PDF (mm)
-                $margin = 10; // Jarak dari pinggir kertas (mm)
-                $x = 0;
-                $y = 0;
+                if ($pageNo === 1) {
+                    // Logika Posisi Dinamis (Copy yang tadi)
+                    $qrSize = 25;
+                    $margin = 10;
+                    $x = 0;
+                    $y = 0;
 
-                // Hitung X dan Y berdasarkan konfigurasi DB
-                switch ($qrPosition) {
-                    case 'top_left':
-                        $x = $margin;
-                        $y = $margin;
-                        break;
-                    case 'top_right':
-                        $x = $size['width'] - $qrSize - $margin;
-                        $y = $margin;
-                        break;
-                    case 'bottom_left':
-                        $x = $margin;
-                        $y = $size['height'] - $qrSize - $margin;
-                        break;
-                    case 'bottom_right':
-                    default:
-                        $x = $size['width'] - $qrSize - $margin;
-                        $y = $size['height'] - $qrSize - $margin;
-                        break;
+                    switch ($qrPosition) {
+                        case 'top_left':
+                            $x = $margin;
+                            $y = $margin;
+                            break;
+                        case 'top_right':
+                            $x = $size['width'] - $qrSize - $margin;
+                            $y = $margin;
+                            break;
+                        case 'bottom_left':
+                            $x = $margin;
+                            $y = $size['height'] - $qrSize - $margin;
+                            break;
+                        case 'bottom_right':
+                        default:
+                            $x = $size['width'] - $qrSize - $margin;
+                            $y = $size['height'] - $qrSize - $margin;
+                            break;
+                    }
+
+                    // TEMPEL IMAGE CUMA DI SINI
+                    $pdf->Image($qrTempPath, $x, $y, $qrSize, $qrSize);
                 }
-
-                // Tempel Image
-                $pdf->Image($qrTempPath, $x, $y, $qrSize, $qrSize);
             }
 
             // Simpan (Overwrite file asli)

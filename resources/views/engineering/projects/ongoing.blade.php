@@ -93,11 +93,9 @@
                                 </td>
                                 <td class="text-center" id="status-{{ $pd->id }}">
                                     @php
-                                        $now = now();
-
                                         if (!$pd->file_name) {
                                             // belum submit
-                                            if ($pd->due_date && $now->gt($pd->due_date)) {
+                                            if ($pd->due_date && today()->gt($pd->due_date)) {
                                                 $status = 'Delay';
                                             } else {
                                                 $status = 'Not Yet Submitted';
