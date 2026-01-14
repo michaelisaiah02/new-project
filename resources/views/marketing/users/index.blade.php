@@ -231,6 +231,17 @@
         }
 
         $(document).ready(function() {
+            @if ($errors->any())
+                // Reset action url ke store default kalau error terjadi pas create
+                // Tapi kalau error pas edit, Laravel biasanya balikin old input ID, jadi agak tricky.
+                // Cara paling aman cek old('id'):
+
+                let oldId = "{{ old('id') }}";
+                if (oldId) {
+                    // Buka modalnya lagi biar user tau salah dimana tanpa klik tambah lagi
+                    new bootstrap.Modal(document.getElementById('userModal')).show();
+                }
+            @endif
             // Add User
             $('#btn-add-user').click(function() {
                 $('#userForm').trigger('reset');

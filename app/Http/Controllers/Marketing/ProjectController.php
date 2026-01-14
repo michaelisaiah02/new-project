@@ -42,15 +42,24 @@ class ProjectController extends Controller
          * ==========================
          */
         if ($request->hasFile('drawing_2d')) {
+            $file = $request->file('drawing_2d');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $label = $request->input('drawing_label_2d');
 
-            // hapus temp lama kalau ada
+            // Jika input label tidak punya ekstensi, atau ekstensinya masih .tif
+            // Kita paksa ubah labelnya menjadi .jpg jika itu file TIFF
+            if (in_array($ext, ['tif', 'tiff'])) {
+                $label = pathinfo($label, PATHINFO_FILENAME) . '.jpg';
+            }
+
+            // Hapus temp lama jika ada
             if (session()->has('drawing_2d_temp')) {
                 Storage::disk('public')->delete(session('drawing_2d_temp'));
             }
 
             session([
-                'drawing_2d_temp' => FileHelper::storeTempDrawing($request->file('drawing_2d')),
-                'drawing_2d_name' => $request->input('drawing_label_2d'),
+                'drawing_2d_temp' => FileHelper::storeTempDrawing($file),
+                'drawing_2d_name' => $label, // Gunakan label yang sudah disesuaikan ekstensinya
             ]);
         }
 
@@ -81,7 +90,7 @@ class ProjectController extends Controller
                     'string',
                     'max:50',
                     Rule::unique('projects')->where(
-                        fn ($q) => $q->where('suffix', $request->suffix)
+                        fn($q) => $q->where('suffix', $request->suffix)
                             ->where('minor_change', $request->minor_change)
                     ),
                 ],

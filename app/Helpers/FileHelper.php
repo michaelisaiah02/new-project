@@ -3,7 +3,10 @@
 namespace App\Helpers;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Imagick\Driver;
 
 class FileHelper
 {
@@ -43,6 +46,37 @@ class FileHelper
 
     public static function storeTempDrawing(UploadedFile $file): string
     {
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        // Cek apakah file adalah TIF / TIFF
+        if (in_array($ext, ['tif', 'tiff'])) {
+            try {
+                // 1. Setup Image Manager dengan driver Imagick
+                // Pastikan extension imagick sudah aktif di PHP server kamu
+                $manager = new ImageManager(new Driver());
+
+                // 2. Baca file
+                $image = $manager->read($file->getRealPath());
+
+                // 3. Encode ke JPG (quality 90)
+                $encoded = $image->toJpeg(90);
+
+                // 4. Siapkan nama & path baru
+                $filename = pathinfo($file->hashName(), PATHINFO_FILENAME) . '.jpg';
+                $path = 'temp/drawings/' . $filename;
+
+                // 5. Simpan hasilnya
+                Storage::disk('public')->put($path, (string) $encoded);
+
+                return $path;
+            } catch (\Exception $e) {
+                // Fallback jika gagal convert, simpan file aslinya saja
+                Log::error('Gagal convert TIFF (V3): ' . $e->getMessage());
+                return $file->store('temp/drawings', 'public');
+            }
+        }
+
+        // Untuk file PDF, JPG, PNG biasa
         return $file->store('temp/drawings', 'public');
     }
 

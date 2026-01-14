@@ -17,20 +17,30 @@ $(function () {
         let $form = $(this);
         let $btn = $form.find('button[type="submit"]');
 
-        // Cek kalau udah pernah disubmit biar nggak double post
+        // 1. Cek Validasi HTML5 Native
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // INI YANG KURANG TADI:
+            // Paksa form buat nampilin style validasi (border merah & pesan error)
+            $form.addClass('was-validated');
+
+            return; // Stop di sini, jangan lanjut ke logic "Processing"
+        }
+
+        // 2. Cek Double Submit
         if ($form.data('is-submitting')) {
             e.preventDefault();
             return;
         }
 
-        // Tandai form lagi proses
+        // 3. Kalau Valid, Lanjut Processing
         $form.data('is-submitting', true);
+        $btn.prop('disabled', true);
+        $btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
 
-        // Ubah tampilan tombol
-        $btn.prop('disabled', true); // Pake .prop lebih aman daripada .attr
-        $btn.html('Processing...');
-
-        // Biarkan form submit secara natural
+        // Biarkan form submit
         return true;
     });
 });
