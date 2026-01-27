@@ -47,9 +47,9 @@ class ProjectController extends Controller
             $label = $request->input('drawing_label_2d');
 
             // Jika input label tidak punya ekstensi, atau ekstensinya masih .tif
-            // Kita paksa ubah labelnya menjadi .jpg jika itu file TIFF
+            // Kita paksa ubah labelnya menjadi .png jika itu file TIFF
             if (in_array($ext, ['tif', 'tiff'])) {
-                $label = pathinfo($label, PATHINFO_FILENAME) . '.jpg';
+                $label = pathinfo($label, PATHINFO_FILENAME) . '.png';
             }
 
             // Hapus temp lama jika ada

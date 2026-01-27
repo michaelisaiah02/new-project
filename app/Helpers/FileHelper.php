@@ -58,11 +58,11 @@ class FileHelper
                 // 2. Baca file
                 $image = $manager->read($file->getRealPath());
 
-                // 3. Encode ke JPG (quality 90)
-                $encoded = $image->toJpeg(90);
+                // 3. Encode ke PNG
+                $encoded = $image->toPng();
 
                 // 4. Siapkan nama & path baru
-                $filename = pathinfo($file->hashName(), PATHINFO_FILENAME) . '.jpg';
+                $filename = pathinfo($file->hashName(), PATHINFO_FILENAME) . '.png';
                 $path = 'temp/drawings/' . $filename;
 
                 // 5. Simpan hasilnya

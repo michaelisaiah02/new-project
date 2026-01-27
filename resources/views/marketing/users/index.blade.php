@@ -2,6 +2,15 @@
 
 @section('title', 'MANAGEMENT USERS')
 
+@section('styles')
+    <style>
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="container mt-3">
         <div class="row justify-content-md-end justify-content-center align-items-center mb-3">
@@ -81,7 +90,7 @@
                     </div>
                     <div class="row">
                         <label for="department" class="form-label mb-0 mt-1">Department</label>
-                        <select class="form-select" id="department" name="department_id">
+                        <select class="form-select" id="department" name="department_id" required>
                             <option value="" disabled selected>Choose Department</option>
                             @foreach ($departments as $department)
                                 <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -105,10 +114,17 @@
                     </div>
                     <div class="row mb-3">
                         <label for="password" class="form-label mb-0 mt-1">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" minlength="8"
-                            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$">
-                        <div class="invalid-feedback">
-                            Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.
+                        <div class="input-group has-validation mx-0 px-0">
+                            <input type="password" class="form-control" id="password" name="password" minlength="8"
+                                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$" autocomplete="new-password">
+
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+
+                            <div class="invalid-feedback">
+                                Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -248,6 +264,18 @@
                 $('#userModalLabel').text('Add User');
                 $('#userForm').attr('action', "{{ route('marketing.users.store') }}");
                 $('#password').prop('required', true);
+            });
+
+            $('#togglePassword').on('click', function() {
+                const $passwordInput = $('#password');
+                const $icon = $(this).find('i');
+
+                // Toggle type attribute
+                const type = $passwordInput.attr('type') === 'password' ? 'text' : 'password';
+                $passwordInput.attr('type', type);
+
+                // Toggle icon (biar berubah jadi eye-slash kalo kebuka)
+                $icon.toggleClass('bi-eye bi-eye-slash');
             });
 
             $('#department').change(function() {
