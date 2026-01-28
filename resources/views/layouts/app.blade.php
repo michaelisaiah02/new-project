@@ -6,73 +6,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'New Project')</title>
+
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
+
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @yield('styles')
-    @if (!request()->is('login'))
-        <style>
-            #navbar-project {
-                height: 6.5rem;
-            }
-        </style>
-    @endif
+
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light text-light py-0 my-0 {{ request()->is('login') ? 'bg-transparent px-3' : 'bg-primary' }}"
+    <nav class="navbar navbar-expand-lg navbar-light text-light py-0 my-0 {{ request()->is('login') ? 'bg-transparent' : 'bg-primary navbar-custom' }}"
         id="navbar-project">
-        <div class="container-fluid justify-content-between my-0 py-0">
-            <a class="navbar-brand mx-0 mx-md-4" href="/">
-                <img src="{{ asset('image/logo-pt.png') }}" alt="Logo" class="mt-0 logo">
+
+        <div class="container-fluid justify-content-between px-0 mx-0">
+            <a class="navbar-brand mx-2 mx-md-3" href="/">
+                <img src="{{ asset('image/logo-pt.png') }}" alt="Logo PT" class="logo">
             </a>
-            <div class="row text-center justify-content-end align-items-center w-75 {{ request()->is('login') ? 'text-light' : 'bg-none' }}"
-                id="title-section">
-                <div class="{{ request()->is('login') ? 'col-12' : 'col-md-9' }}">
-                    <p class="align-self-center company-name py-0 my-0 lh-lg">PT. CATURINDO AGUNGJAYA RUBBER</p>
+
+            <div
+                class="row text-center justify-content-md-between align-items-center mx-0 px-0 w-75 {{ request()->is('login') ? 'text-light' : '' }}">
+                <div class="{{ request()->is('login') ? 'col-12' : 'col-md-8' }}">
+
+                    <p class="company-name py-0 my-0 text-uppercase">
+                        PT. CATURINDO AGUNGJAYA RUBBER
+                    </p>
+
                     @if (request()->is('login') || request()->is('/') || request()->is('main-menu'))
-                        <p id="main-title"
-                            class="align-self-center main-title py-0 my-0 text-uppercase lh-1 {{ request()->is('login') ? 'shadow-none' : 'shadow-sm' }}">
-                            @yield('title')</p>
+                        <p
+                            class="main-title py-0 my-0 text-uppercase {{ request()->is('login') ? '' : 'text-shadow-sm' }}">
+                            @yield('title')
+                        </p>
                     @else
-                        <p id="sub-title"
-                            class="p-0 my-auto sub-judul border-3 border-light-subtle border-dotted rounded-2 text-uppercase bg-secondary-subtle text-dark">
-                            @yield('title')</p>
+                        {{-- Class 'sub-title-box' menghandle border dotted & styling --}}
+                        <div
+                            class="d-inline-block px-4 py-1 mt-1 sub-title-box border-light-subtle rounded-2 bg-secondary-subtle text-dark text-uppercase w-100">
+                            @yield('title')
+                        </div>
                     @endif
                 </div>
                 @if (!request()->is('login'))
-                    <div class="col-md-auto">
-                        <div class="card my-0 py-0">
-                            <div
-                                class="card-body my-0 py-0 bg-secondary-subtle border-3 border-light-subtle rounded-3 text-center">
-                                <p class="py-0 my-0">{{ auth()->id() }} - {{ auth()->user()->name }}</p>
-                                <p class="py-0 my-0">{{ auth()->user()->department->name }}</p>
-                            </div>
+                    <div class="col-md-4 py-1 py-md-0 d-none d-md-block"> {{-- d-none d-md-block biar di HP ga menuhin layar --}}
+                        <div class="card bg-secondary-subtle border-light-subtle rounded-3 text-center px-3 py-1">
+                            <small class="fw-bold text-dark d-block">{{ auth()->id() }} -
+                                {{ auth()->user()->name }}</small>
+                            <small class="text-muted d-block">{{ auth()->user()->department->name }}</small>
                         </div>
                     </div>
                 @endif
             </div>
-            <a class="navbar-brand mx-0 mx-md-4" href="/">
-                <img src="{{ asset('image/logo-rice.png') }}" alt="Logo" class="mt-0 logo">
+
+            <a class="navbar-brand mx-2 mx-md-3" href="/">
+                <img src="{{ asset('image/logo-rice.png') }}" alt="Logo Rice" class="logo">
             </a>
         </div>
     </nav>
-    <!-- Modal Auto Logout -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true"
-        data-bs-backdrop="static">
+
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logoutModalLabel">Auto Logout</h5>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Session Expired</h5>
                 </div>
                 <div class="modal-body">
-                    No activity detected. You will be logged out automatically in a few seconds...
+                    No activity detected. You will be logged out automatically.
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-primary"
+                    <button class="btn btn-primary w-100"
                         onclick="localStorage.removeItem('forceLogout'); document.getElementById('auto-logout-form').submit();">
                         OK
                     </button>
@@ -81,11 +84,17 @@
         </div>
     </div>
 
-    <!-- Form Logout -->
-    <form id="auto-logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+    <form id="auto-logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
         @csrf
     </form>
+
     @yield('content')
+
+    <div id="connection-indicator" style="display: none;">
+        <div class="alert alert-danger shadow-lg mb-0 py-2 px-3 fw-bold rounded-pill" role="alert">
+            <i class="bi bi-wifi-off me-2"></i> Connection lost...
+        </div>
+    </div>
     @yield('scripts')
     @auth
         <script type="module">
@@ -160,13 +169,7 @@
                 document.addEventListener(event, resetIdleTimer);
             });
         </script>
-    @endauth
-    <div id="connection-indicator" style="display: none; position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;">
-        <div class="alert alert-danger mb-0 py-2 px-3" role="alert">
-            ⚠️ Connection was lost...
-        </div>
-    </div>
-    @auth
+
         <script>
             const connectionIndicator = document.getElementById('connection-indicator');
             let isOffline = false;

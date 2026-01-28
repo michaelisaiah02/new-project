@@ -2,25 +2,43 @@
 @section('title', 'INPUT NEW PROJECT')
 @section('styles')
     <style>
-        .adjust-width {
-            width: 10rem;
+        /* CSS Khusus Halaman Ini */
+
+        /* 1. Label Box: Di PC lebarnya fix biar rapi, di HP auto biar muat */
+        .label-box {
+            min-width: 140px;
+            /* Default PC */
+            white-space: wrap;
+            /* Biar teks panjang kayak 'Tanggal Terima' bisa turun ke bawah */
+            text-align: start;
         }
 
+        /* Responsif untuk HP: Label sedikit mengecil */
+        @media (max-width: 768px) {
+            .label-box {
+                min-width: 110px;
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+        }
+
+        /* Fix button disabled pointer events */
         button[disabled] {
             pointer-events: auto !important;
         }
     </style>
 @endsection
+
 @section('content')
     <div class="container-fluid mt-3">
         <form action="{{ route('marketing.projects.store') }}" method="post" enctype="multipart/form-data">
             @csrf
-            <div class="row justify-content-md-center g-2 column-gap-4">
-                <div class="col-md-5">
+            <div class="row g-1">
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Customer</span>
-                        <select class="form-select bg-warning-subtle border-warning border" placeholder="Username"
-                            aria-label="Username" aria-describedby="customer" id="customer" name="customer_code">
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Customer</span>
+                        <select class="form-select bg-warning-subtle border-warning border" id="customer"
+                            name="customer_code">
                             <option value="" selected disabled>Kode Customer</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->code }}" data-department="{{ $customer->department->name }}"
@@ -33,206 +51,184 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Department</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Department</span>
                         <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                            id="department" placeholder="Nama Department" aria-label="Department"
-                            aria-describedby="department" readonly>
+                            id="department" placeholder="Nama Department" readonly>
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Model</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Model Part" aria-label="Model Part" aria-describedby="model" id="model"
-                            name="model" value="{{ old('model') }}">
+                            placeholder="Model Part" id="model" name="model" value="{{ old('model') }}">
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="row">
-                        <div class="col-auto">
-                            <span
-                                class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width rounded-1">Drawing</span>
-                        </div>
-                        <div class="col">
-                            <button type="button"
-                                class="btn btn-primary border-3 border-light-subtle w-100 position-relative"
-                                id="btn-upload-2d" disabled data-bs-toggle="tooltip" data-bs-placement="top"
-                                data-bs-custom-class="custom-tooltip" title="Lengkapi form untuk upload">
+
+                <div class="col-12 col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Drawing</span>
+                        <div class="grow position-relative">
+                            <button type="button" class="btn btn-primary border-3 border-light-subtle w-100 rounded-0"
+                                id="btn-upload-2d" disabled data-bs-toggle="tooltip" title="Lengkapi form untuk upload">
                                 Upload 2D
                                 <span id="badge-upload-2d"
-                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                                    !
-                                </span>
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">!</span>
                             </button>
-                            <input type="file" class="form-control bg-secondary-subtle border-secondary border"
-                                id="upload-2d" name="drawing_2d" placeholder="Upload 2D" aria-label="Upload 2D"
-                                aria-describedby="upload-2d" hidden>
+                            <input type="file" id="upload-2d" name="drawing_2d" hidden>
                         </div>
-                        <div class="col">
-                            <button type="button"
-                                class="btn btn-primary border-3 border-light-subtle w-100 position-relative"
-                                id="btn-upload-3d" disabled data-bs-toggle="tooltip" data-bs-placement="top"
-                                data-bs-custom-class="custom-tooltip" title="Lengkapi form untuk upload">
+                        <div class="grow position-relative">
+                            <button type="button" class="btn btn-primary border-3 border-light-subtle w-100 rounded-end"
+                                id="btn-upload-3d" disabled data-bs-toggle="tooltip" title="Lengkapi form untuk upload">
                                 Upload 3D
                                 <span id="badge-upload-3d"
-                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                                    !
-                                </span>
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">!</span>
                             </button>
-                            <input type="file" class="form-control bg-secondary-subtle border-secondary border"
-                                id="upload-3d" name="drawing_3d" placeholder="Upload 3D" aria-label="Upload 3D"
-                                aria-describedby="upload-3d" hidden value="{{ old('drawing_3d') }}">
+                            <input type="file" id="upload-3d" name="drawing_3d" hidden value="{{ old('drawing_3d') }}">
                         </div>
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width"
-                            id="part-num-label">No.
-                            Part</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle"
+                            id="part-num-label">No. Part</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Nomor Part" aria-label="Nomor Part" aria-describedby="part-num-label"
-                            id="part-num" name="part_number" value="{{ old('part_number') }}">
+                            placeholder="Nomor Part" id="part-num" name="part_number" value="{{ old('part_number') }}">
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="input-group">
+
+                <div class="col-12 col-lg-6">
+                    <div class="d-flex flex-column flex-md-row gap-2">
                         <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                            placeholder="Nama File Drawing 2D" aria-label="Nama File Drawing 2D"
-                            aria-describedby="drawing-label-2d" id="drawing-label-2d" name="drawing_label_2d" readonly
+                            placeholder="Nama File Drawing 2D" id="drawing-label-2d" name="drawing_label_2d" readonly
                             value="{{ old('drawing_label_2d') }}">
                         <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                            placeholder="Nama File Drawing 3D" aria-label="Nama File Drawing 3D"
-                            aria-describedby="drawing-label-3d" id="drawing-label-3d" name="drawing_label_3d" readonly
+                            placeholder="Nama File Drawing 3D" id="drawing-label-3d" name="drawing_label_3d" readonly
                             value="{{ old('drawing_label_3d') }}">
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
-                            Name</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Part Name</span>
                         <input class="form-control bg-warning-subtle border-warning border" placeholder="Nama Part"
-                            aria-label="Nama Part" aria-describedby="part-name" id="part-name" name="part_name"
-                            value="{{ old('part_name') }}">
+                            id="part-name" name="part_name" value="{{ old('part_name') }}">
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-start">No.
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle text-start">No.
                             Drawing</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="text"
-                            aria-label="Nomor Drawing" aria-describedby="drawing-number" id="drawing-number"
-                            placeholder="Nomor Drawing" name="drawing_number" value="{{ old('drawing_number') }}">
+                            id="drawing-number" placeholder="Nomor Drawing" name="drawing_number"
+                            value="{{ old('drawing_number') }}">
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
-                            Type</span>
-                        <select class="form-select bg-warning-subtle border-warning border"
-                            placeholder="Hose/Molding/Weatherstrip/Bonding Metal"
-                            aria-label="Hose/Molding/Weatherstrip/Bonding Metal" aria-describedby="part-type"
-                            id="part-type" name="part_type">
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Part Type</span>
+                        <select class="form-select bg-warning-subtle border-warning border" id="part-type"
+                            name="part_type">
                             <option value="">Jenis Part</option>
                             <option value="Hose" {{ old('part_type') == 'Hose' ? 'selected' : '' }}>Hose</option>
                             <option value="Molding" {{ old('part_type') == 'Molding' ? 'selected' : '' }}>Molding</option>
                             <option value="Weatherstrip" {{ old('part_type') == 'Weatherstrip' ? 'selected' : '' }}>
-                                Weatherstrip
-                            </option>
+                                Weatherstrip</option>
                             <option value="Bonding Metal" {{ old('part_type') == 'Bonding Metal' ? 'selected' : '' }}>
-                                Bonding Metal
-                            </option>
+                                Bonding Metal</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7">No.
-                            ECI/EO/ECN</span>
-                        <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="Nomor Revisi Drawing" aria-label="Nomor Revisi Drawing"
-                            aria-describedby="eee-number" id="eee-number" name="eee_number"
-                            value="{{ old('eee_number') }}">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle">Suffix</span>
-                        <input class="form-control bg-warning-subtle border-warning border" type="text"
-                            aria-label="Suffix" aria-describedby="suffix" id="suffix" name="suffix"
-                            value="{{ old('suffix', '-') }}" onfocus="if (this.value === '-') this.value='';"
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">No. ECI/EO</span>
+                        <input class="form-control bg-warning-subtle border-warning border" placeholder="No. Revisi"
+                            id="eee-number" name="eee_number" value="{{ old('eee_number') }}">
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Suffix</span>
+                        <input class="form-control bg-warning-subtle border-warning border" type="text" id="suffix"
+                            name="suffix" value="{{ old('suffix', '-') }}"
+                            onfocus="if (this.value === '-') this.value='';"
                             onblur="if (this.value === '') this.value='-';">
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">QTY/Year</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">QTY/Year</span>
                         <input class="form-control bg-warning-subtle border-warning border" placeholder="Qty/Year (pcs)"
-                            aria-label="Qty/Year (pcs)" aria-describedby="qty" id="qty" name="qty"
-                            type="number" value="{{ old('qty') }}">
+                            id="qty" name="qty" type="number" value="{{ old('qty') }}">
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Drawing
-                            Revision
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Dwg Rev
                             Date</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="date"
-                            aria-label="dd/mm/yyyy" aria-describedby="drawing-revision-date" id="drawing-revision-date"
-                            name="drawing_revision_date" value="{{ old('drawing_revision_date') }}">
+                            id="drawing-revision-date" name="drawing_revision_date"
+                            value="{{ old('drawing_revision_date') }}">
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Target
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Target
                             Masspro</span>
                         <input class="form-control bg-warning-subtle border-warning border" placeholder="dd/mm/yyyy"
-                            type="date" aria-label="dd/mm/yyyy" aria-describedby="masspro-target" id="masspro-target"
-                            name="masspro_target" value="{{ old('masspro_target') }}">
+                            type="date" id="masspro-target" name="masspro_target"
+                            value="{{ old('masspro_target') }}">
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle fs-7 text-wrap pt-0"
-                            style="width: 6rem;">No. SPK
-                            /LOI/DIE
-                            GO</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">No.
+                            SPK/LOI</span>
                         <input class="form-control bg-warning-subtle border-warning border"
-                            placeholder="No. SPK /LOI/DIE GO" aria-label="No. SPK /LOI/DIE GO"
-                            aria-describedby="sldg-number" id="sldg-number" name="sldg_number"
+                            placeholder="Nomor SPK/LOI/DIE GO" id="sldg-number" name="sldg_number"
                             value="{{ old('sldg_number') }}">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-base pt-0 text-start fs-7">Tanggal
-                            Terima SPK/LOI/DIE
-                            GO</span>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Tgl
+                            Terima</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="date"
-                            aria-label="dd/mm/yyyy" aria-describedby="receive-date-sldg" id="receive-date-sldg"
-                            name="receive_date_sldg" value="{{ old('receive_date_sldg') }}">
+                            id="receive-date-sldg" name="receive_date_sldg" value="{{ old('receive_date_sldg') }}">
                     </div>
                 </div>
-                <div class="col-md-5">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span
-                            class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width text-wrap lh-1 pt-0 text-start">Material
-                            on
-                            Drawing</span>
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Material</span>
                         <input class="form-control bg-warning-subtle border-warning border" placeholder="Nama Material"
-                            aria-label="Nama Material" aria-describedby="material-on-drawing" id="material-on-drawing"
-                            name="material_on_drawing" value="{{ old('material_on_drawing') }}">
+                            id="material-on-drawing" name="material_on_drawing"
+                            value="{{ old('material_on_drawing') }}">
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-12 col-lg-6">
                     <div class="input-group">
-                        <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Minor
+                        <span class="input-group-text label-box border-dark border-3 bg-secondary-subtle">Minor
                             Change</span>
                         <input class="form-control bg-warning-subtle border-warning border" placeholder="Minor Change"
-                            aria-label="Pesan dari management" aria-describedby="minor-change" id="minor-change"
-                            name="minor_change" value="{{ old('minor_change') }}">
+                            id="minor-change" name="minor_change" value="{{ old('minor_change') }}">
                     </div>
                 </div>
-            </div>
-            @php
+
+            </div> @php
                 $backUrl = match (auth()->user()->department->type()) {
                     'management' => route('management'),
                     'engineering' => route('engineering'),
@@ -240,17 +236,19 @@
                     default => route('login'),
                 };
             @endphp
-            <div
-                class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-2 mx-4">
+
+            <div class="row justify-content-between align-items-center mt-2 px-3">
                 <div class="col-auto">
-                    <a href="{{ $backUrl }}" class="btn btn-primary">Back</a>
+                    <a href="{{ $backUrl }}"
+                        class="btn btn-primary px-4 border-3 border-light-subtle shadow-sm">Back</a>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary px-4 border-3 border-light-subtle shadow-sm" type="submit">
                         Save
                     </button>
                 </div>
             </div>
+
         </form>
     </div>
     <x-toast />
@@ -340,7 +338,7 @@
                     const is2D = inputId === '#upload-2d';
                     const fileInput = $(inputId)[0];
                     const drawingLabelInput = is2D ? $('#drawing-label-2d') : $(
-                    '#drawing-label-3d');
+                        '#drawing-label-3d');
                     const extension = fileInput.files.length > 0 ? fileInput.files[0].name.split(
                         '.').pop() : '';
                     const partNum = $('#part-num').val().trim();

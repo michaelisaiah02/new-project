@@ -1,4 +1,4 @@
-// 1) Wajib: fungsi dulu biar bisa pakai color functions
+// 1. Config Bootstrap
 @use "sass:map";
 @import "bootstrap/scss/functions";
 
@@ -14,10 +14,9 @@ $theme-colors: (
     "danger": #f44336
 );
 
-// 2) Override variabel Bootstrap sesuai kebutuhan
+// PENTING: Jangan override $breakpoints cuma satu biji. Pake default aja.
 $table-bg-scale: 50%;
 
-// 3) Lanjut import sisa partial Bootstrap
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/maps";
 @import "bootstrap/scss/mixins";
@@ -28,151 +27,75 @@ $table-bg-scale: 50%;
 @import "@selectize/selectize/dist/css/selectize.bootstrap5.css";
 @import "bootstrap-icons/font/bootstrap-icons.css";
 
-// 1) Tokens
-$font-sans: "Cambria", sans-serif;
-$breakpoints: (
-    "md": 1080px
-);
+// ==========================================
+// MULAI DARI SINI CUSTOM STYLE BARU (SIMPEL)
+// ==========================================
 
-// 2) Mixins breakpoint
-@mixin up($bp) {
-    @media (min-width: map.get($breakpoints, $bp)) {
-        @content;
-    }
-}
-
-@mixin down($bp) {
-    @media (max-width: map.get($breakpoints, $bp)) {
-        @content;
-    }
-}
-
-// 4) Base
 body {
-    font-family: $font-sans;
+    font-family: "Cambria", sans-serif;
 }
 
-.main-title {
-    font-weight: 800;
+// Navbar Custom Height
+.navbar-custom {
+    min-height: 6.5rem;
+    transition: min-height 0.3s ease;
 }
 
-.company-name {
-    font-weight: 300;
-}
-
-img.icon {
-    transition: .3s;
-    transform: scale(1);
+// Logo Responsif (Fluid)
+.logo {
+    transition: transform 0.3s ease;
+    height: auto;
+    // Otomatis membesar/mengecil antara 30px sampai 75px tergantung layar
+    width: clamp(30px, 8vw, 75px);
 
     &:hover {
-        transform: scale(1.3);
+        transform: scale(1.1);
     }
 }
 
-.page-link {
-    color: var(--bs-primary);
+// 1. Nama PT (Panjang banget kan, jadi harus kecil di HP)
+.company-name {
+    font-weight: 300;
+    // Di HP: 14px (0.9rem) | Di PC: Sekitar 20px (1.25rem)
+    font-size: clamp(0.8rem, 2vw, 1.25rem);
+    letter-spacing: 1px;
+    line-height: 1.2;
 }
 
-.active .page-link {
-    background-color: var(--bs-primary);
+// 2. Judul "NEW PROJECT" / "MAIN MENU"
+.main-title {
+    font-weight: 800;
+    // Di HP: 24px (1.5rem) | Di PC: 56px (3.5rem) -> Biar nampol
+    font-size: clamp(1.5rem, 4vw + 1rem, 3.5rem);
+    line-height: 1.1;
 }
 
-.custom-tooltip {
-    --bs-tooltip-bg: var(--bs-primary);
-    --bs-tooltip-color: var(--bs-white);
+// 3. Kotak Judul Halaman
+.sub-title-box {
+    font-weight: 600;
+    // Di HP: 16px | Di PC: 24px
+    font-size: clamp(1rem, 1.5vw + 0.5rem, 1.5rem);
+    border-style: dotted !important;
+    border-width: 3px !important;
 }
 
-// 5) Responsive
-@include down("md") {
-    .sub-judul {
-        width: 95% !important;
-        font-size: .8rem !important;
-    }
-
-    .customer-title {
-        width: 95% !important;
-    }
-
-    .main-title,
-    .company-name {
-        font-size: 1rem;
-    }
-
-    .logo,
-    .icon {
-        width: 30px;
-        height: 40.5px;
-    }
-
-    .btn1 {
-        font-size: 1.5rem;
-    }
-
-    .btn2 {
-        font-size: 1rem;
-    }
-
-    .width-label-1,
-    .width-label-2 {
-        width: 50%;
-    }
+// Indikator Koneksi Hilang (Floating)
+#connection-indicator {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    animation: slideIn 0.3s ease-out;
 }
 
-@include up("md") {
-    .sub-judul {
-        font-size: 28pt !important;
-        transform: translateY(-10px);
-        -webkit-transform: translateY(-10px);
-        -moz-transform: translateY(-10px);
-        -ms-transform: translateY(-10px);
-        -o-transform: translateY(-10px);
+@keyframes slideIn {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
     }
 
-    .customer-title,
-    .user-title {
-        transform: translateY(-10px);
-        -webkit-transform: translateY(-10px);
-        -moz-transform: translateY(-10px);
-        -ms-transform: translateY(-10px);
-        -o-transform: translateY(-10px);
-    }
-
-    .main-title {
-        font-size: 60pt;
-        transform: translateY(-20px);
-        -webkit-transform: translateY(-20px);
-        -moz-transform: translateY(-20px);
-        -ms-transform: translateY(-20px);
-        -o-transform: translateY(-20px);
-    }
-
-    .company-name {
-        font-size: 18pt;
-    }
-
-    .logo,
-    .icon {
-        width: 75px;
-        height: 90.5px;
-    }
-
-    .btn1 {
-        font-size: 2.2rem !important;
-    }
-
-    .btn2 {
-        font-size: 1.4rem !important;
-    }
-
-    .width-label-1 {
-        width: 25%;
-    }
-
-    .width-label-2 {
-        width: 30%;
-    }
-
-    .fs-7 {
-        font-size: .675rem;
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
 }

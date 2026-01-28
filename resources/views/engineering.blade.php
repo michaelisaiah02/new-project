@@ -6,7 +6,7 @@
             <div class="card-body p-2">
                 <span class="badge bg-none text-dark shadow fs-5 border-2 border-secondary-subtle mb-1">New Project</span>
                 <div class="table-responsive overflow-y-auto" style="max-height: 135px;">
-                    <table class="table table-sm table-bordered table-hover m-0">
+                    <table class="table table-sm table-bordered table-hover m-0 text-nowrap">
                         <thead class="table-secondary sticky-top">
                             <tr class="text-center">
                                 <th scope="col">NO</th>
@@ -73,7 +73,7 @@
                     <span class="badge bg-none text-dark shadow fs-5 border-2 border-secondary-subtle mb-1">On Going
                         Project</span>
                     <div class="table-responsive overflow-y-auto" style="max-height: 200px;">
-                        <table class="table table-sm table-bordered table-hover m-0">
+                        <table class="table table-sm table-bordered table-hover m-0 text-nowrap">
                             <thead class="table-secondary sticky-top">
                                 <tr>
                                     <th scope="col" class="text-center">NO</th>

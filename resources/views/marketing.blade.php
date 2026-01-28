@@ -1,51 +1,56 @@
 @extends('layouts.app')
 @section('title', 'NEW PROJECT')
 @section('content')
-    <div class="container">
-        <div class="row justify-content-center align-items-center my-3">
-            <div class="col-5" style="height: 8rem">
-                <a href="{{ route('marketing.projects.index') }}"
-                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
-                    INPUT NEW PROJECT
+    <div class="container py-4">
+
+        <div class="row g-3 justify-content-center">
+
+            <div class="col-12 col-md-5"> <a href="{{ route('marketing.projects.index') }}"
+                    class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
+                    <span class="h2 fw-bold mb-0">INPUT NEW PROJECT</span>
                 </a>
             </div>
-            <div class="col-5" style="height: 8rem">
+
+            <div class="col-12 col-md-5">
                 <a href="{{ route('masspro.index') }}"
-                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
-                    LIST MASS PRODUCTION PART
+                    class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
+                    <span class="h2 fw-bold mb-0">LIST MASS PRODUCTION PART</span>
                 </a>
             </div>
-        </div>
-        <div class="row justify-content-center align-items-center mb-3">
-            <div class="col-5" style="height: 8rem">
+
+            <div class="col-12 col-md-5">
                 <a href="{{ route('marketing.users.index') }}"
-                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
-                    MANAGEMENT USER
+                    class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
+                    <span class="h2 fw-bold mb-0">MANAGEMENT USER</span>
                 </a>
             </div>
-            <div class="col-5" style="height: 8rem">
+
+            <div class="col-12 col-md-5">
                 <a href="{{ route('marketing.customers.index') }}"
-                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
-                    MANAGEMENT CUSTOMER
+                    class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
+                    <span class="h2 fw-bold mb-0">MANAGEMENT CUSTOMER</span>
                 </a>
             </div>
-        </div>
-        <div class="row justify-content-center align-items-center mb-3">
-            <div class="col-5" style="height: 8rem">
+
+            <div class="col-12 col-md-5">
                 <a href="{{ route('kpi.index') }}"
-                    class="btn btn-primary py-2 px-5 rounded-4 menu-btn btn1 w-100 h-100 border-4 border-light-subtle align-items-center d-flex justify-content-center">
-                    KPI
+                    class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
+                    <span class="h2 fw-bold mb-0">KPI</span>
                 </a>
             </div>
+
         </div>
-        <div
-            class="text-center row justify-content-center align-items-center position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
+
+        <div class="row justify-content-center mt-5 mb-3">
             <div class="col-auto">
                 <form action="{{ route('logout') }}" method="post">
                     @csrf
-                    <button type="submit" class="btn btn-primary border-3 border-light-subtle">LOGOUT</button>
+                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold border-3 border-light-subtle shadow">
+                        LOGOUT
+                    </button>
                 </form>
             </div>
         </div>
+
     </div>
 @endsection

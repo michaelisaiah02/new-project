@@ -1,13 +1,27 @@
 @extends('layouts.app')
 @section('title', 'MASS PRODUCTION')
+
+@section('styles')
+    <style>
+        /* CSS Khusus Halaman Ini */
+
+        /* 1. Label Box: Di PC lebarnya fix biar rapi, di HP auto biar muat */
+        .label-box {
+            min-width: 120px;
+            /* Default PC */
+            white-space: wrap;
+            /* Biar teks panjang kayak 'Tanggal Terima' bisa turun ke bawah */
+            text-align: start;
+        }
+    </style>
+@endsection
 @section('content')
     <div class="container-fluid mt-2">
         <form action="{{ route('masspro.index') }}" method="get">
             <div class="row justify-content-center mb-2">
                 <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span
-                            class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Customer</span>
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle label-box">Customer</span>
                         <select class="form-select bg-warning-subtle border-warning border" id="customer" name="customer"
                             aria-label="Model" aria-describedby="customer">
                             <option value="">All Customer</option>
@@ -21,8 +35,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
-                            style="width: 30%">Model</span>
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle label-box">Model</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Model Part" aria-label="Model Part" aria-describedby="model" id="model"
                             name="model" value="{{ request('model') }}">
@@ -30,7 +43,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">No.
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle label-box">No.
                             Part</span>
                         <input type="text" class="form-control bg-warning-subtle border-warning border"
                             placeholder="Nomor Part" aria-label="Nomor Part" aria-describedby="part-num-label"
@@ -39,8 +52,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span
-                            class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Remark</span>
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle label-box">Remark</span>
                         <select class="form-select bg-warning-subtle border-warning border" id="remark" name="remark"
                             aria-label="Remark" aria-describedby="remark">
                             <option value="all" {{ request('remark') == 'all' ? 'selected' : '' }}>All</option>
@@ -53,8 +65,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle adjust-width"
-                            style="width: 30%">Minor
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle label-box">Minor
                             Change</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="text"
                             aria-label="Minor Change" aria-describedby="minor_change" id="minor_change" name="minor_change"
@@ -63,8 +74,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="input-group mb-1">
-                        <span
-                            class="input-group-text border-dark border-3 bg-warning-subtle adjust-width w-25">Suffix</span>
+                        <span class="input-group-text border-dark border-3 bg-warning-subtle label-box">Suffix</span>
                         <input class="form-control bg-warning-subtle border-warning border" type="text"
                             aria-label="Suffix" aria-describedby="suffix" id="suffix" name="suffix" placeholder="..."
                             value="{{ request('suffix') }}">
@@ -75,8 +85,8 @@
                 </div>
             </div>
         </form>
-        <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 300px; overflow-y: auto;">
-            <table class="table table-bordered table-hover align-middle text-center">
+        <div class="table-responsive mb-3 pt-1" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-bordered table-hover align-middle text-center text-nowrap">
                 <thead class="table-secondary position-sticky top-0">
                     <tr>
                         <th>Model</th>
@@ -124,9 +134,9 @@
                 default => route('login'),
             };
         @endphp
-        <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+        <div class="row justify-content-between align-items-center px-1">
             <div class="col-auto">
-                <a href="{{ $backUrl }}" class="btn btn-primary">Back</a>
+                <a href="{{ $backUrl }}" class="btn btn-primary px-4 border-3 border-light-subtle shadow-sm">Back</a>
             </div>
         </div>
     </div>

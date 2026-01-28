@@ -1,36 +1,83 @@
 @extends('layouts.app')
 @section('title', 'KPI NEW PROJECT')
+
 @section('styles')
     <style>
-        .selectize-input,
-        .selectize-input.full,
-        .selectize-control.single .selectize-input.input-active {
-            background-color: #fff3cc;
-            border: 0;
+        /* 1. Label Box Konsisten */
+        .label-box {
+            min-width: 100px;
+            text-align: start;
+            white-space: nowrap;
         }
 
+        /* 2. Selectize Custom Theme (Yellow/Black) */
+        .selectize-input {
+            background-color: var(--bs-warning-bg-subtle) !important;
+            border: 1px solid var(--bs-warning-border-subtle) !important;
+            border-radius: 0 0.375rem 0.375rem 0 !important;
+            /* Rounded kanan doang */
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+            box-shadow: none !important;
+        }
 
+        /* Hilangkan border radius kiri karena nempel sama label */
+        .selectize-control.single .selectize-input {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+        }
+
+        .selectize-input.focus {
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        }
+
+        .selectize-dropdown {
+            border-color: var(--bs-warning-border-subtle) !important;
+        }
 
         .selectize-dropdown-content {
-            background-color: #fff3cc;
+            background-color: #fff !important;
+        }
+
+        .selectize-dropdown-content .option.active {
+            background-color: #fff3cc !important;
+            /* Kuning muda pas hover */
+            color: #000 !important;
+        }
+
+        /* 3. Chart Container Responsive */
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+                /* Di HP jangan terlalu tinggi */
+            }
         }
     </style>
 @endsection
+
 @section('content')
-    <div class="container-fluid mt-2">
+    <div class="container-fluid mt-3">
+
         <form action="{{ route('kpi.index') }}" method="get" id="form-kpi">
-            <div class="row justify-content-center mb-2">
+            <div class="row g-2 justify-content-center mb-2">
 
                 {{-- 1. PILIH CUSTOMER --}}
-                <div class="col-md-5">
-                    <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Customer</span>
-                        <select class="form-select border-warning border selectize-control rounded-end-3" id="customer"
-                            name="customer">
+                <div class="col-12 col-md-6 col-lg-5">
+                    <div class="input-group">
+                        <span
+                            class="input-group-text label-box border-dark border-3 bg-warning-subtle fw-bold">Customer</span>
+                        <select id="customer" name="customer" class="form-select">
                             <option value="">Pilih Customer</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->code }}"
-                                    {{ request('customer') == $customer->code ? 'selected' : '' }}> {{-- Ganti old() jadi request() disini juga --}}
+                                    {{ request('customer') == $customer->code ? 'selected' : '' }}>
                                     {{ $customer->code }} - {{ $customer->name }}
                                 </option>
                             @endforeach
@@ -39,125 +86,112 @@
                 </div>
 
                 {{-- 2. PILIH MODEL --}}
-                <div class="col-md-5">
-                    <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Model</span>
-                        <select class="form-select border-warning border selectize-control rounded-end-3" id="model"
-                            name="model" disabled>
+                <div class="col-12 col-md-6 col-lg-5">
+                    <div class="input-group">
+                        <span class="input-group-text label-box border-dark border-3 bg-warning-subtle fw-bold">Model</span>
+                        <select id="model" name="model" disabled class="form-select">
                             <option value="">Pilih Model</option>
-                            {{-- Opsi akan diisi via AJAX --}}
+                            {{-- AJAX --}}
                         </select>
                     </div>
                 </div>
 
                 {{-- 3. PILIH PART NUMBER --}}
-                <div class="col-md-5">
-                    <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Part No.</span>
-                        <select class="form-select border-warning border selectize-control rounded-end-3" id="part_number"
-                            name="part_number" disabled>
+                <div class="col-12 col-md-6 col-lg-5">
+                    <div class="input-group">
+                        <span class="input-group-text label-box border-dark border-3 bg-warning-subtle fw-bold">Part
+                            No.</span>
+                        <select id="part_number" name="part_number" disabled class="form-select">
                             <option value="">Pilih Part Number</option>
-                            {{-- Opsi akan diisi via AJAX --}}
+                            {{-- AJAX --}}
                         </select>
                     </div>
                 </div>
 
-                {{-- 4. PILIH VARIANT (Suffix & Minor Change) --}}
-                {{-- Kita gunakan satu dropdown untuk memilih kombinasi unik, lalu JS akan memecahnya jika perlu --}}
-                <div class="col-md-5">
-                    <div class="input-group mb-1">
-                        <span class="input-group-text border-dark border-3 bg-warning-subtle fw-bold w-25">Suffix/MC</span>
-                        <select class="form-select border-warning border selectize-control rounded-end-3" id="variant_combo"
-                            name="variant_combo" disabled>
+                {{-- 4. PILIH VARIANT --}}
+                <div class="col-12 col-md-6 col-lg-5">
+                    <div class="input-group">
+                        <span
+                            class="input-group-text label-box border-dark border-3 bg-warning-subtle fw-bold">Suffix/MC</span>
+                        <select id="variant_combo" name="variant_combo" disabled class="form-select">
                             <option value="">Pilih Suffix - MC</option>
-                            {{-- Opsi akan diisi via AJAX --}}
+                            {{-- AJAX --}}
                         </select>
                     </div>
-                    {{-- Input hidden ini agar logic backend kamu yg lama tetap jalan (menerima suffix dan minor_change terpisah) --}}
                     <input type="hidden" name="suffix" id="hidden_suffix">
                     <input type="hidden" name="minor_change" id="hidden_minor_change">
                 </div>
-
-            </div>
-
-            <div class="row justify-content-center d-none">
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Cari Data</button>
-                </div>
             </div>
         </form>
+
         @if ($selectedProject)
-            {{-- Tentukan lebar kolom dinamis --}}
             @php
                 $hasDelay = $delayDocuments->count() > 0;
-                // Kalau ada delay, chart pakai 8 kolom, kalau tidak ada delay, chart full 12 kolom
                 $chartCol = $hasDelay ? 'col-lg-8' : 'col-12';
             @endphp
 
-            <div class="row">
+            <div class="row g-3 align-items-stretch">
                 {{-- KOLOM KIRI: CHART --}}
-                <div class="{{ $chartCol }} mb-4">
-                    <div class="card shadow-sm h-100"> {{-- h-100 biar tingginya sama dengan sebelahnya --}}
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
+                <div class="{{ $chartCol }}">
+                    <div class="card shadow-sm h-100 border-secondary-subtle">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h5 class="mb-0 fs-6 fw-bold">
+                                <i class="bi bi-bar-chart-fill me-2"></i>
                                 Performance: {{ $selectedProject->part_number }} - {{ $selectedProject->suffix }} -
                                 {{ $selectedProject->minor_change }}
                             </h5>
                         </div>
-                        <div class="card-body">
-                            {{-- Container Chart --}}
-                            <div style="position: relative; height: 280px; width: 100%;">
+                        <div class="card-body d-flex align-items-center justify-content-center">
+                            <div class="chart-container">
                                 <canvas id="kpiChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- KOLOM KANAN: LIST DELAY (Hanya muncul jika ada delay) --}}
+                {{-- KOLOM KANAN: LIST DELAY (Optional) --}}
                 @if ($hasDelay)
-                    <div class="col-lg-4 mb-4">
+                    <div class="col-lg-4">
                         <div class="card border-danger shadow-sm h-100">
-                            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Late List</h6>
-                                <span class="badge bg-white text-danger">{{ $delayDocuments->count() }} Docs</span>
+                            <div
+                                class="card-header bg-danger text-white py-2 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Late List</h6>
+                                <span class="badge bg-white text-danger fw-bold rounded-pill">{{ $delayDocuments->count() }}
+                                    Docs</span>
                             </div>
 
-                            {{--
-                        Kita kasih max-height dan overflow-auto
-                        supaya kalau listnya panjang, dia bisa discroll
-                        dan tidak bikin chart di sebelahnya jadi gepeng/kosong bawahnya
-                    --}}
-                            <div class="card-body p-0" style="max-height: 280px; overflow-y: auto;">
+                            <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-hover table-sm mb-0"
-                                        style="font-size: 0.85rem;">
-                                        <thead class="table-light sticky-top">
+                                    <table class="table table-striped table-hover table-sm mb-0" style="font-size: 0.8rem;">
+                                        <thead class="table-light sticky-top shadow-sm">
                                             <tr>
-                                                <th>Doc Type</th>
-                                                <th class="text-center">Late</th>
+                                                <th class="ps-3">Doc Type</th>
+                                                <th class="text-center">Late (Days)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach ($delayDocuments as $doc)
                                                 <tr>
-                                                    <td>
-                                                        <div class="fw-bold text-truncate" style="max-width: 150px;"
-                                                            title="{{ $doc->documentType->name }}">
+                                                    <td class="ps-3 align-middle">
+                                                        <div class="fw-bold text-truncate" style="max-width: 180px;">
                                                             {{ $doc->documentType->name ?? $doc->document_type_code }}
                                                         </div>
-                                                        <small class="text-muted">
-                                                            Due:
-                                                            {{ \Carbon\Carbon::parse($doc->due_date)->format('d/m/y') }}
-                                                        </small>
-                                                        <small class="text-muted ms-3">
-                                                            Actual:
-                                                            {{ \Carbon\Carbon::parse($doc->actual_date)->format('d/m/y') }}
-                                                        </small>
+                                                        <div class="d-flex gap-2 mt-1">
+                                                            <span
+                                                                class="badge bg-secondary-subtle text-dark border border-secondary-subtle">
+                                                                Due:
+                                                                {{ \Carbon\Carbon::parse($doc->due_date)->format('d/m/y') }}
+                                                            </span>
+                                                            <span
+                                                                class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                                Act:
+                                                                {{ \Carbon\Carbon::parse($doc->actual_date)->format('d/m/y') }}
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                     <td class="text-center align-middle">
-                                                        <span class="badge bg-danger">
+                                                        <span class="badge bg-danger fs-6 rounded-pill">
                                                             {{ \Carbon\Carbon::parse($doc->actual_date)->diffInDays(\Carbon\Carbon::parse($doc->due_date)) }}
-                                                            Hari
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -166,16 +200,18 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="card-footer bg-light text-center">
-                                @if ($delayDocuments->count() > 5)
-                                    <small class="text-muted">Scroll untuk melihat lebih banyak</small>
-                                @endif
-                            </div>
+
+                            @if ($delayDocuments->count() > 5)
+                                <div class="card-footer bg-light text-center py-1">
+                                    <small class="text-muted fst-italic" style="font-size: 0.7rem;">Scroll for more</small>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endif
             </div>
         @endif
+
         @php
             $backUrl = match (auth()->user()->department->type()) {
                 'management' => route('management'),
@@ -184,30 +220,28 @@
                 default => route('login'),
             };
         @endphp
-        <div class="row justify-content-between align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+        <div class="row sticky-bottom mt-2 mb-3">
             <div class="col-auto">
-                <a href="{{ $backUrl }}" class="btn btn-primary">Back</a>
+                <a href="{{ $backUrl }}" class="btn btn-primary px-4 border-3 border-light-subtle shadow-sm">Back</a>
             </div>
         </div>
+
     </div>
     <x-toast />
 @endsection
+
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
-            // --- 0. AMBIL OLD VALUES DARI LARAVEL ---
-            // Kita simpan di variabel JS agar bersih
+            // --- 0. DATA OLD VALUES ---
             var oldCustomer = "{{ request('customer') }}";
             var oldModel = "{{ request('model') }}";
             var oldPart = "{{ request('part_number') }}";
-
-            // Ambil Suffix dan MC
             var oldSuffix = "{{ request('suffix') }}";
             var oldMc = "{{ request('minor_change') }}";
-            // Cek apakah ada data old, jika ada gabung pakai '|'
             var oldVariant = (oldSuffix || oldMc) ? (oldSuffix || '') + '|' + (oldMc || '') : null;
 
-            // --- 1. Inisialisasi Selectize ---
+            // --- 1. INISIALISASI SELECTIZE ---
             var $selectCustomer = $('#customer').selectize({
                 create: false,
                 sortField: 'text'
@@ -218,6 +252,7 @@
                 searchField: 'model',
                 create: false
             });
+
             var $selectPart = $('#part_number').selectize({
                 valueField: 'part_number',
                 labelField: 'part_number',
@@ -225,12 +260,14 @@
                 create: false,
                 render: {
                     option: function(item, escape) {
-                        return '<div><span class="fw-bold">' + escape(item.part_number) +
-                            '</span><span class="text-muted small ms-2">(' + escape(item.part_name ||
-                                '-') + ')</span></div>';
+                        return '<div class="px-2 py-1"><div class="fw-bold">' + escape(item
+                                .part_number) +
+                            '</div><small class="text-muted">' + escape(item.part_name || '-') +
+                            '</small></div>';
                     }
                 }
             });
+
             var $selectVariant = $('#variant_combo').selectize({
                 valueField: 'value_string',
                 labelField: 'label_string',
@@ -243,11 +280,9 @@
             var controlPart = $selectPart[0].selectize;
             var controlVariant = $selectVariant[0].selectize;
 
-            // --- 2. LOGIKA RE-POPULATE (MENGEMBALIKAN NILAI LAMA) ---
-            // Ini dijalankan SAAT HALAMAN LOAD
-
+            // --- 2. LOGIKA RE-POPULATE (OLD DATA) ---
             if (oldCustomer) {
-                // A. Load Model berdasarkan Old Customer
+                // A. Load Model
                 $.ajax({
                     url: '{{ route('kpi.api.models') }}',
                     type: 'GET',
@@ -256,13 +291,11 @@
                     },
                     success: function(res) {
                         controlModel.enable();
-                        controlModel.addOption(res); // Masukkan opsi ke dropdown
-
+                        controlModel.addOption(res);
                         if (oldModel) {
-                            controlModel.setValue(oldModel,
-                                true); // true = silent (jangan trigger event change)
+                            controlModel.setValue(oldModel, true);
 
-                            // B. Load Part berdasarkan Old Model
+                            // B. Load Part
                             $.ajax({
                                 url: '{{ route('kpi.api.parts') }}',
                                 type: 'GET',
@@ -273,12 +306,10 @@
                                 success: function(res) {
                                     controlPart.enable();
                                     controlPart.addOption(res);
-
                                     if (oldPart) {
-                                        controlPart.setValue(oldPart,
-                                            true); // true = silent
+                                        controlPart.setValue(oldPart, true);
 
-                                        // C. Load Variant berdasarkan Old Part
+                                        // C. Load Variant
                                         $.ajax({
                                             url: '{{ route('kpi.api.variants') }}',
                                             type: 'GET',
@@ -316,13 +347,10 @@
                                                             .minor_change
                                                     };
                                                 });
-
                                                 controlVariant.enable();
                                                 controlVariant.addOption(
                                                     options);
-
                                                 if (oldVariant) {
-                                                    // Kita set value variant, TAPI silent (true) agar tidak auto-submit lagi
                                                     controlVariant.setValue(
                                                         oldVariant, true);
                                                 }
@@ -336,9 +364,7 @@
                 });
             }
 
-            // --- 3. EVENT LISTENER (INTERAKSI USER) ---
-            // Kode di bawah ini sama seperti sebelumnya, untuk handle perubahan manual user
-
+            // --- 3. EVENT LISTENERS (CASCADE) ---
             controlCustomer.on('change', function(value) {
                 controlModel.clear();
                 controlModel.clearOptions();
@@ -350,6 +376,7 @@
                 controlVariant.clearOptions();
                 controlVariant.disable();
                 if (!value) return;
+
                 controlModel.load(function(callback) {
                     $.ajax({
                         url: '{{ route('kpi.api.models') }}',
@@ -377,6 +404,7 @@
                 controlVariant.disable();
                 var customerCode = controlCustomer.getValue();
                 if (!value || !customerCode) return;
+
                 controlPart.load(function(callback) {
                     $.ajax({
                         url: '{{ route('kpi.api.parts') }}',
@@ -440,7 +468,7 @@
                 });
             });
 
-            // AUTO SUBMIT
+            // --- 4. AUTO SUBMIT ---
             controlVariant.on('change', function(value) {
                 if (value) {
                     var parts = value.split('|');
@@ -449,7 +477,7 @@
                     $('#hidden_suffix').val(suffixVal);
                     $('#hidden_minor_change').val(mcVal);
 
-                    // Delay sedikit untuk UX
+                    // Show Loading or Toast here if needed
                     setTimeout(function() {
                         $('#form-kpi').submit();
                     }, 100);
@@ -460,13 +488,13 @@
             });
         });
     </script>
+
     @if ($selectedProject)
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 const ctx = document.getElementById('kpiChart').getContext('2d');
-
-                const labels = @json($chartLabels); // Dari Controller
-                const dataValues = @json($chartValues); // Dari Controller
+                const labels = @json($chartLabels);
+                const dataValues = @json($chartValues);
 
                 new Chart(ctx, {
                     type: 'bar',
@@ -475,30 +503,41 @@
                         datasets: [{
                             label: 'On-Time Percentage (%)',
                             data: dataValues,
-                            backgroundColor: '#4e73df', // Warna Biru mirip gambar
-                            borderColor: '#2e59d9',
+                            backgroundColor: '#0d6efd',
+                            /* Bootstrap Primary Blue */
+                            borderColor: '#0a58ca',
                             borderWidth: 1,
-                            barPercentage: 0.5, // Mengatur lebar batang
+                            borderRadius: 4,
+                            barPercentage: 0.6,
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        /* Biar ngikutin tinggi container */
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                max: 100, // Mentok di 100%
+                                max: 100,
+                                grid: {
+                                    color: '#e9ecef'
+                                },
                                 ticks: {
                                     callback: function(value) {
                                         return value + "%"
                                     }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
                                 }
                             }
                         },
                         plugins: {
                             legend: {
                                 display: false
-                            }, // Sembunyikan legend karena cuma 1 warna
+                            },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {

@@ -3,8 +3,12 @@
 @section('customer', $project->customer->name)
 @section('styles')
     <style>
-        .adjust-width {
-            width: 9rem;
+        .label-box {
+            min-width: 120px;
+            /* Default PC */
+            white-space: wrap;
+            /* Biar teks panjang kayak 'Tanggal Terima' bisa turun ke bawah */
+            text-align: start;
         }
     </style>
 @section('content')
@@ -12,35 +16,35 @@
         <div class="row justify-content-center mb-2">
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Customer</span>
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle label-box">Customer</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->customer_code . '-' . $project->customer->name }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle label-box">No. Part</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->part_number }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Suffix</span>
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle label-box">Suffix</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->suffix }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle label-box">Model</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->model }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle label-box">Part
                         Name</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->part_name }}" readonly>
@@ -48,7 +52,7 @@
             </div>
             <div class="col-md-4">
                 <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No.
+                    <span class="input-group-text border-dark border-3 bg-secondary-subtle label-box">No.
                         ECI/EO/ECN</span>
                     <input type="text" class="form-control bg-secondary-subtle border-secondary border"
                         value="{{ $project->part_name }}" readonly>
@@ -56,7 +60,7 @@
             </div>
         </div>
         <div class="table-responsive mb-5 pb-3 pt-1" style="max-height: 350px; overflow-y: auto;">
-            <table class="table table-sm table-bordered m-0 text-start align-middle">
+            <table class="table table-sm table-bordered m-0 text-start align-middle text-nowrap">
                 <thead class="table-primary sticky-top">
                     <tr>
                         <th class="text-center">Stage</th>
@@ -101,11 +105,11 @@
             </table>
         </div>
 
-        <div class="row align-items-center position-absolute bottom-0 start-0 end-0 mx-0 px-0 mb-2">
+        <div class="row justify-content-between align-items-center sticky-bottom mb-2">
             <div class="col-auto">
                 <a href="{{ route('masspro.index', request()->query()) }}" class="btn btn-primary">Back</a>
             </div>
-            <div class="col-auto mx-auto">
+            <div class="col-auto">
                 <button type="button" class="btn btn-primary btn-show-project" data-bs-toggle="modal"
                     data-bs-target="#showProjectModal">
                     Show Details
