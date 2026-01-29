@@ -8,6 +8,9 @@ use App\Models\CustomerStage;
 use App\Models\Project;
 use App\Models\ProjectDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use setasign\Fpdi\Fpdi;
 
 use function Symfony\Component\Clock\now;
 
@@ -245,6 +248,176 @@ class ProjectEngineerController extends Controller
                 'management_approved_by_name' => $user->name,
                 'management_approved_date' => now(),
             ]);
+
+            $project = Project::findOrFail($request->project_id);
+
+            // 1. CEK FILE DRAWING 2D
+            if (!$project->drawing_2d) {
+                return response()->json(['message' => 'File Drawing 2D belum diupload.'], 422);
+            }
+
+            // Konstruksi Path Lengkap (Sesuaikan dengan folder penyimpanan kamu)
+            $relativePath = $project->customer_code . '/' . $project->model . '/' . $project->part_number . '/' . $project->drawing_2d;
+            $fullPath = storage_path('app/public/' . $relativePath);
+
+            if (!file_exists($fullPath)) {
+                return response()->json(['message' => 'File fisik tidak ditemukan.' . $relativePath . '/' . $fullPath], 404);
+            }
+
+            $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+
+            // 2. GENERATE QR CODE TEMP (Sama untuk PDF maupun Image)
+            // Kita generate QR polos high quality
+            $qrTempPath = sys_get_temp_dir() . '/qr_2d_' . uniqid() . '.png';
+
+            // Isi QR: Bisa disesuaikan, misal info part number + status approved
+            $qrContent = "Part: {$project->part_number}\nStatus: APPROVED\nDate: " . now()->format('d-m-Y');
+
+            QrCode::format('png')
+                ->size(500) // Gedein biar tajem pas di-resize
+                ->margin(0)
+                ->errorCorrection('H')
+                ->generate($qrContent, $qrTempPath);
+
+            // 3. CABANG LOGIKA BERDASARKAN EKSTENSI
+            try {
+                // === SKENARIO A: JIKA PDF (Pakai FPDI - Logic Stempel Vektor) ===
+                if ($ext === 'pdf') {
+                    $pdf = new Fpdi();
+                    // Gunakan Ghostscript repair logic jika perlu (copy dari method sebelumnya)
+                    // Disini kita asumsi file aman/sudah direpair:
+                    $pageCount = $pdf->setSourceFile($fullPath);
+
+                    for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                        $templateId = $pdf->importPage($pageNo);
+                        $size = $pdf->getTemplateSize($templateId);
+                        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                        $pdf->useTemplate($templateId);
+
+                        // Tempel Stempel HANYA di Halaman 1
+                        if ($pageNo === 1) {
+                            $boxWidth = 10; // mm
+                            $textHeight = 5;
+                            $boxHeight = $boxWidth + $textHeight;
+                            $margin = 10;
+
+                            // Posisi Kanan Bawah
+                            $x = $size['width'] - $boxWidth - $margin;
+                            $y = $size['height'] - $boxHeight - $margin;
+
+                            // Gambar Kotak & Teks
+                            $pdf->SetDrawColor(0, 0, 0);
+                            $pdf->SetLineWidth(0.3);
+                            $pdf->SetFillColor(255, 255, 255);
+                            $pdf->Rect($x, $y, $boxWidth, $boxHeight, 'DF');
+
+                            $pdf->SetFont('Arial', 'B', 7);
+                            $pdf->SetTextColor(0, 0, 0);
+                            $pdf->SetXY($x, $y);
+                            $pdf->Cell($boxWidth, $textHeight, 'CAR Digital Approved', 'B', 0, 'C');
+
+                            // Tempel QR
+                            $qrPadding = 1;
+                            $qrSize = $boxWidth - ($qrPadding * 2);
+                            $pdf->Image($qrTempPath, $x + $qrPadding, $y + $textHeight + $qrPadding, $qrSize, $qrSize);
+                        }
+                    }
+                    $pdf->Output('F', $fullPath); // Save Overwrite PDF
+                }
+
+                // === SKENARIO B: JIKA GAMBAR (JPG/PNG) - Pakai GD Library ===
+                elseif (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+
+                    // A. Load Gambar ke Memori
+                    if ($ext === 'png') {
+                        $image = imagecreatefrompng($fullPath);
+                    } else {
+                        $image = imagecreatefromjpeg($fullPath);
+                    }
+
+                    if (!$image) throw new \Exception("Gagal load gambar.");
+
+                    // B. Hitung Ukuran & Posisi (Pixel Based)
+                    $imgWidth = imagesx($image);
+                    $imgHeight = imagesy($image);
+
+                    // Konversi ukuran mm ke pixel (estimasi kasar biar proporsional)
+                    // Kita ambil 15% dari lebar gambar, atau minimal 200px biar kebaca
+                    $boxSizePixel = max($imgWidth * 0.15, 200);
+                    $textHeightPixel = $boxSizePixel * 0.2; // Tinggi teks 20% dari lebar kotak
+                    $totalHeightPixel = $boxSizePixel + $textHeightPixel;
+                    $marginPixel = $imgWidth * 0.05; // Margin 5% dari pinggir
+
+                    // Koordinat Kanan Bawah
+                    $x = $imgWidth - $boxSizePixel - $marginPixel;
+                    $y = $imgHeight - $totalHeightPixel - $marginPixel;
+
+                    // C. Bikin Warna
+                    $white = imagecolorallocate($image, 255, 255, 255);
+                    $black = imagecolorallocate($image, 0, 0, 0);
+
+                    // D. Gambar Kotak Putih (Background) + Border Hitam
+                    imagefilledrectangle($image, $x, $y, $x + $boxSizePixel, $y + $totalHeightPixel, $white);
+                    imagerectangle($image, $x, $y, $x + $boxSizePixel, $y + $totalHeightPixel, $black);
+
+                    // E. Gambar Garis Pemisah (Bawah Teks)
+                    imageline($image, $x, $y + $textHeightPixel, $x + $boxSizePixel, $y + $textHeightPixel, $black);
+
+                    // F. Tulis Teks "CAR Digital Approved"
+                    // Karena GD default fontnya jelek, kita pake imagestring (font bawaan 1-5)
+                    // Atau kalau mau bagus pake imagettftext (tapi butuh file .ttf)
+                    // Kita pake built-in font terbesar (5) dan coba tengahin
+                    $font = 5;
+                    $text = 'CAR Digital Approved';
+                    $fontWidth = imagefontwidth($font) * strlen($text);
+                    $fontHeight = imagefontheight($font);
+
+                    // Center text logic
+                    $textX = $x + ($boxSizePixel - $fontWidth) / 2;
+                    $textY = $y + ($textHeightPixel - $fontHeight) / 2;
+
+                    imagestring($image, $font, $textX, $textY, $text, $black);
+
+                    // G. Tempel QR Code
+                    $qrSrc = imagecreatefrompng($qrTempPath);
+                    $qrSrcWidth = imagesx($qrSrc);
+                    $qrSrcHeight = imagesy($qrSrc);
+
+                    $qrTargetSize = $boxSizePixel - 4; // Kurangi padding dikit (2px kiri kanan)
+
+                    // Copy & Resize QR ke dalam kotak
+                    imagecopyresampled(
+                        $image,
+                        $qrSrc,
+                        $x + 2, // Dest X (Padding 2px)
+                        $y + $textHeightPixel + 2, // Dest Y (Di bawah teks + padding)
+                        0,
+                        0,
+                        $qrTargetSize,
+                        $qrTargetSize,
+                        $qrSrcWidth,
+                        $qrSrcHeight
+                    );
+
+                    // H. Simpan Kembali (Overwrite)
+                    if ($ext === 'png') {
+                        imagepng($image, $fullPath);
+                    } else {
+                        imagejpeg($image, $fullPath, 90); // Quality 90
+                    }
+
+                    // Bersihkan Memori
+                    imagedestroy($image);
+                    imagedestroy($qrSrc);
+                }
+            } catch (\Exception $e) {
+                // Cleanup temp
+                if (file_exists($qrTempPath)) unlink($qrTempPath);
+                return response()->json(['message' => 'Gagal stamp drawing: ' . $e->getMessage()], 500);
+            }
+
+            // Cleanup QR Temp
+            if (file_exists($qrTempPath)) unlink($qrTempPath);
         }
 
         Project::findOrFail($request->project_id)

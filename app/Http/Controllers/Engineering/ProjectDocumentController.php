@@ -233,8 +233,8 @@ class ProjectDocumentController extends Controller
         // Karena Imagick aktif, kita bisa pake format 'png' dengan aman
         QrCode::format('png')
             ->size(400) // Resolusi tinggi biar tajem pas dikecilin di PDF
-            ->margin(1)
-            ->errorCorrection('L')
+            ->margin(0)
+            ->errorCorrection('H')
             ->backgroundColor(255, 255, 255) // Putih biar kontras
             ->color(0, 0, 0)
             ->generate($qrContent, $qrTempPath);
@@ -301,8 +301,10 @@ class ProjectDocumentController extends Controller
 
                 if ($pageNo === 1) {
                     // Logika Posisi Dinamis (Copy yang tadi)
-                    $qrSize = 25;
-                    $margin = 10;
+                    $boxWidth = 25;
+                    $textHeight = 5; // Tinggi area tulisan
+                    $boxHeight = $boxWidth + $textHeight; // Tinggi total (Text + QR)
+                    $margin = 10; // Jarak dari pinggir kertas
                     $x = 0;
                     $y = 0;
 
@@ -312,22 +314,46 @@ class ProjectDocumentController extends Controller
                             $y = $margin;
                             break;
                         case 'top_right':
-                            $x = $size['width'] - $qrSize - $margin;
+                            $x = $size['width'] - $boxWidth - $margin;
                             $y = $margin;
                             break;
                         case 'bottom_left':
                             $x = $margin;
-                            $y = $size['height'] - $qrSize - $margin;
+                            $y = $size['height'] - $boxHeight - $margin;
                             break;
                         case 'bottom_right':
                         default:
-                            $x = $size['width'] - $qrSize - $margin;
-                            $y = $size['height'] - $qrSize - $margin;
+                            $x = $size['width'] - $boxWidth - $margin;
+                            $y = $size['height'] - $boxHeight - $margin;
                             break;
                     }
 
+                    // 1. GAMBAR KOTAK (BORDER)
+                    $pdf->SetDrawColor(0, 0, 0); // Warna Garis Hitam
+                    $pdf->SetLineWidth(0.3);     // Ketebalan Garis
+                    $pdf->SetFillColor(255, 255, 255); // Background Putih (biar tulisan gak numpuk konten PDF)
+
+                    // Rect(x, y, w, h, style). 'DF' = Draw & Fill (Isi putih, garis hitam)
+                    $pdf->Rect($x, $y, $boxWidth, $boxHeight, 'DF');
+
+                    // 2. TULIS TEXT "CAR Digital Approved"
+                    // Pake Font Arial Bold, Ukuran kecil (misal 6 atau 7)
+                    $pdf->SetFont('Arial', 'B', 7);
+                    $pdf->SetTextColor(0, 0, 0); // Teks Hitam
+
+                    // Set kursor ke pojok kiri atas kotak
+                    $pdf->SetXY($x, $y);
+                    // Cell(width, height, text, border, ln, align)
+                    // Border 1 di bawah cell text biar ada garis pemisah antara text & QR
+                    $pdf->Cell($boxWidth, $textHeight, 'CAR Digital Approved', 'B', 0, 'C');
+
+                    // 3. TEMPEL QR CODE (Di bawah teks)
+                    // Kita kasih padding dikit biar gak nempel garis
+                    $qrPadding = 1;
+                    $qrSize = $boxWidth - ($qrPadding * 2);
+
                     // TEMPEL IMAGE CUMA DI SINI
-                    $pdf->Image($qrTempPath, $x, $y, $qrSize, $qrSize);
+                    $pdf->Image($qrTempPath, $x + $qrPadding, $y + $textHeight + $qrPadding, $qrSize, $qrSize);
                 }
             }
 
