@@ -1,102 +1,203 @@
 @extends('layouts.app')
 @section('title', 'ADD NEW CUSTOMER STAGES')
+
+@section('styles')
+    <style>
+        /* 1. Label Style Konsisten */
+        .label-box {
+            min-width: 120px;
+            font-weight: bold;
+            background-color: var(--bs-secondary-bg);
+        }
+
+        /* 2. Table Container Responsive */
+        .table-container {
+            max-height: 60vh;
+            /* Tinggi tabel fleksibel mengikuti layar */
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        /* 3. Sticky Header */
+        thead.sticky-top th {
+            z-index: 10;
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 4. Highlight Animation untuk Row Masspro */
+        @keyframes highlightFade {
+            0% {
+                background-color: #ffe69c;
+            }
+
+            /* Kuning Terang */
+            50% {
+                background-color: #fff3cd;
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .highlight-row {
+            animation: highlightFade 2s ease-out;
+        }
+
+        /* 5. Sticky Footer Action Bar */
+        .action-bar {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 1rem 0;
+            z-index: 20;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+@endsection
+
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid mt-3 pb-5">
+
         <form id="form-stage" action="{{ route('marketing.customers.storeStage', ['customer' => $customer->code]) }}"
             method="post">
             @csrf
             <input type="hidden" name="customer_code" value="{{ $customer->code }}">
             <input type="hidden" name="stage_number" value="{{ $stageNumber }}">
-            <div class="row mb-3 justify-content-between align-items-center">
-                <label for="stage_number" class="col-md-auto col-form-label">Select Document Requirement for Stage
-                    {{ $stageNumber }}</label>
-                <div class="col-md-3 me-auto">
-                    <input type="text" class="form-control form-control-sm bg-secondary-subtle border-3 border-dark"
-                        id="stage_name" name="stage_name">
-                </div>
-                <label for="stage_name" class="col-md-auto col-form-label">Customer Name</label>
-                <div class="col-md-3">
-                    <input type="text" class="form-control form-control-sm bg-secondary-subtle border-3 border-dark"
-                        id="stage_name" value="{{ $customer->name }}" readonly>
-                    <div class="invalid-feedback">Stage Name is required.</div>
+
+            <input type="hidden" name="decision" id="input-decision" value="">
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-body py-3">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-12 col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text label-box border-dark border-3">Stage
+                                    {{ $stageNumber }}</span>
+                                <input type="text" class="form-control border-dark border-3" id="stage_name"
+                                    name="stage_name" placeholder="Stage Name (Optional)">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text label-box border-dark border-3">Customer</span>
+                                <input type="text" class="form-control bg-secondary-subtle border-dark border-3"
+                                    value="{{ $customer->name }}" readonly>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="row mb-3">
-                <div class="table-responsive overflow-y-auto" style="max-height: 400px;">
-                    <table class="table table-sm table-bordered table-striped-columns m-0 text-center">
-                        <thead class="table-primary sticky-top align-middle">
-                            <tr>
-                                <th rowspan="2"></th>
-                                <th rowspan="2">Jenis Dokumen
-                                    <div class="row mx-1">
-                                        <input type="text" id="doc-search" class="form-control form-control-sm"
-                                            placeholder="Cari dokumen... (contoh: NPWP, DM, SIUP)">
-                                    </div>
-                                </th>
-                                <th colspan="4">Posisi QR Code</th>
-                            </tr>
-                            <tr>
-                                <th>Atas Kiri</th>
-                                <th>Atas Kanan</th>
-                                <th>Bawah Kiri</th>
-                                <th>Bawah Kanan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($availableDocuments as $doc)
-                                <tr class="text-center align-middle doc-row">
-                                    <td>
-                                        <input type="checkbox" class="doc-check" name="document_type_codes[]"
-                                            value="{{ $doc->code }}">
-                                    </td>
-                                    <td class="text-start">{{ $doc->name }}</td>
-                                    @foreach (['top_left', 'top_right', 'bottom_left', 'bottom_right'] as $pos)
-                                        <td class="qr-cell">
-                                            <input type="radio" class="qr-option" name="qr_position[{{ $doc->code }}]"
-                                                value="{{ $pos }}">
-                                        </td>
-                                    @endforeach
+
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-white py-2">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-file-earmark-text me-2"></i>Document
+                                Requirements</h6>
+                        </div>
+                        <div class="col"></div>
+                        <div class="col-12 col-md-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                <input type="text" id="doc-search" class="form-control" placeholder="Cari dokumen...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-container">
+                        <table class="table table-sm table-hover table-bordered table-striped align-middle mb-0">
+                            <thead class="table-primary sticky-top text-center">
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>Jenis Dokumen</th>
+                                    <th colspan="4">Posisi QR Code</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                <tr class="table-light">
+                                    <th></th>
+                                    <th></th>
+                                    <th class="small text-muted">Atas Kiri</th>
+                                    <th class="small text-muted">Atas Kanan</th>
+                                    <th class="small text-muted">Bawah Kiri</th>
+                                    <th class="small text-muted">Bawah Kanan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($availableDocuments as $doc)
+                                    <tr class="doc-row" data-code="{{ $doc->code }}">
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input doc-check cursor-pointer"
+                                                name="document_type_codes[]" value="{{ $doc->code }}">
+                                        </td>
+                                        <td class="fw-bold text-start">
+                                            {{ $doc->name }}
+                                            @if ($doc->code == 'DM')
+                                                <span class="badge bg-warning text-dark ms-1">Required</span>
+                                            @endif
+                                        </td>
+
+                                        @foreach (['top_left', 'top_right', 'bottom_left', 'bottom_right'] as $pos)
+                                            <td class="text-center qr-cell cursor-pointer position-relative">
+                                                <input type="radio" class="form-check-input qr-option"
+                                                    name="qr_position[{{ $doc->code }}]" value="{{ $pos }}"
+                                                    disabled>
+                                                <div class="position-absolute top-0 start-0 w-100 h-100"
+                                                    style="z-index: 1;"></div>
+                                            </td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div
-                class="text-center row justify-content-between align-items-start position-absolute bottom-0 start-0 end-0 mb-3 mx-3">
-                <div class="col-auto">
-                    <a id="btn-back" href="{{ route('marketing.customers.index') }}"
-                        class="btn btn-primary border-3 border-light-subtle">Back</a>
-                </div>
-                <div class="col-auto ms-auto">
-                    <button id="btn-next" type="button" class="btn btn-primary border-3 border-light-subtle">
-                        Next Stage
-                    </button>
-                </div>
-                <div class="col-auto">
-                    <button id="btn-finish" type="button" class="btn btn-primary border-3 border-light-subtle">
-                        Finish
-                    </button>
+
+            <div class="action-bar">
+                <div class="container-fluid">
+                    <div class="row justify-content-between align-items-center">
+                        <div class="col-auto">
+                            <a href="{{ route('marketing.customers.index') }}"
+                                class="btn btn-secondary px-4 border-3 border-secondary-subtle">
+                                <i class="bi bi-arrow-left me-2"></i>Back
+                            </a>
+                        </div>
+                        <div class="col-auto d-flex gap-2">
+                            <button type="button" id="btn-next" class="btn btn-outline-primary px-4 border-3 fw-bold">
+                                Next Stage <i class="bi bi-chevron-right ms-1"></i>
+                            </button>
+                            <button type="button" id="btn-finish"
+                                class="btn btn-primary px-4 border-3 border-primary-subtle fw-bold shadow-sm">
+                                <i class="bi bi-check-lg me-1"></i> Finish
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </form>
     </div>
-    <div class="modal fade" id="massproModal" tabindex="-1">
+
+    <div class="modal fade" id="massproModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Required Document</h5>
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-warning text-dark border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Requirement Missing
+                    </h5>
                 </div>
-                <div class="modal-body">
-                    Declaration Masspro belum dipilih.
-                    Dokumen ini **wajib** untuk melanjutkan.
+                <div class="modal-body p-4 text-center">
+                    <p class="fs-5 mb-1">Declaration Masspro (DM) belum dipilih.</p>
+                    <p class="text-muted">Dokumen ini <strong>WAJIB</strong> ada jika Anda ingin menyelesaikan (Finish)
+                        proses ini.</p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" id="forceMasspro">
-                        Lanjutkan
+                <div class="modal-footer justify-content-center border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4 fw-bold" id="forceMasspro">
+                        Tambahkan & Lanjutkan
                     </button>
                 </div>
             </div>
@@ -104,203 +205,114 @@
     </div>
     <x-toast />
 @endsection
+
 @section('scripts')
     <script type="module">
         $(function() {
-            // CLICK ON ROW (toggle checkbox)
+            // --- 1. SEARCH & UI LOGIC (Sama kaya sebelumnya) ---
+            $('#doc-search').on('keyup', function() {
+                const value = $(this).val().toLowerCase();
+                $('.doc-row').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+
             $('.doc-row').on('click', function(e) {
-
-                // kalau klik radio -> skip
-                if ($(e.target).is('.qr-option')) return;
-
-                // kalau klik QR cell -> skip (biar handler QR-cell yang jalan)
-                if ($(e.target).closest('.qr-cell').length) return;
-
-                // kalau klik checkbox -> skip (default behavior)
-                if ($(e.target).is('.doc-check')) return;
-
-                // toggle checkbox
-                const $cb = $(this).find('.doc-check');
-                $cb.prop('checked', !$cb.prop('checked')).trigger('change');
+                if ($(e.target).closest('.qr-option').length > 0) return;
+                if ($(e.target).closest('.qr-cell').length > 0) return;
+                const checkbox = $(this).find('.doc-check');
+                checkbox.prop('checked', !checkbox.prop('checked')).trigger('change');
             });
 
-            // CLICK QR CELL → AUTO CHECK RADIO
             $('.qr-cell').on('click', function(e) {
-                e.stopPropagation(); // biar klik cell gak nyentuh row-click
-
-                const $radio = $(this).find('.qr-option');
-
-                // enable row first (if needed)
-                const $row = $(this).closest('tr');
-                const $cb = $row.find('.doc-check');
-
-                // kalau checkbox belum checked → checklist dulu
-                if (!$cb.prop('checked')) {
-                    $cb.prop('checked', true).trigger('change');
-                }
-
-                // sekarang check radio-nya
-                $radio.prop('checked', true).trigger('change');
+                e.stopPropagation();
+                const row = $(this).closest('tr');
+                const checkbox = row.find('.doc-check');
+                const radio = $(this).find('.qr-option');
+                if (!checkbox.is(':checked')) checkbox.prop('checked', true).trigger('change');
+                radio.prop('checked', true);
             });
 
-
-            // CHECKBOX CHANGE HANDLER
             $('.doc-check').on('change', function() {
-                let $row = $(this).closest('tr');
-                let $radios = $row.find('.qr-option');
-
-                if (this.checked) {
-                    $radios.prop('disabled', false);
-
-                    // kalau belum ada radio yg dipilih → pilih yg pertama
-                    if (!$radios.is(':checked')) {
-                        $radios.first().prop('checked', true);
-                    }
-
-                } else {
-                    $radios.prop('checked', false).prop('disabled', true);
-                }
-            });
-
-            // INIT LOAD
-            $('.doc-check').trigger('change');
-        });
-
-        $(document).ready(function() {
-            // disable semua qr options saat awal
-            if ($('.doc-check').is(':not(:checked)')) {
-                $('.qr-option').prop('disabled', true);
-                $('.qr-option').prop('checked', false);
-            }
-
-            // ketika checkbox dokumen di klik
-            $('.doc-check').on('change', function() {
-                let row = $(this).closest('tr');
-
+                const row = $(this).closest('tr');
+                const radios = row.find('.qr-option');
                 if ($(this).is(':checked')) {
-                    // enable radio positions
-                    row.find('.qr-option').prop('disabled', false);
-                    row.find('.qr-option').first().prop('checked', true);
+                    radios.prop('disabled', false);
+                    if (!radios.is(':checked')) radios.first().prop('checked', true);
+                    row.addClass('table-primary');
                 } else {
-                    // uncheck radio + disable
-                    row.find('.qr-option').prop('checked', false).prop('disabled', true);
+                    radios.prop('disabled', true).prop('checked', false);
+                    row.removeClass('table-primary');
                 }
             });
 
-            // handle submit
-            $('form').on('submit', function(e) {
-                let valid = true;
-                let message = '';
+            // --- 2. SUBMIT LOGIC (PERBAIKAN UTAMA DISINI) ---
 
+            // Function Submit yang Bersih
+            function processSubmit(actionValue) {
+                // A. Validasi Posisi QR (Harus ada radio yg kepilih utk setiap dokumen yg dicentang)
+                let isValid = true;
                 $('.doc-check:checked').each(function() {
-                    let row = $(this).closest('tr');
-                    let hasQR = row.find('.qr-option:checked').length > 0;
-
-                    if (!hasQR) {
-                        valid = false;
-                        message = "Setiap dokumen yang dipilih harus punya posisi QR ya 😅";
+                    if ($(this).closest('tr').find('.qr-option:checked').length === 0) {
+                        isValid = false;
+                        alert(
+                            `Dokumen "${$(this).closest('tr').find('td:eq(1)').text().trim()}" belum dipilih posisi QR-nya.`);
+                        return false;
                     }
                 });
 
-                if (!valid) {
-                    e.preventDefault();
-                    alert(message);
-                }
+                if (!isValid) return;
+
+                // B. Set Value Hidden Input
+                $('#input-decision').val(actionValue);
+
+                // C. Submit Form
+                // Kita pake DOM native .submit() biar aman dari loop event listener jQuery kalo ada
+                document.getElementById('form-stage').submit();
+            }
+
+            // Button Next
+            $('#btn-next').on('click', function() {
+                processSubmit('next');
             });
 
-            // =========================
-            // MASSPRO REQUIRED (DM) => modal + auto-scroll
-            // =========================
-            function hasMasspro() {
-                if ($('input.doc-check[value="DM"]').length == 0) return true;
-                return $('input.doc-check[value="DM"]').is(':checked');
-            }
-
-            function forceMassproChecked() {
-                const $dm = $('input.doc-check[value="DM"]');
-                $dm.prop('checked', true).trigger('change');
-            }
-
-            function scrollToMassproRow() {
-                const row = document.querySelector('input.doc-check[value="DM"]')?.closest('tr');
-                if (!row) return;
-
-                row.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                    inline: 'nearest'
-                });
-
-                row.classList.add('table-warning');
-                setTimeout(() => row.classList.remove('table-warning'), 2000);
-            }
-
-            const massproModalEl = document.getElementById('massproModal');
-            const massproModal = massproModalEl ?
-                bootstrap.Modal.getOrCreateInstance(massproModalEl) :
-                null;
-
-            let pendingAction = null;
-
-            $('#forceMasspro').on('click', function() {
-                forceMassproChecked();
-                massproModal.hide();
-
-                if (pendingAction) {
-                    allowSubmit = true;
-                    submitForm(pendingAction);
-                    pendingAction = null;
-                }
-            });
-
-            let allowSubmit = false;
-
-            function submitForm(actionValue) {
-                if (!allowSubmit) return;
-
-                $('<input>')
-                    .attr({
-                        type: 'hidden',
-                        name: 'decision',
-                        value: actionValue
-                    })
-                    .appendTo('form');
-
-                $('#form-stage').submit();
-            }
+            // Button Finish
+            const $massproModal = new bootstrap.Modal(document.getElementById('massproModal'));
+            let pendingFinish = false;
 
             $('#btn-finish').on('click', function() {
-                const action = 'finish';
+                // Cek Masspro (DM)
+                const $dmCheckbox = $('input.doc-check[value="DM"]');
 
-                if (!hasMasspro()) {
-                    pendingAction = action;
-                    massproModal.show();
-                    setTimeout(scrollToMassproRow, 150);
+                if ($dmCheckbox.length > 0 && !$dmCheckbox.is(':checked')) {
+                    pendingFinish = true;
+                    $massproModal.show();
+
+                    // Highlight Row Logic
+                    const row = $dmCheckbox.closest('tr')[0];
+                    row.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                    $(row).addClass('highlight-row');
+                    setTimeout(() => $(row).removeClass('highlight-row'), 2000);
+
                     return;
                 }
 
-                allowSubmit = true;
-                submitForm(action);
+                processSubmit('finish');
             });
 
-            $('#btn-next').on('click', function() {
-                allowSubmit = true;
-                submitForm('next');
+            // Handle Modal Force Lanjutkan
+            $('#forceMasspro').on('click', function() {
+                const $dmCheckbox = $('input.doc-check[value="DM"]');
+                $dmCheckbox.prop('checked', true).trigger('change'); // Centang otomatis
+                $massproModal.hide();
+
+                if (pendingFinish) {
+                    processSubmit('finish');
+                }
             });
-
-            $('#doc-search').on('keyup', function() {
-                let keyword = $(this).val().toLowerCase().trim();
-
-                $('.doc-row').each(function() {
-                    let docName = $(this)
-                        .find('td:nth-child(2)') // kolom "Jenis Dokumen"
-                        .text()
-                        .toLowerCase();
-
-                    $(this).toggle(docName.includes(keyword));
-                });
-            });
-            $('#doc-search').focus();
         });
     </script>
 @endsection

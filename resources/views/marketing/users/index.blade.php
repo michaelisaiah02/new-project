@@ -12,7 +12,7 @@
 
         /* Table Wrapper yang lebih fleksibel */
         .table-responsive {
-            max-height: 65vh;
+            max-height: 60vh;
             /* Di PC bisa liat banyak data */
             overflow-y: auto;
             border: 1px solid #dee2e6;
@@ -28,7 +28,7 @@
 @endsection
 
 @section('content')
-    <div class="container-fluid mt-4 pb-5">
+    <div class="container-fluid mt-3">
         <div class="row g-3 mb-3 align-items-center justify-content-between">
             <div class="col-12 col-md-auto">
                 <h5 class="fw-bold text-primary mb-0 text-uppercase">
@@ -51,10 +51,11 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-3">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-bordered table-striped align-middle mb-0" id="user-table">
+                    <table class="table table-hover table-bordered table-striped align-middle mb-0 text-nowrap"
+                        id="user-table">
                         <thead class="table-primary sticky-top text-center text-uppercase small">
                             <tr>
                                 <th style="width: 50px;">No</th>
@@ -63,9 +64,9 @@
                                 <th>Department</th>
                                 <th>WhatsApp</th>
                                 <th>Email</th>
-                                <th style="width: 80px;">Checked</th>
-                                <th style="width: 80px;">Approved</th>
-                                <th style="width: 100px;">Action</th>
+                                <th style="width: 50px;">Checked</th>
+                                <th style="width: 50px;">Approved</th>
+                                <th style="width: 120px">Action</th>
                             </tr>
                         </thead>
                         <tbody id="user-table-body" class="small">
@@ -85,7 +86,7 @@
             };
         @endphp
 
-        <div class="row justify-content-between align-items-center">
+        <div class="row justify-content-between align-items-center sticky-bottom">
             <div class="col-auto">
                 <a href="{{ $backUrl }}" class="btn btn-secondary px-4 border-3 border-light-subtle shadow-sm">
                     <i class="bi bi-arrow-left me-2"></i>Back
