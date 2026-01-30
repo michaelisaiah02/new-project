@@ -2,68 +2,105 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
 use App\Models\Project;
-use App\Models\ProjectDocument;
+use App\Models\Customer;
 use Illuminate\Http\Request;
+use App\Models\ProjectDocument;
+use Illuminate\Support\Facades\DB;
 
 class MassproController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Ambil semua data customer untuk pilihan di dropdown (selalu diambil)
-        // Kalau user bukan marketing atau management, batasi customer berdasarkan department user yang login
-        $customers = Customer::when(!in_array(auth()->user()->department->name, ['Marketing', 'Management']), function ($query) {
-            return $query->where('department_id', '=', auth()->user()->department_id);
-        })->orderBy('name')->get();
+        // 1. CEK: Apakah halaman baru dibuka (tanpa filter)?
+        // Kita anggap 'remark' default 'all' tidak dihitung sebagai filter aktif user
+        $filters = $request->only(['customer', 'model', 'part_number', 'suffix', 'minor_change']);
+        $hasFilter = collect($filters)->filter()->isNotEmpty();
 
-        // 2. Cek apakah ada filter yang diisi oleh user
-        $hasFilter = $request->filled('customer') ||
-            $request->filled('model') ||
-            $request->filled('part_number') ||
-            $request->filled('suffix') ||
-            $request->filled('minor_change') ||
-            $request->filled('remark');
-
-        // 3. Logika pengambilan data records
-        if ($hasFilter) {
-            // Jika ada filter, jalankan query
-            $massproRecords = Project::query()
-                ->when($request->customer, function ($query, $customer) {
-                    return $query->where('customer_code', $customer);
-                })
-                ->when($request->model, function ($query, $model) {
-                    return $query->where('model', 'like', '%' . $model . '%');
-                })
-                ->when($request->part_number, function ($query, $partNumber) {
-                    return $query->where('part_number', 'like', '%' . $partNumber . '%');
-                })
-                ->when($request->suffix, function ($query, $suffix) {
-                    return $query->where('suffix', 'like', '%' . $suffix . '%');
-                })
-                ->when($request->minor_change, function ($query, $minorChange) {
-                    return $query->where('minor_change', 'like', '%' . $minorChange . '%');
-                })
-                ->when($request->remark, function ($query, $remark) {
-                    if ($remark === 'all') {
-                        $remark = ['completed', 'canceled'];
-                    }
-                    return $query->whereIn('remark', (array) $remark);
-                })
-                ->whereHas('customer', function ($query) {
-                    // Batasi customer berdasarkan department user yang login
-                    if (!in_array(auth()->user()->department->name, ['Marketing', 'Management'])) {
-                        $query->where('department_id', '=', auth()->user()->department_id);
-                    }
-                })
-                ->orderBy('customer_code')
-                ->get();
-        } else {
-            // Jika tidak ada filter (awal buka halaman), kirim koleksi kosong
-            $massproRecords = collect();
+        // Jika tidak ada filter, kirim data kosong & customer list saja
+        if (!$hasFilter) {
+            return view('masspro.index', [
+                'customers' => Customer::orderBy('name')->get(),
+                'massproRecords' => collect(), // Kosong
+                'autoFilled' => [] // Tidak ada auto-fill
+            ]);
         }
 
-        return view('masspro.index', compact('customers', 'massproRecords'));
+        // 2. QUERY UTAMA
+        $query = Project::query()
+            ->whereIn('remark', ['completed', 'canceled']); // Base Filter
+
+        // Filter Independen (Bisa diisi acak)
+        if ($request->filled('customer')) {
+            $query->where('customer_code', $request->customer);
+        }
+        if ($request->filled('model')) {
+            $query->where('model', $request->model);
+        }
+        if ($request->filled('part_number')) {
+            $query->where('part_number', $request->part_number);
+        }
+        if ($request->filled('suffix')) {
+            $query->where('suffix', $request->suffix);
+        }
+        if ($request->filled('minor_change')) {
+            $query->where('minor_change', $request->minor_change);
+        }
+
+        // Filter Remark
+        if ($request->filled('remark') && $request->remark != 'all') {
+            $query->where('remark', $request->remark);
+        }
+
+        $massproRecords = $query->orderBy('updated_at', 'desc')->get();
+
+        // 3. LOGIKA "OTOMATIS PILIHAN ATASANNYA" (Reverse Lookup)
+        // Jika user memilih Part Number tapi Customer/Model kosong, kita cari induknya
+        $autoFilled = [];
+        if ($request->filled('part_number') && (!$request->filled('customer') || !$request->filled('model'))) {
+            // Ambil data project pertama yg cocok untuk cari induknya
+            $parent = $massproRecords->first();
+            if ($parent) {
+                if (!$request->filled('customer')) $autoFilled['customer'] = $parent->customer_code;
+                if (!$request->filled('model'))    $autoFilled['model'] = $parent->model;
+            }
+        }
+
+        $customers = Customer::orderBy('name')->get();
+
+        return view('masspro.index', compact('customers', 'massproRecords', 'autoFilled'));
+    }
+
+    // --- API METHODS (Update agar menerima semua parameter) ---
+    public function getModels(Request $request)
+    {
+        $q = Project::select('model')->distinct()->whereIn('remark', ['completed', 'canceled']);
+        // Filter opsional (kalau ada input lain, filter ini dipersempit)
+        if ($request->filled('customer_code')) $q->where('customer_code', $request->customer_code);
+        if ($request->filled('part_number'))   $q->where('part_number', $request->part_number);
+        return response()->json($q->orderBy('model')->pluck('model')); // Pluck biar jadi array string simple
+    }
+
+    public function getParts(Request $request)
+    {
+        $q = Project::select('part_number', 'part_name')->distinct()->whereIn('remark', ['completed', 'canceled']);
+        if ($request->filled('customer_code')) $q->where('customer_code', $request->customer_code);
+        if ($request->filled('model'))         $q->where('model', $request->model);
+        return response()->json($q->orderBy('part_number')->get());
+    }
+
+    public function getSuffixes(Request $request)
+    {
+        $q = Project::select('suffix')->distinct()->whereNotNull('suffix')->where('suffix', '!=', '')->whereIn('remark', ['completed', 'canceled']);
+        if ($request->filled('part_number')) $q->where('part_number', $request->part_number);
+        return response()->json($q->orderBy('suffix')->pluck('suffix'));
+    }
+
+    public function getMinorChanges(Request $request)
+    {
+        $q = Project::select('minor_change')->distinct()->whereNotNull('minor_change')->where('minor_change', '!=', '')->whereIn('remark', ['completed', 'canceled']);
+        if ($request->filled('part_number')) $q->where('part_number', $request->part_number);
+        return response()->json($q->orderBy('minor_change')->pluck('minor_change'));
     }
 
     public function view(Project $project)

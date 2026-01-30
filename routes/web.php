@@ -105,11 +105,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/view/{project}', 'view')->name('view');
         Route::get('{projectDocument}/view', 'document')->name('document');
         Route::get('/filter-options', 'getFilterOptions')->name('filterOptions');
+        Route::get('/api/get-models', 'getModels')->name('api.models');
+        Route::get('/api/get-parts', 'getParts')->name('api.parts');
+        Route::get('/api/get-minor-changes', 'getMinorChanges')->name('api.minorChanges');
+        Route::get('/api/get-suffixes', 'getSuffixes')->name('api.suffixes');
     });
 });
 Route::prefix('kpi')->as('kpi.')->controller(KPIController::class)->group(function () {
     Route::get('/', 'index')->name('index');
-    Route::get('/api/get-models', [KPIController::class, 'getModels'])->name('api.models');
-    Route::get('/api/get-parts', [KPIController::class, 'getParts'])->name('api.parts');
-    Route::get('/api/get-variants', [KPIController::class, 'getVariants'])->name('api.variants');
+    Route::get('/api/get-models', 'getModels')->name('api.models');
+    Route::get('/api/get-parts', 'getParts')->name('api.parts');
+    Route::get('/api/get-variants', 'getVariants')->name('api.variants');
 });
