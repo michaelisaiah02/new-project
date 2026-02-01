@@ -86,26 +86,35 @@ class DashboardController extends Controller
         // Tentuin target status string dari function statusOngoing()
         $targetStatus = null;
         if ($department === 'management') {
-            $targetStatus = 'Not Yet Approved Management';
+            $targetStatus = ['Not Yet Approved Management'];
         } elseif ($user->checked) {
-            $targetStatus = 'Not Yet Checked';
+            $targetStatus = ['Not Yet Checked'];
         } elseif ($user->approved && $user->department->type() === 'engineering') {
-            $targetStatus = 'Not Yet Approved';
+            $targetStatus = ['Not Yet Approved'];
         } else {
-            $targetStatus = 'On Going';
+            $targetStatus = ['Some Doc Delay', 'On Going'];
         }
 
         // Sorting Collection via PHP
         $ongoingProjects = $ongoingProjectsRaw->sortBy(function ($project) use ($targetStatus) {
-            // Kalau gak ada target status (user biasa), gak usah di sort aneh-aneh
-            if (!$targetStatus) return 0;
+            // Kalau gak ada target status (user biasa), sort berdasarkan delay, kemudian Ongoing
+            if (!empty($targetStatus)) {
+                // Cek dulu ada dokumen delay gak
+                $hasDelay = $project->documents->where('status', 'delay')->isNotEmpty();
 
-            // Cek status kalkulasinya
-            $currentStatus = $project->statusOngoing();
+                // Tentuin status kalkulasinya
+                $currentStatus = $project->statusOngoing();
 
-            // Kalau statusnya match sama target user, taruh di atas (return 0)
-            // Sisanya taruh di bawah (return 1)
-            return $currentStatus === $targetStatus ? 0 : 1;
+                // Prioritas 1: Yang sesuai target status
+                if (is_array($targetStatus)) {
+                    return in_array($currentStatus, $targetStatus) ? 0 : 1;
+                }
+
+                // Prioritas 3: Sisanya
+                return 1;
+            }
+            // Kalau ada target status, yang sesuai di atas
+            return $project->statusOngoing() === $targetStatus ? 0 : 1;
         });
 
         return view('engineering', compact('newProjects', 'ongoingProjects'));

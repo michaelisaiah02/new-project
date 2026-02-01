@@ -232,61 +232,49 @@ class ProjectDocumentController extends Controller
 
         // Karena Imagick aktif, kita bisa pake format 'png' dengan aman
         QrCode::format('png')
-            ->size(400) // Resolusi tinggi biar tajem pas dikecilin di PDF
+            ->size(500) // Resolusi tinggi biar tajem pas dikecilin di PDF
             ->margin(0)
-            ->errorCorrection('H')
+            ->errorCorrection('L')
             ->backgroundColor(255, 255, 255) // Putih biar kontras
             ->color(0, 0, 0)
             ->generate($qrContent, $qrTempPath);
 
         // 6. Proses Stamping ke PDF (FPDI)
         try {
-            $pdf = new Fpdi();
+            // REVISI PENTING: Paksa constructor 'mm' biar 1 unit = 1 milimeter.
+            // Pake backslash \setasign\Fpdi\Fpdi biar yakin class yg bener
+            $pdf = new Fpdi('P', 'mm');
 
             // Coba load file asli dulu
             try {
                 $pageCount = $pdf->setSourceFile($fullPath);
             } catch (\Exception $e) {
-                // --- MASUK LOGIC REPAIR GHOSTSCRIPT ---
-
-                // 1. Path EXE & Folder Temp (Sama kayak tadi)
+                // 1. Path EXE & Folder Temp
                 $gsBin = 'C:\\Program Files\\gs\\gs10.06.0\\bin\\gswin64c.exe';
-                $tempDir = storage_path('app/temp_pdf'); // Folder temp kita
+                $tempDir = storage_path('app/temp_pdf');
 
                 if (!file_exists($tempDir)) mkdir($tempDir, 0777, true);
 
-                // 2. Setup Nama File
                 $repairedPath = $tempDir . '/repair_' . time() . '.pdf';
-
-                // 3. Normalisasi Path (Wajib Backslash buat Windows)
                 $fixedGsBin  = str_replace('/', '\\', $gsBin);
                 $fixedOutput = str_replace('/', '\\', $repairedPath);
                 $fixedInput  = str_replace('/', '\\', $fullPath);
-                $fixedTemp   = str_replace('/', '\\', $tempDir); // <--- Path Temp Folder juga dinormalisasi
+                $fixedTemp   = str_replace('/', '\\', $tempDir);
 
-                // 4. Command Sakti
-                // Tambahan: -sTMPDIR="..." buat maksa GS pake folder temp kita, jangan folder system yg restricted.
                 $command = sprintf(
                     '"%s" -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sTMPDIR="%s" -sOutputFile="%s" "%s"',
                     $fixedGsBin,
-                    $fixedTemp, // <--- Param baru
+                    $fixedTemp,
                     $fixedOutput,
                     $fixedInput
                 );
 
-                // 5. Eksekusi Pake 'shell_exec' (Lebih Barbar tapi Jujur)
-                // Tambahin '2>&1' di belakang buat nangkep pesan error (stderr) ke output biasa
                 $output = shell_exec($command . ' 2>&1');
 
-                // 6. Validasi
-                // Cek apakah file output beneran jadi?
                 if (!file_exists($repairedPath) || filesize($repairedPath) === 0) {
-                    // Kalau gagal, lempar error beserta output asli dari CMD
-                    // Ini bakal ngasih tau lo error sebenernya apa (misal: Access Denied, dll)
                     throw new \Exception("Ghostscript Failed! Output CMD: " . $output);
                 }
 
-                // 7. Sukses? Lanjut load pake FPDI
                 $pageCount = $pdf->setSourceFile($repairedPath);
                 $tempRepairedFile = $repairedPath;
             }
@@ -296,18 +284,24 @@ class ProjectDocumentController extends Controller
                 $size = $pdf->getTemplateSize($templateId);
 
                 // Tambah halaman & pakai template lama
+                // Karena constructor dipaksa 'mm', size template akan otomatis dikonversi ke mm oleh FPDI
                 $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
                 $pdf->useTemplate($templateId);
+                $pdf->SetAutoPageBreak(false);
+                $pdf->SetMargins(0, 0, 0);
 
                 if ($pageNo === 1) {
-                    // Logika Posisi Dinamis (Copy yang tadi)
-                    $boxWidth = 25;
-                    $textHeight = 5; // Tinggi area tulisan
-                    $boxHeight = $boxWidth + $textHeight; // Tinggi total (Text + QR)
+                    // === KONFIGURASI UKURAN 10mm (1cm) ===
+                    $boxWidth = 12;     // LEBAR TOTAL 10mm
+                    $headerHeight = 3.6; // Tinggi Header 2.5mm
+                    $boxHeight = $headerHeight + $boxWidth; // Total Tinggi 12.5mm
                     $margin = 10; // Jarak dari pinggir kertas
+                    $qrPadding = 0.5; // Padding super tipis
+
                     $x = 0;
                     $y = 0;
 
+                    // Logika Posisi
                     switch ($qrPosition) {
                         case 'top_left':
                             $x = $margin;
@@ -329,43 +323,36 @@ class ProjectDocumentController extends Controller
                     }
 
                     // 1. GAMBAR KOTAK (BORDER)
-                    $pdf->SetDrawColor(0, 0, 0); // Warna Garis Hitam
-                    $pdf->SetLineWidth(0.3);     // Ketebalan Garis
-                    $pdf->SetFillColor(255, 255, 255); // Background Putih (biar tulisan gak numpuk konten PDF)
+                    $pdf->SetDrawColor(0, 0, 0);
+                    $pdf->SetLineWidth(0.1);     // Garis tipis 0.1mm biar gak tebel menuhin kotak
+                    $pdf->SetFillColor(255, 255, 255);
 
-                    // Rect(x, y, w, h, style). 'DF' = Draw & Fill (Isi putih, garis hitam)
+                    // Gambar Kotak Utama
                     $pdf->Rect($x, $y, $boxWidth, $boxHeight, 'DF');
 
-                    // 2. TULIS TEXT "CAR Digital Approved"
-                    // Pake Font Arial Bold, Ukuran kecil (misal 6 atau 7)
-                    $pdf->SetFont('Arial', 'B', 7);
-                    $pdf->SetTextColor(0, 0, 0); // Teks Hitam
+                    // Gambar Garis Pemisah Header
+                    $pdf->Line($x, $y + $headerHeight, $x + $boxWidth, $y + $headerHeight);
 
-                    // Set kursor ke pojok kiri atas kotak
-                    $pdf->SetXY($x, $y);
-                    // Cell(width, height, text, border, ln, align)
-                    // Border 1 di bawah cell text biar ada garis pemisah antara text & QR
-                    $pdf->Cell($boxWidth, $textHeight, 'CAR Digital Approved', 'B', 0, 'C');
+                    // 2. TULIS TEXT "CAR Digital Approved" (MICRO SIZE)
+                    // Pake Font Size 3 biar muat di lebar 10mm
+                    $pdf->SetFont('Arial', 'B', 5);
+                    $pdf->SetTextColor(0, 0, 0);
 
-                    // 3. TEMPEL QR CODE (Di bawah teks)
-                    // Kita kasih padding dikit biar gak nempel garis
-                    $qrPadding = 1;
+                    $pdf->SetXY($x, $y + 0.2);
+                    $pdf->Cell($boxWidth, 1.5, 'CAR Digital', 0, 0, 'C');
+                    $pdf->SetXY($x, $y + 1.6);
+                    $pdf->Cell($boxWidth, 1.5, 'Approved', 0, 0, 'C');
+
+                    // 3. TEMPEL QR CODE
                     $qrSize = $boxWidth - ($qrPadding * 2);
-
-                    // TEMPEL IMAGE CUMA DI SINI
-                    $pdf->Image($qrTempPath, $x + $qrPadding, $y + $textHeight + $qrPadding, $qrSize, $qrSize);
+                    $pdf->Image($qrTempPath, $x + $qrPadding, $y + $headerHeight + $qrPadding, $qrSize, $qrSize);
                 }
             }
 
             // Simpan (Overwrite file asli)
             $pdf->Output('F', $fullPath);
         } catch (\Exception $e) {
-            // Hapus file temp kalau gagal biar gak nyampah
-            if (file_exists($qrTempPath)) {
-                unlink($qrTempPath);
-            }
-
-            // Revert database update kalau PDF gagal (Opsional, tapi best practice)
+            // Revert status DB jika gagal
             $projectDocument->update([
                 'approved_by_id' => null,
                 'approved_by_name' => null,
@@ -376,11 +363,7 @@ class ProjectDocumentController extends Controller
         } finally {
             // CLEANUP
             if (isset($qrTempPath) && file_exists($qrTempPath)) unlink($qrTempPath);
-
-            // Hapus file hasil repair GS kalau ada
-            if (isset($tempRepairedFile) && file_exists($tempRepairedFile)) {
-                unlink($tempRepairedFile);
-            }
+            if (isset($tempRepairedFile) && file_exists($tempRepairedFile)) unlink($tempRepairedFile);
         }
 
         // 7. Cleanup

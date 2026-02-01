@@ -276,147 +276,160 @@ class ProjectEngineerController extends Controller
             QrCode::format('png')
                 ->size(500) // Gedein biar tajem pas di-resize
                 ->margin(0)
-                ->errorCorrection('H')
+                ->errorCorrection('L')
                 ->generate($qrContent, $qrTempPath);
 
             // 3. CABANG LOGIKA BERDASARKAN EKSTENSI
             try {
-                // === SKENARIO A: JIKA PDF (Pakai FPDI - Logic Stempel Vektor) ===
+                // === KONFIGURASI UMUM (10mm) ===
+                $boxWidth_mm = 12;
+                $headerHeight_mm = 3.6; // Tinggi header 3.6mm (cukup buat 2 baris)
+                $qrPadding_mm = 0.5;   // Padding aman buat scanner
+
+                // === SKENARIO A: JIKA PDF (FPDI) ===
                 if ($ext === 'pdf') {
-                    $pdf = new Fpdi();
-                    // Gunakan Ghostscript repair logic jika perlu (copy dari method sebelumnya)
-                    // Disini kita asumsi file aman/sudah direpair:
+                    // 1. Setup FPDI 'mm'
+                    $pdf = new Fpdi('P', 'mm');
                     $pageCount = $pdf->setSourceFile($fullPath);
 
                     for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                         $templateId = $pdf->importPage($pageNo);
                         $size = $pdf->getTemplateSize($templateId);
+
                         $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+
+                        // Mantra Anti Ngaco
+                        $pdf->SetAutoPageBreak(false);
+                        $pdf->SetMargins(0, 0, 0);
+
                         $pdf->useTemplate($templateId);
 
-                        // Tempel Stempel HANYA di Halaman 1
                         if ($pageNo === 1) {
-                            $boxWidth = 10; // mm
-                            $textHeight = 5;
-                            $boxHeight = $boxWidth + $textHeight;
+                            // Setup Ukuran
+                            $boxWidth = $boxWidth_mm;
+                            $headerHeight = $headerHeight_mm;
+                            $boxHeight = $headerHeight + $boxWidth;
                             $margin = 10;
 
-                            // Posisi Kanan Bawah
+                            // Posisi (Default Kanan Bawah)
                             $x = $size['width'] - $boxWidth - $margin;
                             $y = $size['height'] - $boxHeight - $margin;
 
-                            // Gambar Kotak & Teks
+                            // Gambar Kotak
                             $pdf->SetDrawColor(0, 0, 0);
-                            $pdf->SetLineWidth(0.3);
+                            $pdf->SetLineWidth(0.1);
                             $pdf->SetFillColor(255, 255, 255);
                             $pdf->Rect($x, $y, $boxWidth, $boxHeight, 'DF');
+                            $pdf->Line($x, $y + $headerHeight, $x + $boxWidth, $y + $headerHeight);
 
-                            $pdf->SetFont('Arial', 'B', 7);
+                            // Teks 2 Baris (MultiCell)
+                            $pdf->SetFont('Arial', 'B', 5);
                             $pdf->SetTextColor(0, 0, 0);
-                            $pdf->SetXY($x, $y);
-                            $pdf->Cell($boxWidth, $textHeight, 'CAR Digital Approved', 'B', 0, 'C');
+                            $pdf->SetXY($x, $y + 0.3); // Padding atas dikit 0.3mm
+                            $pdf->MultiCell($boxWidth, 1.5, "CAR Digital\nApproved", 0, 'C');
 
                             // Tempel QR
-                            $qrPadding = 1;
-                            $qrSize = $boxWidth - ($qrPadding * 2);
-                            $pdf->Image($qrTempPath, $x + $qrPadding, $y + $textHeight + $qrPadding, $qrSize, $qrSize);
+                            $qrSize = $boxWidth - ($qrPadding_mm * 2);
+                            $pdf->Image($qrTempPath, $x + $qrPadding_mm, $y + $headerHeight + $qrPadding_mm, $qrSize, $qrSize);
                         }
                     }
-                    $pdf->Output('F', $fullPath); // Save Overwrite PDF
+                    $pdf->Output('F', $fullPath);
                 }
 
-                // === SKENARIO B: JIKA GAMBAR (JPG/PNG) - Pakai GD Library ===
+                // === SKENARIO B: JIKA GAMBAR (GD Library) ===
                 elseif (in_array($ext, ['jpg', 'jpeg', 'png'])) {
 
-                    // A. Load Gambar ke Memori
-                    if ($ext === 'png') {
-                        $image = imagecreatefrompng($fullPath);
-                    } else {
-                        $image = imagecreatefromjpeg($fullPath);
-                    }
+                    if ($ext === 'png') $image = imagecreatefrompng($fullPath);
+                    else $image = imagecreatefromjpeg($fullPath);
 
                     if (!$image) throw new \Exception("Gagal load gambar.");
 
-                    // B. Hitung Ukuran & Posisi (Pixel Based)
                     $imgWidth = imagesx($image);
                     $imgHeight = imagesy($image);
 
-                    // Konversi ukuran mm ke pixel (estimasi kasar biar proporsional)
-                    // Kita ambil 15% dari lebar gambar, atau minimal 200px biar kebaca
-                    $boxSizePixel = max($imgWidth * 0.15, 200);
-                    $textHeightPixel = $boxSizePixel * 0.2; // Tinggi teks 20% dari lebar kotak
-                    $totalHeightPixel = $boxSizePixel + $textHeightPixel;
-                    $marginPixel = $imgWidth * 0.05; // Margin 5% dari pinggir
+                    // 1. UKURAN TARGET DI GAMBAR ASLI (12mm)
+                    // Rasio 12mm ke A4 (210mm) ~ 0.057
+                    $targetBoxW = $imgWidth * 0.057;
 
-                    // Koordinat Kanan Bawah
-                    $x = $imgWidth - $boxSizePixel - $marginPixel;
-                    $y = $imgHeight - $totalHeightPixel - $marginPixel;
+                    // LIMITASI MINIMUM:
+                    // Kita kunci minimal 120px.
+                    // Apapun resolusi gambarnya, stempel gak boleh lebih kecil dari ini.
+                    $targetBoxW = max($targetBoxW, 120);
 
-                    // C. Bikin Warna
-                    $white = imagecolorallocate($image, 255, 255, 255);
-                    $black = imagecolorallocate($image, 0, 0, 0);
+                    // Tinggi Proporsional (Header + Body)
+                    // Header 3.8mm / Body 12mm -> Ratio Total Tinggi ~1.32 dari lebar
+                    $targetBoxH = $targetBoxW * 1.32;
 
-                    // D. Gambar Kotak Putih (Background) + Border Hitam
-                    imagefilledrectangle($image, $x, $y, $x + $boxSizePixel, $y + $totalHeightPixel, $white);
-                    imagerectangle($image, $x, $y, $x + $boxSizePixel, $y + $totalHeightPixel, $black);
+                    $margin_px = $imgWidth * 0.02; // Margin 2%
 
-                    // E. Gambar Garis Pemisah (Bawah Teks)
-                    imageline($image, $x, $y + $textHeightPixel, $x + $boxSizePixel, $y + $textHeightPixel, $black);
+                    $dst_x = $imgWidth - $targetBoxW - $margin_px;
+                    $dst_y = $imgHeight - $targetBoxH - $margin_px;
 
-                    // F. Tulis Teks "CAR Digital Approved"
-                    // Karena GD default fontnya jelek, kita pake imagestring (font bawaan 1-5)
-                    // Atau kalau mau bagus pake imagettftext (tapi butuh file .ttf)
-                    // Kita pake built-in font terbesar (5) dan coba tengahin
+                    // 2. BIKIN MASTER KANVAS (TIGHT FIT)
+                    // Kita hitung lebar text "CAR Digital" pake Font 5
+                    // Font 5 itu lebar per hurufnya sekitar 9px. "CAR Digital" = 11 huruf.
+                    // Total lebar text ~ 100px.
+                    // Jadi kita set lebar Master Canvas 130px aja (biar text keliatan GEDE dan PENUH).
+                    $hdW = 130;
+                    $hdH = $hdW * 1.32;
+
+                    $stampHD = imagecreatetruecolor($hdW, $hdH);
+                    $white = imagecolorallocate($stampHD, 255, 255, 255);
+                    $black = imagecolorallocate($stampHD, 0, 0, 0);
+
+                    // Fill Putih & Border
+                    imagefilledrectangle($stampHD, 0, 0, $hdW, $hdH, $white);
+                    // Ketebalan garis disesuaikan sama kanvas kecil (2px cukup)
+                    imagesetthickness($stampHD, 2);
+                    imagerectangle($stampHD, 0, 0, $hdW, $hdH, $black);
+
+                    // Garis Pemisah Header (24% dari atas)
+                    $lineY = $hdH * 0.24;
+                    imageline($stampHD, 0, $lineY, $hdW, $lineY, $black);
+
+                    // 3. TULIS TEXT (FONT 5 - JADI TERLIHAT RAKSASA SEKARANG)
                     $font = 5;
-                    $text = 'CAR Digital Approved';
-                    $fontWidth = imagefontwidth($font) * strlen($text);
-                    $fontHeight = imagefontheight($font);
+                    $fh = imagefontheight($font);
 
-                    // Center text logic
-                    $textX = $x + ($boxSizePixel - $fontWidth) / 2;
-                    $textY = $y + ($textHeightPixel - $fontHeight) / 2;
+                    // Baris 1: "CAR Digital"
+                    $text1 = 'CAR Digital';
+                    $tx1 = ($hdW - (imagefontwidth($font) * strlen($text1))) / 2;
+                    // Posisi Y: Center di area header
+                    $ty1 = ($lineY / 2) - $fh + 2;
 
-                    imagestring($image, $font, $textX, $textY, $text, $black);
+                    imagestring($stampHD, $font, $tx1, $ty1, $text1, $black);
 
-                    // G. Tempel QR Code
+                    // Baris 2: "Approved"
+                    $text2 = 'Approved';
+                    $tx2 = ($hdW - (imagefontwidth($font) * strlen($text2))) / 2;
+                    $ty2 = $ty1 + $fh + 3; // Jarak dikit ke bawah
+
+                    imagestring($stampHD, $font, $tx2, $ty2, $text2, $black);
+
+                    // 4. TEMPEL QR KE KANVAS
                     $qrSrc = imagecreatefrompng($qrTempPath);
-                    $qrSrcWidth = imagesx($qrSrc);
-                    $qrSrcHeight = imagesy($qrSrc);
+                    $qrPad = $hdW * 0.05; // Padding 5%
+                    $qrTargetSize = $hdW - ($qrPad * 2);
 
-                    $qrTargetSize = $boxSizePixel - 4; // Kurangi padding dikit (2px kiri kanan)
+                    imagecopyresampled($stampHD, $qrSrc, $qrPad, $lineY + $qrPad, 0, 0, $qrTargetSize, $qrTargetSize, imagesx($qrSrc), imagesy($qrSrc));
 
-                    // Copy & Resize QR ke dalam kotak
-                    imagecopyresampled(
-                        $image,
-                        $qrSrc,
-                        $x + 2, // Dest X (Padding 2px)
-                        $y + $textHeightPixel + 2, // Dest Y (Di bawah teks + padding)
-                        0,
-                        0,
-                        $qrTargetSize,
-                        $qrTargetSize,
-                        $qrSrcWidth,
-                        $qrSrcHeight
-                    );
+                    // 5. RESIZE KE TARGET
+                    // Karena $hdW (130px) mungkin lebih kecil dari $targetBoxW (misal 200px di gambar HD),
+                    // dia bakal di-UPSCALE. Tulisannya bakal kebaca JELAS (walau agak kotak-kotak dikit style retro).
+                    imagecopyresampled($image, $stampHD, $dst_x, $dst_y, 0, 0, $targetBoxW, $targetBoxH, $hdW, $hdH);
 
-                    // H. Simpan Kembali (Overwrite)
-                    if ($ext === 'png') {
-                        imagepng($image, $fullPath);
-                    } else {
-                        imagejpeg($image, $fullPath, 90); // Quality 90
-                    }
+                    if ($ext === 'png') imagepng($image, $fullPath);
+                    else imagejpeg($image, $fullPath, 100);
 
-                    // Bersihkan Memori
                     imagedestroy($image);
+                    imagedestroy($stampHD);
                     imagedestroy($qrSrc);
                 }
             } catch (\Exception $e) {
-                // Cleanup temp
                 if (file_exists($qrTempPath)) unlink($qrTempPath);
-                return response()->json(['message' => 'Gagal stamp drawing: ' . $e->getMessage()], 500);
+                return response()->json(['message' => 'Gagal stamp: ' . $e->getMessage()], 500);
             }
 
-            // Cleanup QR Temp
             if (file_exists($qrTempPath)) unlink($qrTempPath);
         }
 
