@@ -171,16 +171,16 @@
                         </div>
                     </div>
 
-                    <div class="d-flex gap-4 p-3 bg-light rounded border">
+                    <div class="d-flex gap-4 p-1 bg-light rounded border justify-content-around">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="checked" name="checked"
                                 value="1">
-                            <label class="form-check-label fw-bold" for="checked">Can Check</label>
+                            <label class="form-check-label fw-bold" for="checked">Check</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="approved" name="approved"
                                 value="1">
-                            <label class="form-check-label fw-bold" for="approved">Can Approve</label>
+                            <label class="form-check-label fw-bold" for="approved">Approve</label>
                         </div>
                     </div>
                 </div>

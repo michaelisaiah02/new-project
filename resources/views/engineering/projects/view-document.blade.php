@@ -1,108 +1,206 @@
 @extends('layouts.app-projects')
 @section('title', 'ON-GOING PROJECT')
 @section('customer', $projectDocument->project->customer->name)
+
 @section('styles')
     <style>
-        .file-viewer {
-            width: 100%;
-            height: calc(100vh - 260px);
-            background: #fff;
-            border: 1px solid #0b1b3a;
+        /* 1. Label Box */
+        .label-box {
+            min-width: 100px;
+            font-weight: bold;
+            background-color: var(--bs-secondary-bg);
         }
 
-        .file-viewer iframe {
+        /* 2. File Viewer Container */
+        .viewer-container {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tinggi Viewer Responsif */
+        .viewer-container {
+            height: 50vh;
+            /* Default HP */
+            min-height: 400px;
+        }
+
+        @media (min-width: 992px) {
+            .viewer-container {
+                height: 62vh;
+                /* Desktop lebih tinggi */
+            }
+        }
+
+        .viewer-content {
             width: 100%;
             height: 100%;
-            border: 0;
+            object-fit: contain;
+            border: none;
         }
 
-        /* panel kanan */
-        .side-panel {
-            height: calc(100vh - 260px);
-            display: flex;
-            flex-direction: column;
-            gap: .5rem;
+        /* 3. Info Blocks */
+        .info-block {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 5px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #6c757d;
+            font-weight: bold;
+            margin-bottom: 2px;
         }
     </style>
 @endsection
+
 @section('content')
-    @php
-        $stages = [];
-    @endphp
-    <div class="container-fluid mt-2">
-        <div class="row justify-content-center mb-2">
-            <div class="col-md-4">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Model</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border"
-                        value="{{ $projectDocument->project->model }}" id="model" placeholder="Model Part"
-                        aria-label="Model" aria-describedby="model" readonly>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">No. Part</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-number"
-                        placeholder="Nomor Part" aria-label="No. Part" aria-describedby="part-number"
-                        value="{{ $projectDocument->project->part_number }}" readonly>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="input-group mb-1">
-                    <span class="input-group-text border-dark border-3 bg-secondary-subtle adjust-width">Part
-                        Name</span>
-                    <input type="text" class="form-control bg-secondary-subtle border-secondary border" id="part-name"
-                        placeholder="Nama Part" aria-label="Part Name" aria-describedby="part-name"
-                        value="{{ $projectDocument->project->part_name }}" readonly>
+    <div class="container-fluid mt-3 pb-3 pb-lg-0">
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body py-3">
+                <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text label-box border-dark border-2">Model</span>
+                            <input type="text" class="form-control border-dark border-2 bg-light fw-bold"
+                                value="{{ $projectDocument->project->model }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text label-box border-dark border-2">Part No</span>
+                            <input type="text" class="form-control border-dark border-2 bg-light fw-bold"
+                                value="{{ $projectDocument->project->part_number }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text label-box border-dark border-2">Part Name</span>
+                            <input type="text" class="form-control border-dark border-2 bg-light fw-bold"
+                                value="{{ $projectDocument->project->part_name }}" readonly>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="row mb-2 ms-0 justify-content-start align-items-center">
-            <div class="col-auto border-0 shadow-sm bg-secondary-subtle bg-gradient rounded-2">
-                <p class="fs-4 p-0 m-0">Documents : {{ $projectDocument->documentType->name }}</p>
+
+        <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+            <div class="d-flex align-items-center bg-secondary-subtle px-3 py-1 rounded border shadow-sm">
+                <i class="bi bi-file-earmark-text fs-4 me-2 text-primary"></i>
+                <span class="fs-5 fw-bold">{{ $projectDocument->documentType->name }}</span>
             </div>
-            <div class="col-auto">
-                <button class="btn btn-primary w-100 my-0" id="btn-download">Download</button>
+            <div>
+                <button class="btn btn-primary btn-sm shadow-sm px-3 fw-bold" id="btn-download">
+                    <i class="bi bi-download me-1"></i> Download
+                </button>
             </div>
         </div>
-        <div class="row g-2">
-            <div class="col-lg-9">
-                <div id="fileViewerContainer" class="file-viewer"></div>
+
+        <div class="row g-3">
+
+            <div class="col-lg-9 order-2 order-lg-1">
+                @php
+                    // Generate Secure URL di Server Side
+                    $customerCode = $projectDocument->project->customer->code;
+                    $model = $projectDocument->project->model;
+                    $partNumber = $projectDocument->project->part_number;
+                    $fileName = $projectDocument->file_name;
+
+                    // Path manual (sesuai folder structure lo)
+                    $path = "{$customerCode}/{$model}/{$partNumber}/{$fileName}";
+                    $fileUrl = $fileName ? Storage::url($path) : '';
+                @endphp
+
+                <div id="fileViewerContainer" class="viewer-container shadow-sm" data-url="{{ $fileUrl }}"
+                    data-filename="{{ $fileName }}">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="col-lg-3">
-                <div class="side-panel">
-                    <div class="row flex-fill">
-                        <div class="col">
-                            <div class="border bg-light-subtle rounded-2 p-2 h-100">
-                                <h5>Document Info</h5>
-                                <p class="mb-1"><strong>Uploaded
-                                        By:</strong>
-                                    {{ $projectDocument->created_by_name ? $projectDocument->created_by_name : '-' }}
-                                    -
+            <div class="col-lg-3 order-1 order-lg-2">
+                <div class="d-flex flex-column h-100">
+
+                    <div class="card shadow-sm border-0 bg-light mb-1 flex-fill">
+                        <div class="card-header bg-dark text-white fw-bold py-2">
+                            <i class="bi bi-info-circle me-2"></i>Document Info
+                        </div>
+                        <div class="card-body p-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 300px;">
+                            <div class="info-block">
+                                <div class="info-label">Uploaded By</div>
+                                <div class="fw-bold text-dark">{{ $projectDocument->created_by_name ?? '-' }}</div>
+                                <div class="small text-muted">
                                     {{ $projectDocument->created_date ? $projectDocument->created_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                                </p>
-                                <p class="mb-1"><strong>Checked
-                                        By:</strong>
-                                    {{ $projectDocument->checked_by_name ? $projectDocument->checked_by_name : '-' }}
-                                    -
-                                    {{ $projectDocument->checked_date ? $projectDocument->checked_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                                </p>
-                                <p class="mb-1"><strong>Approved
-                                        By:</strong>
-                                    {{ $projectDocument->approved_by_name ? $projectDocument->approved_by_name : '-' }}
-                                    -
-                                    {{ $projectDocument->approved_date ? $projectDocument->approved_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                                </p>
+                                </div>
                             </div>
+
+                            <div
+                                class="info-block {{ $projectDocument->checked_by_name ? 'border-primary border-opacity-25 bg-primary-subtle' : '' }}">
+                                <div class="info-label text-primary">Checked By</div>
+                                <div class="fw-bold text-dark">{{ $projectDocument->checked_by_name ?? '-' }}</div>
+                                <div class="small text-muted">
+                                    {{ $projectDocument->checked_date ? $projectDocument->checked_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                                </div>
+                            </div>
+
+                            <div
+                                class="info-block {{ $projectDocument->approved_by_name ? 'border-success border-opacity-25 bg-success-subtle' : '' }}">
+                                <div class="info-label text-success">Approved By</div>
+                                <div class="fw-bold text-dark">{{ $projectDocument->approved_by_name ?? '-' }}</div>
+                                <div class="small text-muted">
+                                    {{ $projectDocument->approved_date ? $projectDocument->approved_date->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
-                    <button class="btn btn-primary w-100" id="btn-check" hidden>Checked</button>
-                    <button class="btn btn-success w-100" id="btn-approve" hidden>Approved</button>
+                    <div class="d-flex flex-column gap-1">
+                        @php
+                            $user = auth()->user();
+                            $dept = $user->department->type();
 
-                    <a href="{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->id]) }}"
-                        class="btn btn-secondary w-100">Back</a>
+                            // Logic Permission (Pindah dari JS ke Blade biar aman)
+                            $showCheck = $user->checked && !$projectDocument->checked_date && $dept === 'engineering';
+                            $showApprove =
+                                $user->approved &&
+                                $projectDocument->checked_date &&
+                                !$projectDocument->approved_date &&
+                                ($dept === 'engineering' || $dept === 'management');
+                        @endphp
+
+                        @if ($showCheck)
+                            <button class="btn btn-primary w-100 shadow-sm fw-bold py-2 border-3 border-light-subtle"
+                                id="btn-check">
+                                <i class="bi bi-check-circle me-2"></i>Check
+                            </button>
+                        @endif
+
+                        @if ($showApprove)
+                            <button class="btn btn-success w-100 shadow-sm fw-bold py-2 border-3 border-light-subtle"
+                                id="btn-approve">
+                                <i class="bi bi-check-all me-2"></i>Approve
+                            </button>
+                        @endif
+
+                        <a href="{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->id]) }}"
+                            class="btn btn-secondary w-100 border-3 border-secondary-subtle">
+                            <i class="bi bi-arrow-left me-2"></i>Back
+                        </a>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -113,135 +211,108 @@
 
 @section('scripts')
     <script type="module">
-        function checkApproval() {
-            const userCanCheck = @json(auth()->user()->checked);
-            const userCanApprove = @json(auth()->user()->approved);
-            const userDepartment = @json(auth()->user()->department->type());
-            const isChecked = @json($projectDocument->checked_date !== null);
-            const isApproved = @json($projectDocument->approved_date !== null);
-            console.log(userCanCheck, userCanApprove, userDepartment, isChecked, isApproved);
-            if (userCanCheck && !isChecked && userDepartment === 'engineering') {
-                $('#btn-check').removeAttr('hidden');
-            }
-            if (userCanApprove && isChecked && !isApproved && (userDepartment === 'engineering' || userDepartment ===
-                    'management')) {
-                $('#btn-approve').removeAttr('hidden');
-            }
-        }
         $(function() {
-            const fileName = "{{ $projectDocument->file_name }}";
-            const $viewerContainer = $('#fileViewerContainer');
+            // --- 1. VIEWER LOGIC ---
+            const $container = $('#fileViewerContainer');
+            const fileUrl = $container.data('url');
+            const fileName = $container.data('filename');
 
             if (!fileName) {
-                $viewerContainer.text('No file uploaded.');
-                return;
-            }
-
-            const customerCode = "{{ $projectDocument->project->customer->code }}";
-            const model = "{{ $projectDocument->project->model }}";
-            const partNumber = "{{ $projectDocument->project->part_number }}";
-
-            const fileUrl =
-                `/storage/${customerCode}/${model}/${partNumber}/${fileName}?v={{ time() }}#toolbar=0&navpanes=0&scrollbar=0`;
-            const ext = fileName.split('.').pop().toLowerCase();
-
-            let $viewer;
-
-            if (ext === 'pdf') {
-                $viewer = $('<iframe>', {
-                    src: fileUrl
-                });
-            } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
-                $viewer = $('<img>', {
-                    src: fileUrl
-                });
+                $container.html(`
+                    <div class="text-center text-muted">
+                        <i class="bi bi-file-earmark-x display-1"></i>
+                        <p class="mt-2 fw-bold">No file uploaded yet.</p>
+                    </div>
+                `);
             } else {
-                $viewer = $('<p>').text('Unsupported file format');
+                const ext = fileName.split('.').pop().toLowerCase();
+                let viewerHtml = '';
+
+                // PDF Viewer
+                if (ext === 'pdf') {
+                    // Tambahin cache buster & params biar bersih
+                    viewerHtml =
+                        `<iframe src="${fileUrl}?v={{ time() }}#toolbar=0&navpanes=0&scrollbar=0" class="viewer-content"></iframe>`;
+                }
+                // Image Viewer
+                else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+                    viewerHtml =
+                        `<img src="${fileUrl}?v={{ time() }}" class="viewer-content" alt="Document Preview">`;
+                }
+                // Fallback
+                else {
+                    viewerHtml = `
+                        <div class="text-center">
+                            <i class="bi bi-file-earmark-binary display-4 text-warning"></i>
+                            <p class="mt-3">Preview not available for .${ext} files.</p>
+                            <a href="${fileUrl}" class="btn btn-primary" download="${fileName}">Download File</a>
+                        </div>
+                    `;
+                }
+
+                // Delay render dikit biar spinner keliatan (UX)
+                setTimeout(() => {
+                    $container.html(viewerHtml);
+                }, 500);
             }
 
-            $viewerContainer.append($viewer);
-        });
-        $(document).ready(function() {
+            // --- 2. ACTION BUTTONS LOGIC ---
             const csrf = '{{ csrf_token() }}';
             const docId = '{{ $projectDocument->id }}';
-            const ONGOING_URL =
+            const redirectUrl =
                 '{{ route('engineering.projects.onGoing', ['project' => $projectDocument->project->id]) }}';
 
-            // Helper biar gak ngetik ulang-ulang
-            const setButtonLoading = ($btn, isLoading, originalContent = '') => {
-                if (isLoading) {
-                    // Simpen konten asli di data attribute biar gak ilang
-                    $btn.data('original-content', $btn.html());
-                    $btn.prop('disabled', true);
-                    // Ganti jadi Spinner (Asumsi pake Bootstrap, kalau FontAwesome ganti <i>)
-                    $btn.html(
-                        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...'
-                        );
-                } else {
-                    $btn.prop('disabled', false);
-                    // Balikin konten asli
-                    $btn.html($btn.data('original-content'));
-                }
-            };
+            // Fungsi helper Loading Button
+            function setLoading($btn) {
+                const originalText = $btn.html();
+                $btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-2"></span>Processing...');
+                return function reset() {
+                    $btn.prop('disabled', false).html(originalText);
+                };
+            }
 
+            // Button Check
             $('#btn-check').on('click', function() {
-                const $btn = $(this);
-
-                // 1. Aktifin Mode Loading
-                setButtonLoading($btn, true);
-
+                const resetBtn = setLoading($(this));
                 $.post(`/engineering/project-documents/${docId}/checked`, {
-                    _token: csrf
-                }, () => {
-                    // Sukses? Redirect. Gak perlu balikin button karena halaman bakal pindah.
-                    location.href = ONGOING_URL;
-                }).fail(res => {
-                    // 2. Gagal? Balikin Tombol biar bisa dicoba lagi
-                    setButtonLoading($btn, false);
-                    alert(res.responseJSON.message);
-                });
+                        _token: csrf
+                    })
+                    .done(() => window.location.href = redirectUrl)
+                    .fail((res) => {
+                        resetBtn();
+                        alert('Error: ' + (res.responseJSON?.message || 'Failed to check document.'));
+                    });
             });
 
+            // Button Approve
             $('#btn-approve').on('click', function() {
-                const $btn = $(this);
-
-                // 1. Aktifin Mode Loading
-                setButtonLoading($btn, true);
-
+                const resetBtn = setLoading($(this));
                 $.post(`/engineering/project-documents/${docId}/approved`, {
-                    _token: csrf
-                }, () => {
-                    location.href = ONGOING_URL;
-                }).fail(res => {
-                    // 2. Gagal? Balikin Tombol + Log Error
-                    setButtonLoading($btn, false);
-
-                    // Alert errornya biar user tau (opsional, daripada cuma console.log)
-                    alert('Gagal approve: ' + (res.responseJSON?.message || 'Unknown Error'));
-                    console.log(res.responseJSON);
-                });
+                        _token: csrf
+                    })
+                    .done(() => window.location.href = redirectUrl)
+                    .fail((res) => {
+                        resetBtn();
+                        alert('Error: ' + (res.responseJSON?.message || 'Failed to approve document.'));
+                    });
             });
 
+            // Button Download
             $('#btn-download').on('click', function() {
-                const customerCode = "{{ $projectDocument->project->customer->code }}";
-                const model = "{{ $projectDocument->project->model }}";
-                const partNumber = "{{ $projectDocument->project->part_number }}";
-                const fileName = "{{ $projectDocument->file_name }}";
-
-                if (!fileName) {
-                    alert('No file uploaded.');
+                if (!fileName || !fileUrl) {
+                    alert('No file available to download.');
                     return;
                 }
-
-                const fileUrl = `/storage/${customerCode}/${model}/${partNumber}/${fileName}`;
+                // Invisible Link Trick
                 const link = document.createElement('a');
                 link.href = fileUrl;
                 link.download = fileName;
+                link.target = '_blank';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
             });
-            checkApproval();
         });
     </script>
 @endsection

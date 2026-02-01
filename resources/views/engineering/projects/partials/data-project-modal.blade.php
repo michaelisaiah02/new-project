@@ -70,14 +70,16 @@
                                     '/';
                             @endphp
 
-                            <button type="button" class="btn btn-primary border-3 border-light-subtle grow view-file"
+                            <button type="button"
+                                class="btn btn-primary border-3 border-light-subtle grow view-file w-fit"
                                 {{ $project->drawing_2d ? '' : 'disabled' }}
                                 data-file="{{ $project->drawing_2d ? Storage::url($basePath . $project->drawing_2d) : '#' }}"
                                 data-title="View 2D - {{ $project->drawing_2d }}">
                                 <i class="bi bi-file-earmark-image me-md-1"></i> View 2D
                             </button>
 
-                            <button type="button" class="btn btn-dark border-3 border-light-subtle grow view-file"
+                            <button type="button"
+                                class="btn btn-dark border-3 border-light-subtle grow view-file w-fit"
                                 {{ $project->drawing_3d ? '' : 'disabled' }}
                                 data-file="{{ $project->drawing_3d ? Storage::url($basePath . $project->drawing_3d) : '#' }}"
                                 data-title="View 3D - {{ $project->drawing_3d }}">

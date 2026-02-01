@@ -7,14 +7,14 @@
 
     @media (max-width: 768px) {
         .label-box {
-            min-width: 110px;
+            min-width: 98px;
             font-size: 0.85rem;
             padding: 0.5rem;
         }
     }
 </style>
 
-<div class="modal fade" id="showProjectModal" tabindex="-1" aria-labelledby="showProjectModal{{ $project->id }}"
+<div class="modal fade" id="showProjectModal{{ $project->id }}" tabindex="-1" aria-labelledby="showProjectModal"
     aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -78,7 +78,7 @@
                                 <i class="bi bi-file-earmark-image me-md-1"></i> View 2D
                             </button>
 
-                            <button type="button" class="btn btn-dark border-3 border-light-subtle grow view-file"
+                            <button type="button" class="btn btn-primary border-3 border-light-subtle grow view-file"
                                 {{ $project->drawing_3d ? '' : 'disabled' }}
                                 data-file="{{ $project->drawing_3d ? Storage::url($basePath . $project->drawing_3d) : '#' }}"
                                 data-title="View 3D - {{ $project->drawing_3d }}">
@@ -224,25 +224,6 @@
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary px-4 shadow-sm"
                     data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="fileViewerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content h-100">
-            <div class="modal-header bg-dark text-white py-2">
-                <h6 class="modal-title text-truncate" id="fileViewerTitle" style="max-width: 90%;">File Viewer</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-0 bg-secondary-subtle position-relative"
-                style="height: 80vh; min-height: 400px;">
-                <div id="fileViewerContainer" class="w-100 h-100 d-flex justify-content-center align-items-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

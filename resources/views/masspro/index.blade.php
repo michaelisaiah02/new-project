@@ -64,7 +64,7 @@
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle label-box w-25">Remark</span>
                         <select class="form-select border-warning border" id="remark" name="remark">
-                            <option value="all" {{ request('remark') == 'all' ? 'selected' : '' }}>All (Masspro Only)
+                            <option value="all" {{ request('remark') == 'all' ? 'selected' : '' }}>All
                             </option>
                             <option value="completed" {{ request('remark') == 'completed' ? 'selected' : '' }}>Completed
                             </option>
@@ -146,6 +146,20 @@
             </table>
         </div>
     </div>
+    @php
+        $backUrl = match (auth()->user()->department->type()) {
+            'management' => route('management'),
+            'engineering' => route('engineering'),
+            'marketing' => route('marketing'),
+            default => route('login'),
+        };
+    @endphp
+    <div class="row justify-content-between align-items-center px-1 sticky-bottom">
+        <div class="col-auto">
+            <a href="{{ $backUrl }}" class="btn btn-primary px-4 border-3 border-light-subtle shadow-sm">Back</a>
+        </div>
+    </div>
+    <x-toast />
 @endsection
 
 @section('scripts')

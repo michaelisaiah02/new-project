@@ -22,7 +22,7 @@
     <nav class="navbar navbar-expand-lg navbar-light text-light py-0 my-0 bg-primary navbar-custom" id="navbar-project">
         <div class="container-fluid justify-content-center justify-content-md-between px-0">
 
-            <a class="navbar-brand mx-2 mx-md-4" href="/">
+            <a class="navbar-brand mx-1 mx-md-4" href="/">
                 <img src="{{ asset('image/logo-pt.png') }}" alt="Logo PT" class="logo">
             </a>
 
@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <a class="navbar-brand mx-2 mx-md-4" href="/">
+            <a class="navbar-brand mx-1 mx-md-4" href="/">
                 <img src="{{ asset('image/logo-rice.png') }}" alt="Logo Rice" class="logo">
             </a>
         </div>
