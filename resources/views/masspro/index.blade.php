@@ -84,7 +84,7 @@
                     </div>
                 </div>
 
-                {{-- MINOR CHANGE (DIPISAH) --}}
+                {{-- MINOR CHANGE --}}
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="input-group mb-1">
                         <span class="input-group-text border-dark border-3 bg-warning-subtle label-box w-25">MC</span>
@@ -154,7 +154,7 @@
             default => route('login'),
         };
     @endphp
-    <div class="row justify-content-between align-items-center px-1 sticky-bottom">
+    <div class="row justify-content-between align-items-center mx-0 sticky-bottom">
         <div class="col-auto">
             <a href="{{ $backUrl }}" class="btn btn-primary px-4 border-3 border-light-subtle shadow-sm">Back</a>
         </div>
@@ -165,15 +165,19 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
-            // --- 1. AMBIL VALUE AWAL (Termasuk AutoFilled dari Controller) ---
-            // Kita pakai ?? untuk fallback ke empty string
+            // --- 0. FLAG PEREDAM (PENTING BIAR GA LOOPING) ---
+            // Variabel ini berfungsi untuk memblokir auto-submit saat kita sedang mengutak-atik dropdown via coding (AJAX)
+            var isUpdating = false;
+
+            // --- 1. AMBIL VALUE AWAL ---
             var valCust = "{{ request('customer') ?? ($autoFilled['customer'] ?? '') }}";
             var valModel = "{{ request('model') ?? ($autoFilled['model'] ?? '') }}";
             var valPart = "{{ request('part_number') }}";
             var valSuffix = "{{ request('suffix') }}";
             var valMc = "{{ request('minor_change') }}";
+            var valRemark = "{{ request('remark') ?? 'all' }}";
 
-            // --- 2. SETUP SELECTIZE (Init Awal) ---
+            // --- 2. SETUP SELECTIZE ---
             var $sCust = $('#customer').selectize({
                 create: false,
                 sortField: 'text'
@@ -210,6 +214,9 @@
                 create: false
             });
             var $sRemark = $('#remark').selectize({
+                valueField: 'id',
+                labelField: 'text',
+                searchField: 'text',
                 create: false
             });
 
@@ -218,107 +225,151 @@
             var cPart = $sPart[0].selectize;
             var cSuffix = $sSuffix[0].selectize;
             var cMc = $sMc[0].selectize;
+            var cRemark = $sRemark[0].selectize;
 
-            // Fungsi Auto Submit
-            function submitForm() {
-                setTimeout(function() {
-                    $('#form-masspro').submit();
-                }, 50);
+            // Set Value Awal Customer
+            if (valCust) cCust.setValue(valCust, true);
+
+            // --- 3. HELPER: AMBIL SEMUA FILTER ---
+            function getAllFilters() {
+                return {
+                    customer: cCust.getValue(),
+                    model: cModel.getValue() || valModel,
+                    part_number: cPart.getValue() || valPart,
+                    suffix: cSuffix.getValue() || valSuffix,
+                    minor_change: cMc.getValue() || valMc,
+                    remark: cRemark.getValue() || valRemark,
+                };
             }
 
-            // --- 3. FUNGSI LOAD OPSI (INDEPENDENT & MIXED) ---
-            // Kita load opsi dropdown berdasarkan apa yg sedang terpilih.
-            // Kita kirim SEMUA parameter saat request API, biar API yang mikir filternya.
+            // --- 4. LOAD OPSI SECARA PARALEL ---
+            var params = getAllFilters();
 
-            var currentParams = {
-                customer_code: valCust,
-                model: valModel,
-                part_number: valPart
-            };
-
-            // A. Load Model (Berdasarkan Cust & Part)
+            // A. Load Model
             $.ajax({
                 url: '{{ route('masspro.api.models') }}',
-                data: currentParams,
+                data: params,
                 success: function(res) {
-                    var options = res.map(function(x) {
+                    isUpdating = true; // <--- NYALAKAN PEREDAM
+                    cModel.clearOptions(); // Ini memicu change, tapi ditahan oleh isUpdating
+                    cModel.addOption(res.map(function(x) {
                         return {
                             text: x
-                        };
-                    });
-                    cModel.addOption(options);
-                    if (valModel) cModel.setValue(valModel, true); // True = Silent (no trigger change)
+                        }
+                    }));
+                    if (valModel) cModel.setValue(valModel, true);
+                    isUpdating = false; // <--- MATIKAN PEREDAM
                 }
             });
 
-            // B. Load Part (Berdasarkan Cust & Model)
+            // B. Load Part
             $.ajax({
                 url: '{{ route('masspro.api.parts') }}',
-                data: currentParams,
+                data: params,
                 success: function(res) {
+                    isUpdating = true;
+                    cPart.clearOptions();
                     cPart.addOption(res);
                     if (valPart) cPart.setValue(valPart, true);
+                    isUpdating = false;
                 }
             });
 
-            // C. Load Suffix (Berdasarkan Part)
+            // C. Load Suffix
             $.ajax({
-                url: '{{ route('masspro.api.suffixes') }}', // Pastikan route ini ada
-                data: {
-                    part_number: valPart
-                },
+                url: '{{ route('masspro.api.suffixes') }}',
+                data: params,
                 success: function(res) {
-                    var options = res.map(function(x) {
+                    isUpdating = true;
+                    cSuffix.clearOptions();
+                    cSuffix.addOption(res.map(function(x) {
                         return {
                             text: x
-                        };
-                    });
-                    cSuffix.addOption(options);
+                        }
+                    }));
                     if (valSuffix) cSuffix.setValue(valSuffix, true);
+                    isUpdating = false;
                 }
             });
 
-            // D. Load MC (Berdasarkan Part)
+            // D. Load MC
             $.ajax({
-                url: '{{ route('masspro.api.minorChanges') }}', // Pastikan route ini ada
-                data: {
-                    part_number: valPart
-                },
+                url: '{{ route('masspro.api.minorChanges') }}',
+                data: params,
                 success: function(res) {
-                    var options = res.map(function(x) {
+                    isUpdating = true;
+                    cMc.clearOptions();
+                    cMc.addOption(res.map(function(x) {
                         return {
                             text: x
-                        };
-                    });
-                    cMc.addOption(options);
+                        }
+                    }));
                     if (valMc) cMc.setValue(valMc, true);
+                    isUpdating = false;
                 }
             });
 
+            // E. Load Remark
+            $.ajax({
+                url: '{{ route('masspro.api.remarks') }}',
+                data: params,
+                success: function(res) {
+                    isUpdating = true;
+                    cRemark.clearOptions();
+                    cRemark.addOption({
+                        id: 'all',
+                        text: 'All'
+                    });
+                    var options = res.map(function(x) {
+                        var label = x.charAt(0).toUpperCase() + x.slice(1);
+                        return {
+                            id: x,
+                            text: label
+                        };
+                    });
+                    cRemark.addOption(options);
+                    if (valRemark) cRemark.setValue(valRemark, true);
+                    isUpdating = false;
+                }
+            });
 
-            // --- 4. EVENT LISTENER (AUTO SUBMIT SAJA) ---
-            // Kita hapus logic "clear options" yg ribet.
-            // Biarkan User pilih -> Submit -> Controller filter & autoFill -> Halaman Reload -> Dropdown terisi yg benar.
+            // --- 5. EVENT LISTENER (AUTO SUBMIT) ---
+            function submitForm() {
+                // CEK PEREDAM DISINI
+                if (isUpdating) return; // Kalau lagi updating via AJAX, JANGAN submit!
+
+                // Debounce sedikit biar ga double submit
+                setTimeout(function() {
+                    $('#form-masspro').submit();
+                }, 100);
+            }
+
+            // Logic Trigger: Cek apakah nilai berubah dari nilai awal
+            // Gunakan 'String(val)' untuk memastikan tipe data sama (kadang "1" != 1)
 
             cCust.on('change', function(val) {
-                if (val !== valCust) submitForm();
-            });
-            cModel.on('change', function(val) {
-                if (val !== valModel) submitForm();
-            });
-            cPart.on('change', function(val) {
-                if (val !== valPart) submitForm();
-            });
-            cSuffix.on('change', function(val) {
-                if (val !== valSuffix) submitForm();
-            });
-            cMc.on('change', function(val) {
-                if (val !== valMc) submitForm();
-            });
-            $sRemark[0].selectize.on('change', function(val) {
-                submitForm();
+                if (val !== valCust && !isUpdating) submitForm();
             });
 
+            cModel.on('change', function(val) {
+                if (String(val) !== String(valModel) && !isUpdating) submitForm();
+            });
+
+            cPart.on('change', function(val) {
+                if (String(val) !== String(valPart) && !isUpdating) submitForm();
+            });
+
+            cSuffix.on('change', function(val) {
+                if (String(val) !== String(valSuffix) && !isUpdating) submitForm();
+            });
+
+            cMc.on('change', function(val) {
+                if (String(val) !== String(valMc) && !isUpdating) submitForm();
+            });
+
+            cRemark.on('change', function(val) {
+                if (String(val) !== String(valRemark) && !isUpdating) submitForm();
+            });
         });
     </script>
 @endsection

@@ -27,10 +27,12 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    Route::get('/', [DashboardController::class, 'index'])->name('index');
-    Route::get('/marketing', [DashboardController::class, 'marketing'])->name('marketing');
-    Route::get('/engineering', [DashboardController::class, 'engineering'])->name('engineering');
-    Route::get('/management', [DashboardController::class, 'management'])->name('management');
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/marketing', 'marketing')->name('marketing');
+        Route::get('/engineering', 'engineering')->name('engineering');
+        Route::get('/management', 'management')->name('management');
+    });
 
     Route::prefix('document-type')->as('document-type.')->controller(DocumentTypeController::class)->group(function () {
         Route::get('/', 'index')->name('index');
@@ -106,6 +108,7 @@ Route::middleware('auth')->group(function () {
         Route::get('{projectDocument}/view', 'document')->name('document');
         Route::get('/filter-options', 'getFilterOptions')->name('filterOptions');
         Route::get('/api/get-models', 'getModels')->name('api.models');
+        Route::get('/api/get-remarks',  'getRemarks')->name('api.remarks');
         Route::get('/api/get-parts', 'getParts')->name('api.parts');
         Route::get('/api/get-minor-changes', 'getMinorChanges')->name('api.minorChanges');
         Route::get('/api/get-suffixes', 'getSuffixes')->name('api.suffixes');

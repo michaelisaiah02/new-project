@@ -284,7 +284,7 @@ class ProjectEngineerController extends Controller
                 // === KONFIGURASI UMUM (10mm) ===
                 $boxWidth_mm = 12;
                 $headerHeight_mm = 3.6; // Tinggi header 3.6mm (cukup buat 2 baris)
-                $qrPadding_mm = 0.5;   // Padding aman buat scanner
+                $qrPadding_mm = 1.5;   // Padding aman buat scanner
 
                 // === SKENARIO A: JIKA PDF (FPDI) ===
                 if ($ext === 'pdf') {
@@ -349,7 +349,8 @@ class ProjectEngineerController extends Controller
 
                     // 1. UKURAN TARGET DI GAMBAR ASLI (12mm)
                     // Rasio 12mm ke A4 (210mm) ~ 0.057
-                    $targetBoxW = $imgWidth * 0.057;
+                    $refSize = min($imgWidth, $imgHeight);
+                    $targetBoxW = $refSize * 0.057;
 
                     // LIMITASI MINIMUM:
                     // Kita kunci minimal 120px.
@@ -360,7 +361,7 @@ class ProjectEngineerController extends Controller
                     // Header 3.8mm / Body 12mm -> Ratio Total Tinggi ~1.32 dari lebar
                     $targetBoxH = $targetBoxW * 1.32;
 
-                    $margin_px = $imgWidth * 0.02; // Margin 2%
+                    $margin_px = $refSize * 0.02; // Margin 2%
 
                     $dst_x = $imgWidth - $targetBoxW - $margin_px;
                     $dst_y = $imgHeight - $targetBoxH - $margin_px;
@@ -408,7 +409,7 @@ class ProjectEngineerController extends Controller
 
                     // 4. TEMPEL QR KE KANVAS
                     $qrSrc = imagecreatefrompng($qrTempPath);
-                    $qrPad = $hdW * 0.05; // Padding 5%
+                    $qrPad = $hdW * 0.125; // Padding 5%
                     $qrTargetSize = $hdW - ($qrPad * 2);
 
                     imagecopyresampled($stampHD, $qrSrc, $qrPad, $lineY + $qrPad, 0, 0, $qrTargetSize, $qrTargetSize, imagesx($qrSrc), imagesy($qrSrc));
