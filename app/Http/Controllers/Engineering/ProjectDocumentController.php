@@ -296,7 +296,7 @@ class ProjectDocumentController extends Controller
                     $headerHeight = 3.6; // Tinggi Header 2.5mm
                     $boxHeight = $headerHeight + $boxWidth; // Total Tinggi 12.5mm
                     $margin = 10; // Jarak dari pinggir kertas
-                    $qrPadding = 0.5; // Padding super tipis
+                    $qrPadding = 1.5; // Padding super tipis
 
                     $x = 0;
                     $y = 0;

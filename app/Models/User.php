@@ -62,4 +62,30 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+    // Ambil nomor WA Management (Dept 1)
+    public static function getManagementNumbers()
+    {
+        return self::where('department_id', 1)->pluck('whatsapp')->implode(',');
+    }
+
+    // Ambil nomor Checker (User yang checked = true)
+    public static function getCheckerNumbers()
+    {
+        return self::where('checked', true)->pluck('whatsapp')->implode(',');
+    }
+
+    // Ambil nomor Approver (User yang approved = true)
+    public static function getApproverNumbers()
+    {
+        return self::where('approved', true)->pluck('whatsapp')->implode(',');
+    }
+
+    // Ambil nomor Engineering (Dept 3,4,5)
+    // Logic: Lo harus nentuin project ini buat enginnering 2, 3, atau 9.
+    // Asumsi: Gue kirim ke SEMUA engineering dulu ya, nanti lo filter lagi kalo ada logic spesifik.
+    public static function getEngineeringNumbers()
+    {
+        return self::whereIn('department_id', [3, 4, 5])->pluck('whatsapp')->implode(',');
+    }
 }
