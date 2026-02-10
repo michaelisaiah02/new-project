@@ -41,7 +41,7 @@ class ProjectController extends Controller
          * 1. HANDLE TEMP UPLOAD
          * ==========================
          */
-        if ($request->hasFile('drawing_2d')) {
+        if ($request->hasFile('drawing_2d') && $request->file('drawing_2d')->getSize() <= 5242880) {
             $file = $request->file('drawing_2d');
             $ext = strtolower($file->getClientOriginalExtension());
             $label = $request->input('drawing_label_2d');
@@ -98,10 +98,10 @@ class ProjectController extends Controller
                 'part_name' => 'required|string|max:100',
                 'part_type' => 'required|in:Hose,Molding,Weatherstrip,Bonding Metal',
 
-                // 🔥 FILE TIDAK REQUIRED LAGI
-                'drawing_2d' => 'nullable|file|max:5120',
+                'drawing_2d' => 'required|file|mimes:pdf|max:5120',
                 'drawing_label_2d' => 'required|string|max:100',
 
+                // 🔥 FILE 3D TIDAK REQUIRED LAGI
                 'drawing_3d' => 'nullable|file|max:5120',
                 'drawing_label_3d' => 'nullable|string|max:100',
 
@@ -133,6 +133,7 @@ class ProjectController extends Controller
         $validated['part_name'] = ucwords(strtolower($validated['part_name']));
         $validated['customer_name_snapshot'] = Customer::where('code', $validated['customer_code'])
             ->value('name');
+        $validated['created_by'] = auth()->id();
 
         /**
          * ==========================

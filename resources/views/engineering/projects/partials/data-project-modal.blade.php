@@ -231,15 +231,14 @@
 </div>
 
 <div class="modal fade" id="fileViewerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content h-100">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
             <div class="modal-header bg-dark text-white py-2">
-                <h6 class="modal-title text-truncate" id="fileViewerTitle" style="max-width: 90%;">File Viewer</h6>
+                <h6 class="modal-title text-truncate" id="fileViewerTitle">File Viewer</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-0 bg-secondary-subtle position-relative"
-                style="height: 80vh; min-height: 400px;">
-                <div id="fileViewerContainer" class="w-100 h-100 d-flex justify-content-center align-items-center">
+            <div class="modal-body p-0 bg-secondary-subtle position-relative">
+                <div id="fileViewerContainer" class="d-flex justify-content-center align-items-center h-100">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>

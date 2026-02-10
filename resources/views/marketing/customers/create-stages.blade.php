@@ -113,17 +113,15 @@
                         <table class="table table-sm table-hover table-bordered table-striped align-middle mb-0">
                             <thead class="table-primary sticky-top text-center">
                                 <tr>
-                                    <th style="width: 40px;">#</th>
-                                    <th>Jenis Dokumen</th>
+                                    <th style="width: 40px;" rowspan="2" class="align-middle">#</th>
+                                    <th rowspan="2" class="align-middle">Jenis Dokumen</th>
                                     <th colspan="4">Posisi QR Code</th>
                                 </tr>
-                                <tr class="table-light">
-                                    <th></th>
-                                    <th></th>
-                                    <th class="small text-muted">Atas Kiri</th>
-                                    <th class="small text-muted">Atas Kanan</th>
-                                    <th class="small text-muted">Bawah Kiri</th>
-                                    <th class="small text-muted">Bawah Kanan</th>
+                                <tr>
+                                    <th class="small">Atas Kiri</th>
+                                    <th class="small">Atas Kanan</th>
+                                    <th class="small">Bawah Kiri</th>
+                                    <th class="small">Bawah Kanan</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -186,7 +184,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-warning text-dark border-0">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Requirement Missing
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Requirement
+                        Missing
                     </h5>
                 </div>
                 <div class="modal-body p-4 text-center">
@@ -256,7 +255,8 @@
                     if ($(this).closest('tr').find('.qr-option:checked').length === 0) {
                         isValid = false;
                         alert(
-                            `Dokumen "${$(this).closest('tr').find('td:eq(1)').text().trim()}" belum dipilih posisi QR-nya.`);
+                            `Dokumen "${$(this).closest('tr').find('td:eq(1)').text().trim()}" belum dipilih posisi QR-nya.`
+                        );
                         return false;
                     }
                 });

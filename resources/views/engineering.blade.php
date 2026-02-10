@@ -147,7 +147,7 @@
             @include('engineering.projects.partials.data-projects-modal', ['project' => $ongoingProject])
         @endforeach
         <div class="modal fade" id="fileViewerModal" tabindex="-1">
-            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-dialog modal-fullscreen modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
 
                     <div class="modal-header">
@@ -155,7 +155,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
-                    <div class="modal-body p-0" style="height: 80vh;">
+                    <div class="modal-body p-0">
                         <div id="fileViewerContainer"
                             class="w-100 h-100 d-flex justify-content-center align-items-center bg-light">
                             <!-- injected by JS -->

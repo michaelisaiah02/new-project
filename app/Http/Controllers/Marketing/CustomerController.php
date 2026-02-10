@@ -131,7 +131,7 @@ class CustomerController extends Controller
             'stage_number' => $validated['stage_number'],
             'stage_name' => $validated['stage_name'],
             'customer_code' => $customer->code,
-            'document_type_code' => null, // gak dipakai lagi
+            'document_type_code' => null,
         ]);
 
         foreach ($validated['document_type_codes'] as $docId) {
@@ -312,11 +312,25 @@ class CustomerController extends Controller
         if ($action === 'finish') {
             $selectedDocs = $request->input('document_type_codes', []);
 
-            // kalau gak ada dokumen DM, auto tambahin di stage terakhir
-            if (! in_array('DM', $selectedDocs)) {
+            // 1. Cek apakah DM dipilih di form saat ini
+            $dmSelectedInCurrentForm = in_array('DM', $selectedDocs);
+
+            // 2. Cek apakah DM SUDAH ADA di database (di stage manapun untuk customer ini)
+            // Kita pakai query DB agar akurat mengecek semua stage milik customer ini
+            $dmAlreadyExistsInDb = DB::table('customer_stage_documents')
+                ->join('customer_stages', 'customer_stage_documents.customer_stage_id', '=', 'customer_stages.id')
+                ->where('customer_stages.customer_code', $customer->code)
+                ->where('customer_stage_documents.document_type_code', 'DM')
+                ->exists();
+
+            // LOGIC: Auto-add DM hanya jika:
+            // TIDAK dipilih di form saat ini DAN TIDAK ada di database sebelumnya
+            if (! $dmSelectedInCurrentForm && ! $dmAlreadyExistsInDb) {
+
                 $lastStage = CustomerStage::where('customer_code', $customer->code)
                     ->orderBy('stage_number', 'desc')
                     ->first();
+
                 if ($lastStage) {
                     $lastStage->documents()->attach('DM', [
                         'qr_position' => 'bottom_right',

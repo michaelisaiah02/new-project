@@ -30,7 +30,13 @@ class Project extends Model
         'masspro_target',
         'minor_change',
         'remark',
+        'created_by',
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
 
     public function customer()
     {

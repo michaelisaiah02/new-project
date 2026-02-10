@@ -32,9 +32,11 @@ return new class extends Migration
             $table->string('masspro_target');
             $table->string('minor_change');
             $table->enum('remark', ['new', 'not checked', 'not approved', 'not approved management', 'on going', 'completed', 'canceled'])->default('new');
+            $table->char('created_by', 5)->nullable();
             $table->timestamps();
 
             $table->foreign('customer_code')->references('code')->on('customers')->nullOnDelete()->cascadeOnUpdate();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete()->cascadeOnUpdate();
             $table->unique(['part_number', 'suffix', 'minor_change'], 'project_unique_part');
         });
     }

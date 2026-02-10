@@ -78,7 +78,7 @@
                                 <span id="badge-upload-2d"
                                     class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">!</span>
                             </button>
-                            <input type="file" id="upload-2d" name="drawing_2d" hidden>
+                            <input type="file" id="upload-2d" name="drawing_2d" hidden accept=".pdf" size="5120">
                         </div>
                         <div class="grow position-relative">
                             <button type="button" class="btn btn-primary border-3 border-light-subtle w-100 rounded-end"
