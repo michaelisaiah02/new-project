@@ -11,19 +11,63 @@ class ProjectObserver
     /**
      * Handle the Project "created" event.
      */
-    public function created(Project $project): void
+    public function created(Project $project)
     {
-        // Logic: Kirim ke Approver, Checker, Management
-        $targets = [
-            User::getApproverNumbers(),
-            User::getCheckerNumbers(),
-            User::getManagementNumbers()
-        ];
-        // Gabungin nomor biar sekali kirim (kalo Fonnte support multi-target koma)
-        $allTargets = implode(',', array_filter($targets));
+        // 1. Ambil Department ID dari Customer project tsb
+        // Kita load relasi customer biar hemat query
+        $project->load('customer');
 
-        $msg = "📢 *Project Baru Dibuat*\n\nPart: {$project->part_name}\nModel: {$project->model}\n\nMohon dicek!";
-        FonnteService::send($allTargets, $msg);
+        // Jaga-jaga kalo project gak ada customernya atau customer ga punya dept
+        if (!$project->customer || !$project->customer->department_id) {
+            return; // Gak bisa kirim notif karena ga tau tujuannya
+        }
+
+        $deptId = $project->customer->department_id;
+        $customerName = $project->customer->name; // Misal: TMMIN
+
+        // 2. Kumpulkan Nomor WA menggunakan Helper User
+        // PIC (Engineering Staff)
+        $picNumbers = User::getPIC($deptId)->pluck('whatsapp')->toArray();
+
+        // Non-PIC (Leader, Spv, Management)
+        $leaderNumbers = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+        $spvNumbers = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+        $mgmtNumbers = User::getManagement()->pluck('whatsapp')->toArray();
+
+        // Gabungin target Non-PIC jadi satu array
+        $otherTargets = array_unique(array_merge($leaderNumbers, $spvNumbers, $mgmtNumbers));
+
+
+        // 3. SUSUN PESAN (Sesuai Request)
+
+        // Format A: Khusus PIC
+        $msgPIC = "[New Project For {$customerName}]\n\n" .
+            "Project       : {$project->model}\n" .
+            "No Part       : {$project->part_number}\n" .
+            "Nama Part     : {$project->part_name}\n" .
+            "Suffix        : {$project->suffix}\n\n" .
+            "Mohon isikan document yang dibutuhkan dan due date sesuai dengan schedule. Terima kasih.";
+
+        // Format B: Selain PIC (Leader, Spv, Mgmt)
+        $msgOthers = "[New Project For {$customerName}]\n\n" .
+            "Project       : {$project->model}\n" .
+            "No Part       : {$project->part_number}\n" .
+            "Nama Part     : {$project->part_name}\n" .
+            "Suffix        : {$project->suffix}\n\n" .
+            "Mohon diberitahukan kepada PIC Engineering untuk mengisi document yang dibutuhkan dan due date sesuai dengan schedule. Terima kasih.";
+
+
+        // 4. KIRIM NOTIFIKASI
+
+        // Kirim ke PIC
+        if (!empty($picNumbers)) {
+            FonnteService::send(implode(',', $picNumbers), $msgPIC);
+        }
+
+        // Kirim ke Others
+        if (!empty($otherTargets)) {
+            FonnteService::send(implode(',', $otherTargets), $msgOthers);
+        }
     }
 
     /**

@@ -3,9 +3,10 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
@@ -63,29 +64,49 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    // Ambil nomor WA Management (Dept 1)
-    public static function getManagementNumbers()
+    /**
+     * 1. Helper getPIC (Engineering)
+     * Kriteria: Dept sesuai parameter, TIDAK BISA check, TIDAK BISA approve.
+     */
+    public static function getPIC(int $departmentId)
     {
-        return self::where('department_id', 1)->pluck('whatsapp')->implode(',');
+        return self::where('department_id', $departmentId)
+            ->where('checked', false)
+            ->where('approved', false)
+            ->get();
     }
 
-    // Ambil nomor Checker (User yang checked = true)
-    public static function getCheckerNumbers()
+    /**
+     * 2. Helper getLeader (Engineering)
+     * Kriteria: Dept sesuai parameter, BISA check, tapi (biasanya) belum level approve.
+     */
+    public static function getLeader(int $departmentId)
     {
-        return self::where('checked', true)->pluck('whatsapp')->implode(',');
+        return self::where('department_id', $departmentId)
+            ->where('checked', true)
+            ->where('approved', false) // Asumsi: Leader cuma check, gak approve final
+            ->get();
     }
 
-    // Ambil nomor Approver (User yang approved = true)
-    public static function getApproverNumbers()
+    /**
+     * 3. Helper getSupervisor (Engineering)
+     * Kriteria: Dept sesuai parameter, BISA approve (Level tertinggi di dept).
+     */
+    public static function getSupervisor(int $departmentId)
     {
-        return self::where('approved', true)->pluck('whatsapp')->implode(',');
+        return self::where('department_id', $departmentId)
+            ->where('approved', true)
+            ->get();
     }
 
-    // Ambil nomor Engineering (Dept 3,4,5)
-    // Logic: Lo harus nentuin project ini buat enginnering 2, 3, atau 9.
-    // Asumsi: Gue kirim ke SEMUA engineering dulu ya, nanti lo filter lagi kalo ada logic spesifik.
-    public static function getEngineeringNumbers()
+    /**
+     * 4. Helper getManagement
+     * Kriteria: Cari user yang nama department-nya 'Management'.
+     */
+    public static function getManagement()
     {
-        return self::whereIn('department_id', [3, 4, 5])->pluck('whatsapp')->implode(',');
+        return self::whereHas('department', function (Builder $query) {
+            $query->where('name', 'Management');
+        })->get();
     }
 }
