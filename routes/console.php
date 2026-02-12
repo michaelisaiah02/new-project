@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 
 // Panggil signature yang ada di dalam file ProjectReminderCron.php
 // Terus set jamnya langsung di sini (method chaining).
-Schedule::command('notify:project-reminders')->dailyAt('07:00');
+Schedule::command('notify:project-reminders')->dailyAt('06:00');
 
 // Kalau mau ngetes tiap menit (buat debugging):
 // Schedule::command('notify:project-reminders')->everyMinute();
