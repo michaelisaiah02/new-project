@@ -50,27 +50,7 @@ class ProjectObserver
      */
     public function updated(Project $project): void
     {
-        // POIN 4: Status berubah jadi 'on going'
-        if ($project->isDirty('remark') && $project->remark === 'on going') {
-            // Logic: Kirim ke Engineering
-            // Note: Lo harus punya logic spesifik engineering mana yg dituju.
-            // Disini gue tembak ke semua engineering.
-            $engNumbers = User::getEngineeringNumbers();
-
-            $msg = "🚀 *Project On Going*\n\nProject {$project->part_name} sekarang statusnya On Going. Silakan diproses engineering.";
-            FonnteService::send($engNumbers, $msg);
-        }
-
-        // POIN 7: Semua dokumen selesai (Tricky logic)
-        // Kita cek manual apakah dokumen project ini udah actual_date semua?
-        if ($project->documents()->exists() && $project->documents()->whereNull('actual_date')->count() == 0) {
-            // Cek biar ga spam, misal check flag di DB atau pastikan baru aja complete
-            // (Simplifikasi: kirim notif)
-
-            $targets = implode(',', [User::getCheckerNumbers(), User::getApproverNumbers(), User::getManagementNumbers()]);
-            $msg = "✅ *All Documents Completed*\n\nProject {$project->part_name} semua dokumen sudah lengkap. Siap pindah Masspro!";
-            FonnteService::send($targets, $msg);
-        }
+        //
     }
 
     /**
