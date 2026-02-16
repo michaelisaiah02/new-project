@@ -31,595 +31,458 @@ class ProjectReminderCron extends Command
      */
     public function handle()
     {
-        $this->info('Jalanin Project Reminder...');
+        $this->info('Mulai ngecek jadwal...');
 
-        // Hitung tanggal H+7 yang lalu (berarti project dibuat tanggal segini)
-        $sevenDaysAgo = Carbon::now()->subDays(7)->toDateString();
+        // =========================================================
+        // 1. REMINDER H+10: PROJECT BARU TAPI DUE DATE BELUM LENGKAP
+        // =========================================================
+        // Mundur 10 hari ke belakang dari hari ini
+        $tenDaysAgo = Carbon::now()->subDays(10)->toDateString();
 
-        // === 1. REMINDER INPUT NEW PROJECT (H+7) ===
-        // Cari project yg dibuat 7 hari lalu DAN (Approval Status Created Date NULL ATAU Ada Dokumen yg Due Date NULL)
-        $projectsH7 = Project::whereDate('created_at', $sevenDaysAgo)
-            ->where(function ($query) {
-                $query->whereHas('approvalStatus', function ($q) {
-                    $q->whereNull('created_date');
-                })
-                    ->orWhereHas('documents', function ($q) {
-                        $q->whereNull('due_date');
-                    });
+        // Cari project yang dibikin 10 hari lalu, DAN masih ada dokumen yg due_date-nya nyangkut/kosong
+        $projectsH10 = Project::whereDate('created_at', $tenDaysAgo)
+            ->whereHas('documents', function ($query) {
+                $query->whereNull('due_date');
             })
-            ->with(['customer']) // Eager load customer biar hemat query
+            ->with(['customer'])
             ->get();
 
-        foreach ($projectsH7 as $project) {
-            // Validasi data customer & department
+        foreach ($projectsH10 as $project) {
+            // Validasi dulu biar script ga nyusruk kalo data relasinya ilang
             if (!$project->customer || !$project->customer->department_id) continue;
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
 
-            // Target: PIC Engineering
-            $pics = User::getPIC($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($pics)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Suffix        : {$project->suffix}\n\n" .
-                    "Mohon isikan document yang dibutuhkan dan due date sesuai dengan schedule. Terima kasih.\n" .
-                    "Terima kasih.";
-
-                // Kirim Notif
-                FonnteService::send(implode(',', $pics), $msg);
-            }
-        }
-
-        $this->info('Reminder H+7 selesai dieksekusi.');
-
-        $yesterday = Carbon::yesterday()->toDateString();
-
-        // === 2. H+1 PROJECT BELUM CHECKED (Target: LEADER) ===
-        // Logic: created_date = kemarin, tapi checked_date masih NULL
-        $lateCheckStatus = ApprovalStatus::whereNull('checked_date')
-            ->whereDate('created_date', $yesterday)
-            ->with('project.customer')
-            ->get();
-
-        foreach ($lateCheckStatus as $status) {
-            $project = $status->project;
-            if (!$project || !$project->customer || !$project->customer->department_id) continue;
-
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-
+            // Target korban omelan: Leader
             $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
 
             if (!empty($leaders)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Document Selection + Input Due Date\n" .
-                    "Status        : Waiting for Leader to Check\n\n" .
-                    "Mohon lakukan pengecekan document dan due date segera.\n" .
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n\n" .
+                    "*BELUM DILAKUKAN FOLLOW UP*\n\n" .
+                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $leaders), $msg);
+                sleep(1);
             }
         }
 
+        // =========================================================
+        // 2. REMINDER H+5: SCHEDULE UDAH INPUT TAPI LEADER GHOSTING (BELUM CHECK)
+        // =========================================================
+        // Mundur 5 hari ke belakang
+        $fiveDaysAgo = Carbon::now()->subDays(5)->toDateString();
 
-        // === 3. H+1 PROJECT BELUM APPROVED (Target: SUPERVISOR) ===
-        // Logic: checked_date = kemarin, tapi approved_date masih NULL
-        $lateApproveStatus = ApprovalStatus::whereNull('approved_date')
-            ->whereDate('checked_date', $yesterday)
-            ->with('project.customer')
+        // Cari status yang created_date-nya 5 hari lalu, tapi checked_date-nya masih kosong
+        $pendingCheckH5 = ApprovalStatus::whereNull('checked_date')
+            ->whereDate('created_date', $fiveDaysAgo)
+            ->with(['project.customer'])
             ->get();
 
-        foreach ($lateApproveStatus as $status) {
+        foreach ($pendingCheckH5 as $status) {
             $project = $status->project;
+
+            // Validasi data aman sejahtera
             if (!$project || !$project->customer || !$project->customer->department_id) continue;
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
 
+            // Target korban SP lisan: Supervisor
             $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
 
+            // Kalau nomor WA dapet, langsung tembak! 🚀
             if (!empty($supervisors)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Document Selection + Input Due Date\n" .
-                    "Status        : Waiting for Supervisor to Approve\n\n" .
-                    "Mohon lakukan approval document dan due date segera.\n" .
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-input.\n\n" .
+                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat.\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $supervisors), $msg);
+                sleep(1);
             }
         }
 
+        // =========================================================
+        // 3. REMINDER H+5: UDAH CHECKED TAPI SUPERVISOR GHOSTING (BELUM APPROVE)
+        // =========================================================
+        // Note: Variabel $fiveDaysAgo udah ada di atas, jadi kita tinggal pakai ulang
 
-        // === 4. H+1 PROJECT BELUM MGMT APPROVED (Target: MANAGEMENT) ===
-        // Logic: approved_date = kemarin, tapi management_approved_date masih NULL
-        $lateMgmtApproveStatus = ApprovalStatus::whereNull('management_approved_date')
-            ->whereDate('approved_date', $yesterday)
-            ->with('project.customer')
+        // Cari status yang checked_date-nya 5 hari lalu, tapi approved_date-nya masih NULL
+        $pendingApproveH5 = ApprovalStatus::whereNotNull('checked_date')
+            ->whereNull('approved_date')
+            ->whereDate('checked_date', $fiveDaysAgo)
+            ->with(['project.customer'])
             ->get();
 
-        foreach ($lateMgmtApproveStatus as $status) {
+        foreach ($pendingApproveH5 as $status) {
             $project = $status->project;
-            if (!$project || !$project->customer) continue; // Management gak butuh dept_id sebenernya
+
+            // Validasi data biar script tetep waras
+            if (!$project || !$project->customer) continue;
 
             $customerName = $project->customer->name;
 
+            // Target korban: Management (Bos Besar yang bakal nge-ping Supervisor)
+            // Management biasanya global, jadi gak usah difilter pake $deptId
             $managements = User::getManagement()->pluck('whatsapp')->toArray();
 
+            // Kalo dapet nomor WA Management, sikatttt! 🚀
             if (!empty($managements)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Document Selection + Input Due Date\n" .
-                    "Status        : Waiting for Management to Approve\n\n" .
-                    "Mohon lakukan approval document dan due date segera.\n" .
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-checked.\n\n" .
+                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat.\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $managements), $msg);
+                sleep(1);
             }
         }
 
-        // SETUP VARIABLE TANGGAL
-        $tomorrow = Carbon::tomorrow()->toDateString();
-        $today = Carbon::today()->toDateString();
-        $twoDaysAgo = Carbon::now()->subDays(2)->toDateString();
+        // =========================================================
+        // 4. REMINDER H+5: UDAH APPROVED TAPI MANAGEMENT LUPA KLIK (BELUM MGMT APPROVE)
+        // =========================================================
 
-        // ==========================================
-        // 5. REMINDER UPLOAD DOKUMEN (H-1)
-        // Kondisi: Belum upload (actual_date null) DAN Due Date = BESOK
-        // ==========================================
-        $docsHMinus1 = ProjectDocument::whereNull('actual_date')
+        // Cari status yang approved_date-nya 5 hari lalu, tapi management_approved_date-nya masih NULL
+        $pendingMgmtApproveH5 = ApprovalStatus::whereNotNull('approved_date')
+            ->whereNull('management_approved_date')
+            ->whereDate('approved_date', $fiveDaysAgo)
+            ->with(['project.customer'])
+            ->get();
+
+        foreach ($pendingMgmtApproveH5 as $status) {
+            $project = $status->project;
+
+            // Validasi data biar script tetep aman sentosa
+            if (!$project || !$project->customer) continue;
+
+            $customerName = $project->customer->name;
+
+            // Target korban: Management (Ngirim reminder ke diri mereka sendiri)
+            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+
+            // Kalo WA-nya ada, let it fly! 🚀
+            if (!empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-approved.\n\n" .
+                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n" .
+                    "Terima kasih.";
+
+                FonnteService::send(implode(',', $managements), $msg);
+                sleep(1);
+            }
+        }
+
+        // =========================================================
+        // 5. REMINDER H-5 DUE DATE: PIC BELUM UPLOAD DOKUMEN
+        // =========================================================
+
+        // Cari tanggal 5 hari ke depan dari hari ini
+        $inFiveDays = Carbon::now()->addDays(5)->toDateString();
+
+        // Cari dokumen yang due_date-nya 5 hari lagi, tapi actual_date masih NULL
+        $pendingUploadHMin5 = ProjectDocument::whereNull('actual_date')
+            ->whereDate('due_date', $inFiveDays)
+            ->with(['project.customer', 'documentType'])
+            ->get();
+
+        foreach ($pendingUploadHMin5 as $doc) {
+            $project = $doc->project;
+
+            // Validasi data biar script aman dan gak error
+            if (!$project || !$project->customer || !$project->customer->department_id) continue;
+
+            $deptId = $project->customer->department_id;
+            $customerName = $project->customer->name;
+
+            // Ambil nama dokumen, jaga-jaga kalau relasinya kosong
+            $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
+
+            // Format Due Date jadi lebih manusiawi dibaca (misal: 21 February 2026)
+            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
+
+            // Target korban pengingat halus: PIC
+            $pics = User::getPIC($deptId)->pluck('whatsapp')->toArray();
+
+            // Kalo dapet nomor WA PIC-nya, lgsg gaskeun! 🚀
+            if (!empty($pics)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Due Date    : {$dueDateStr}\n\n" .
+                    "Mohon segera diupload.\n" .
+                    "Terima kasih.";
+
+                FonnteService::send(implode(',', $pics), $msg);
+                sleep(1);
+            }
+        }
+
+        // =========================================================
+        // 6. REMINDER H-1 DUE DATE: PIC BELUM UPLOAD DOKUMEN (ESKALASI KE LEADER)
+        // =========================================================
+
+        // Cari tanggal BESOK
+        $tomorrow = Carbon::now()->addDay()->toDateString();
+
+        // Cari dokumen yang due_date-nya besok, tapi actual_date masih NULL (belum uplaod)
+        $pendingUploadHMin1 = ProjectDocument::whereNull('actual_date')
             ->whereDate('due_date', $tomorrow)
             ->with(['project.customer', 'documentType'])
             ->get();
 
-        foreach ($docsHMinus1 as $doc) {
+        foreach ($pendingUploadHMin1 as $doc) {
             $project = $doc->project;
+
+            // Validasi data anti-error
             if (!$project || !$project->customer || !$project->customer->department_id) continue;
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
+
+            // Nama dokumen
+            $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
+
+            // Format Due Date
             $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
 
-            // Target: PIC
-            $targets = User::getPIC($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($targets)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (H-1)\n\n" .
-                    "Mohon disiapkan dan diupload segera.\n" .
-                    "Terima kasih.";
-
-                FonnteService::send(implode(',', $targets), $msg);
-            }
-        }
-
-        // ==========================================
-        // 6. REMINDER UPLOAD DOKUMEN (HARI H / TODAY)
-        // Kondisi: Belum upload DAN Due Date = HARI INI
-        // ==========================================
-        $docsHToday = ProjectDocument::whereNull('actual_date')
-            ->whereDate('due_date', $today)
-            ->with(['project.customer', 'documentType'])
-            ->get();
-
-        foreach ($docsHToday as $doc) {
-            $project = $doc->project;
-            if (!$project || !$project->customer) continue;
-
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
-
-            // Target: PIC
-            $targets = User::getPIC($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($targets)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (TODAY)\n\n" .
-                    "Mohon disiapkan dan diupload segera.\n" .
-                    "Terima kasih.";
-
-                FonnteService::send(implode(',', $targets), $msg);
-            }
-        }
-
-        // ==========================================
-        // 7. REMINDER UPLOAD OVERDUE (H+1)
-        // Kondisi: Belum upload DAN Due Date = 1 HARI LALU
-        // ==========================================
-        $docsOverdue = ProjectDocument::whereNull('actual_date')
-            ->whereDate('due_date', $yesterday)
-            ->with(['project.customer', 'documentType'])
-            ->get();
-
-        foreach ($docsOverdue as $doc) {
-            $project = $doc->project;
-            if (!$project || !$project->customer) continue;
-
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
-
-            // Target: Leader
-            $targets = User::getLeader($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($targets)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (Overdue H+1)\n\n" .
-                    "Mohon perintahkan PIC untuk upload!\n" .
-                    "Terima kasih.";
-
-                FonnteService::send(implode(',', $targets), $msg);
-            }
-        }
-
-        // ==========================================
-        // 8. SUDAH UPLOAD TAPI BELUM CHECKED (H+2 DARI UPLOAD)
-        // Kondisi: Actual Date isi, Checked Date NULL, Actual Date = 2 HARI LALU
-        // ==========================================
-        $docsUnchecked = ProjectDocument::whereNotNull('actual_date')
-            ->whereNull('checked_date')
-            // Kita pakai actual_date sebagai acuan kapan dia upload
-            ->whereDate('actual_date', $twoDaysAgo)
-            ->with(['project.customer', 'documentType'])
-            ->get();
-
-        foreach ($docsUnchecked as $doc) {
-            $project = $doc->project;
-            if (!$project || !$project->customer) continue;
-
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-
-            // Target: Leader
+            // Target penerima: LEADER
             $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
 
+            // Kalau dapet nomor WA Leader, langsung bombardir! 🚀
             if (!empty($leaders)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Status        : Waiting for Leader to Check\n\n" .
-                    "Mohon lakukan pengecekan document segera.\n" .
+                $msg = "*REMINDER*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Due Date    : {$dueDateStr}\n\n" .
+                    "*PALING LAMBAT BESOK HARUS UPLOAD*\n\n" .
+                    "Mohon diingatkan kepada PIC.\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $leaders), $msg);
+                sleep(1);
             }
         }
 
-        // ==========================================
-        // 9. REMINDER CHECK DOKUMEN (HARI H / TODAY)
-        // Kondisi: Sudah Upload, Belum Check, Due Date (actual_date + 1 day) = HARI INI
-        // ==========================================
-        $docsCheckToday = ProjectDocument::whereNotNull('actual_date')
+        // =========================================================
+        // 7. REMINDER H+5 ACTUAL DATE: UDAH UPLOAD TAPI LEADER GHOSTING (BELUM CHECK)
+        // =========================================================
+
+        // Catatan: Variabel $fiveDaysAgo udah ada di atas, kita tinggal pakai ulang aja
+        // Cari dokumen yang actual_date-nya pas 5 hari lalu, tapi checked_date masih NULL
+        $pendingDocCheckH5 = ProjectDocument::whereNotNull('actual_date')
             ->whereNull('checked_date')
-            ->whereDate('actual_date', $yesterday)
+            ->whereDate('actual_date', $fiveDaysAgo)
             ->with(['project.customer', 'documentType'])
             ->get();
 
-        foreach ($docsCheckToday as $doc) {
+        foreach ($pendingDocCheckH5 as $doc) {
             $project = $doc->project;
-            if (!$project || !$project->customer) continue;
+
+            // Validasi data anti-error club
+            if (!$project || !$project->customer || !$project->customer->department_id) continue;
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
 
-            // A. Kirim ke LEADER
-            $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
-            if (!empty($leaders)) {
-                $msgLeader = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (TODAY)\n" .
-                    "Status        : Waiting for Leader to Check.\n\n" .
-                    "Mohon lakukan pengecekan document segera.\n" .
+            // Ambil nama dokumen
+            $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
+
+            // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader)
+            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+
+            // Kalau dapet nomor WA Supervisor, langsung bombardir! 🚀
+            if (!empty($supervisors)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Leader to Check\n\n" .
+                    "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload.\n" .
                     "Terima kasih.";
-                FonnteService::send(implode(',', $leaders), $msgLeader);
+
+                FonnteService::send(implode(',', $supervisors), $msg);
+                sleep(1);
             }
         }
 
-        // ==========================================
-        // 10. REMINDER CHECK OVERDUE (H+1)
-        // Kondisi: Sudah Upload, Belum Check, Due Date (actual_date + 1 day) = 1 Hari Lalu
-        // Target: Supervisor & Management
-        // ==========================================
-        $docsCheckOverdue = $docsUnchecked;
+        // =========================================================
+        // 8. REMINDER H+5 CHECKED DATE: UDAH CHECKED TAPI SPV GHOSTING (BELUM APPROVE)
+        // =========================================================
 
-        foreach ($docsCheckOverdue as $doc) {
-            $project = $doc->project;
-            if (!$project || !$project->customer) continue;
-
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
-
-            // Gabung Target SPV
-            $targets = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($targets)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (Overdue H+2)\n" .
-                    "Status        : Waiting for Leader to Check\n\n" .
-                    "Mohon perintahkan Leader untuk cek segera!\n" .
-                    "Terima kasih.";
-                FonnteService::send(implode(',', $targets), $msg);
-            }
-        }
-
-        // ==========================================
-        // 11. REMINDER APPROVE (H+2 SETELAH CHECKED)
-        // Kondisi: Sudah Checked, Belum Approved, Checked Date = 2 Hari Lalu
-        // Target: Supervisor
-        // ==========================================
-        $docsApproveLate = ProjectDocument::whereNotNull('checked_date')
+        // Note: Variabel $fiveDaysAgo masih kita pakai dari yang di atas
+        // Cari dokumen yang checked_date-nya pas 5 hari lalu, tapi approved_date masih NULL
+        $pendingDocApproveH5 = ProjectDocument::whereNotNull('checked_date')
             ->whereNull('approved_date')
-            ->whereDate('checked_date', $twoDaysAgo) // SLA 2 hari dari tanggal check
+            ->whereDate('checked_date', $fiveDaysAgo)
             ->with(['project.customer', 'documentType'])
             ->get();
 
-        foreach ($docsApproveLate as $doc) {
+        foreach ($pendingDocApproveH5 as $doc) {
             $project = $doc->project;
+
+            // Validasi anti-error (Management biasanya ga butuh $deptId, tp nama customer tetep butuh)
             if (!$project || !$project->customer) continue;
 
-            $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
 
-            $spvs = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            // Ambil nama dokumen
+            $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
 
-            if (!empty($spvs)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Status        : Waiting for Supervisor to Approve\n\n" .
-                    "Mohon lakukan approval document segera.\n" .
-                    "Terima kasih.";
-                FonnteService::send(implode(',', $spvs), $msg);
-            }
-        }
-
-        // ==========================================
-        // 12. REMINDER APPROVE DOKUMEN (H)
-        // Kondisi: Sudah Checked, Belum Approved, Due Date (checked_date + 1 day) = HARI INI
-        // Target: Supervisor
-        // ==========================================
-        $docsApproveH = ProjectDocument::whereNotNull('checked_date')
-            ->whereNull('approved_date')
-            ->whereDate('checked_date', $yesterday)
-            ->with(['project.customer', 'documentType'])
-            ->get();
-
-        foreach ($docsApproveH as $doc) {
-            $project = $doc->project;
-            if (!$project || !$project->customer) continue;
-
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
-
-            $spvs = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($spvs)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (H-1)\n" .
-                    "Status        : Waiting for Supervisor to Approve.\n\n" .
-                    "Mohon lakukan approval document segera.\n" .
-                    "Terima kasih.";
-
-                FonnteService::send(implode(',', $spvs), $msg);
-            }
-        }
-
-        // ==========================================
-        // 13. REMINDER APPROVE DOKUMEN (OVERDUE H+1)
-        // Kondisi: Sudah Checked, Belum Approved, Due Date (checked_date + 1 day) = KEMARIN
-        // Target: Management
-        // ==========================================
-        $docsApproveHPlus1 = $docsApproveLate;
-
-        foreach ($docsApproveHPlus1 as $doc) {
-            $project = $doc->project;
-            if (!$project || !$project->customer) continue;
-
-            // Management biasanya gak butuh deptId, tapi kita ambil nama customer
-            $customerName = $project->customer->name;
-            $docName = $doc->documentType->name ?? $doc->document_type_code;
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
-
+            // Target korban eskalasi: MANAGEMENT (Ngadu ke Bos Besar)
             $managements = User::getManagement()->pluck('whatsapp')->toArray();
 
+            // Kalau WA-nya dapet, langsung luncurkan rudalnya! 🚀
             if (!empty($managements)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Due Date      : {$dueDateStr} (Overdue H+1)\n" .
-                    "Status        : Waiting for Supervisor to Approve.\n\n" .
-                    "Mohon perintahkan Supervisor untuk melakukan approval segera!\n" .
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Supervisor to Approve\n\n" .
+                    "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check.\n\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $managements), $msg);
+                sleep(1);
             }
         }
 
-        // SETUP VARIABLE TANGGAL H+3
-        $threeDaysAgo = Carbon::now()->subDays(3)->toDateString();
+        // =========================================================
+        // 9. REMINDER H+5 SEMUA DOC APPROVED: LEADER BELUM CHECK ONGOING PROJECT
+        // =========================================================
 
-        // ==========================================
-        // 14. REMINDER ONGOING CHECK (H+3 DARI LAST DOC APPROVED)
-        // Kondisi: Semua Dokumen Approved, Tapi Leader Belum Klik Ongoing Check
-        // Trigger: Last Doc Approved Date = 3 Hari Lalu
-        // ==========================================
-
-        // Cari status yg belum di-check ongoing-nya
-        $ongoingCheckPending = ApprovalStatus::whereNull('ongoing_checked_date')
-            ->with('project.documents') // Eager load docs
+        // Note: $fiveDaysAgo tetep pake variabel yang sama di atas
+        // Cari project yang SEMUA dokumennya udah di-approve,
+        // tapi ongoing_checked_date di tabel approval_statuses masih NULL.
+        $pendingOngoingCheck = Project::whereHas('approvalStatus', function ($query) {
+            $query->whereNull('ongoing_checked_date');
+        })
+            ->has('documents') // Pastiin project-nya beneran punya dokumen
+            ->whereDoesntHave('documents', function ($query) {
+                $query->whereNull('approved_date'); // Pastiin gak ada satupun doc yg belum di-approve
+            })
+            ->with(['customer', 'documents', 'approvalStatus'])
             ->get();
 
-        foreach ($ongoingCheckPending as $status) {
-            $project = $status->project;
-            if (!$project || $project->documents->isEmpty()) continue;
+        foreach ($pendingOngoingCheck as $project) {
+            // Cari tanggal approve paling terakhir (paling baru) dari tumpukan dokumen project ini
+            $latestApproveDate = $project->documents->max('approved_date');
 
-            // Cek 1: Apakah ada dokumen yg BELUM approved?
-            $unapprovedDocsCount = $project->documents->whereNull('approved_date')->count();
-            if ($unapprovedDocsCount > 0) continue; // Skip kalau belum beres semua
+            // Cek apakah tanggal approve terakhir itu jatuhnya pas 5 hari yang lalu
+            if (Carbon::parse($latestApproveDate)->toDateString() === $fiveDaysAgo) {
 
-            // Cek 2: Ambil tanggal approve paling terakhir (Max Approved Date)
-            $lastApprovedDate = $project->documents->max('approved_date'); // Format Y-m-d
+                // Validasi anti-error club
+                if (!$project->customer || !$project->customer->department_id) continue;
 
-            // Cek 3: Apakah tanggal terakhir approve itu adalah 3 HARI LALU?
-            if ($lastApprovedDate == $threeDaysAgo) {
-
-                if (!$project->customer) continue;
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
-                // Target: LEADER
-                $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+                // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader)
+                $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
 
-                if (!empty($leaders)) {
-                    $msg = "[New Project For {$customerName}]\n\n" .
-                        "Project       : {$project->model}\n" .
-                        "No Part       : {$project->part_number}\n" .
-                        "Nama Part     : {$project->part_name}\n" .
-                        "Activity      : Approve All Doc Requirement\n" .
-                        "Status        : Waiting for Leader to Check\n\n" .
-                        "Mohon lakukan pengecekan semua document new project\n" .
+                // Kalau WA-nya dapet, langsung gaskan! 🚀
+                if (!empty($supervisors)) {
+                    $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                        "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                        "Semua document sudah diupload sesuai schedule.\n\n" .
+                        "Mohon diberitahukan kepada leader untuk segera di-check agar bisa segera masspro.\n" .
                         "Terima kasih.";
 
-                    FonnteService::send(implode(',', $leaders), $msg);
+                    FonnteService::send(implode(',', $supervisors), $msg);
+                    sleep(1);
                 }
             }
         }
 
-        // ==========================================
-        // 15. REMINDER ONGOING APPROVE (H+3 DARI CHECKED)
-        // Kondisi: Ongoing Checked, Tapi Belum Ongoing Approved
-        // Trigger: Ongoing Checked Date = 3 Hari Lalu
-        // ==========================================
-        $ongoingApprovePending = ApprovalStatus::whereNotNull('ongoing_checked_date')
+        // =========================================================
+        // 10. REMINDER H+5 ONGOING CHECKED: SPV GHOSTING (BELUM APPROVE ONGOING)
+        // =========================================================
+
+        // Note: Variabel $fiveDaysAgo masih kita pakai
+        // Cari status yang ongoing_checked_date-nya pas 5 hari lalu, tapi ongoing_approved_date masih NULL
+        $pendingOngoingApproveH5 = ApprovalStatus::whereNotNull('ongoing_checked_date')
             ->whereNull('ongoing_approved_date')
-            ->whereDate('ongoing_checked_date', $threeDaysAgo)
-            ->with('project.customer')
+            ->whereDate('ongoing_checked_date', $fiveDaysAgo)
+            ->with(['project.customer'])
             ->get();
 
-        foreach ($ongoingApprovePending as $status) {
+        foreach ($pendingOngoingApproveH5 as $status) {
             $project = $status->project;
-            if (!$project || !$project->customer) continue;
 
-            $deptId = $project->customer->department_id;
-            $customerName = $project->customer->name;
-
-            // Target: SUPERVISOR
-            $spvs = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
-
-            if (!empty($spvs)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "REMINDER!\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Approve All Doc Requirement\n" .
-                    "Status        : Waiting for Supervisor to Approve\n\n" .
-                    "Mohon lakukan approval semua document new project.\n" .
-                    "Terima kasih.";
-
-                FonnteService::send(implode(',', $spvs), $msg);
-            }
-        }
-
-        // ==========================================
-        // 16. REMINDER ONGOING MGMT APPROVE (H+3 DARI APPROVED)
-        // Kondisi: Ongoing Approved, Tapi Belum Mgmt Approved
-        // Trigger: Ongoing Approved Date = 3 Hari Lalu
-        // ==========================================
-        $ongoingMgmtPending = ApprovalStatus::whereNotNull('ongoing_approved_date')
-            ->whereNull('ongoing_management_approved_date')
-            ->whereDate('ongoing_approved_date', $threeDaysAgo)
-            ->with('project.customer')
-            ->get();
-
-        foreach ($ongoingMgmtPending as $status) {
-            $project = $status->project;
+            // Validasi data anti-error (Management cuma butuh nama customer)
             if (!$project || !$project->customer) continue;
 
             $customerName = $project->customer->name;
 
-            // Target: MANAGEMENT
+            // Target korban eskalasi: MANAGEMENT (Ngadu ke Bos Besar)
             $managements = User::getManagement()->pluck('whatsapp')->toArray();
 
+            // Kalau WA-nya dapet, langsung luncurkan misilnya! 🚀
             if (!empty($managements)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Approve All Doc Requirement\n" .
-                    "Status        : Waiting for Management to Approve\n\n" .
-                    "Mohon lakukan persetujuan semua document new project.\n" .
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                    "Semua document sudah di-check.\n\n" .
+                    "Mohon diberitahukan kepada supervisor untuk segera di-approve agar bisa segera masspro.\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $managements), $msg);
+                sleep(1);
             }
         }
+
+        // =========================================================
+        // 11. REMINDER H+5 ONGOING APPROVED: MANAGEMENT LUPA FINAL APPROVE
+        // =========================================================
+
+        // Note: Variabel $fiveDaysAgo masih setia kita pakai
+        // Cari status yang ongoing_approved_date-nya pas 5 hari lalu, tapi ongoing_management_approved_date masih NULL
+        $pendingOngoingMgmtApproveH5 = ApprovalStatus::whereNotNull('ongoing_approved_date')
+            ->whereNull('ongoing_management_approved_date')
+            ->whereDate('ongoing_approved_date', $fiveDaysAgo)
+            ->with(['project.customer'])
+            ->get();
+
+        foreach ($pendingOngoingMgmtApproveH5 as $status) {
+            $project = $status->project;
+
+            // Validasi data anti-error
+            if (!$project || !$project->customer) continue;
+
+            $customerName = $project->customer->name;
+
+            // Target penerima: MANAGEMENT (Sistem auto-savage ngingetin Bos)
+            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+
+            // Kalau WA-nya dapet, langsung luncurkan notifnya! 🚀
+            if (!empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                    "Semua document sudah di-approve oleh supervisor.\n\n" .
+                    "Mohon segera di-approve by management agar bisa segera masspro.\n" .
+                    "Terima kasih.";
+
+                FonnteService::send(implode(',', $managements), $msg);
+                sleep(1);
+            }
+        }
+
+        $this->info('Cek Beres!');
     }
 }

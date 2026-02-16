@@ -13,60 +13,35 @@ class ProjectObserver
      */
     public function created(Project $project)
     {
-        // 1. Ambil Department ID dari Customer project tsb
-        // Kita load relasi customer biar hemat query
+        // 1. Load relasi customer biar bisa dapet nama dan department_id-nya
         $project->load('customer');
 
-        // Jaga-jaga kalo project gak ada customernya atau customer ga punya dept
+        // Jaga-jaga kalau datanya bolong (ga ada customer / department)
         if (!$project->customer || !$project->customer->department_id) {
-            return; // Gak bisa kirim notif karena ga tau tujuannya
+            return;
         }
 
         $deptId = $project->customer->department_id;
-        $customerName = $project->customer->name; // Misal: TMMIN
+        $customerName = $project->customer->name;
 
-        // 2. Kumpulkan Nomor WA menggunakan Helper User
-        // PIC (Engineering Staff)
-        $picNumbers = User::getPIC($deptId)->pluck('whatsapp')->toArray();
+        // 2. Kumpulin nomor WA target (Leader, Supervisor, Management)
+        $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+        $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+        $managements = User::getManagement()->pluck('whatsapp')->toArray();
 
-        // Non-PIC (Leader, Spv, Management)
-        $leaderNumbers = User::getLeader($deptId)->pluck('whatsapp')->toArray();
-        $spvNumbers = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
-        $mgmtNumbers = User::getManagement()->pluck('whatsapp')->toArray();
+        // Gabungin semua target jadi satu array, dan hilangkan duplikat pake array_unique
+        $targets = array_unique(array_merge($leaders, $supervisors, $managements));
 
-        // Gabungin target Non-PIC jadi satu array
-        $otherTargets = array_unique(array_merge($leaderNumbers, $spvNumbers, $mgmtNumbers));
+        // 3. Susun Pesan sesuai format (Sat-set langsung mapping variabel)
+        if (!empty($targets)) {
+            $msg = "New Project For {$customerName} Project {$project->model}\n" .
+                "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                "Target Mass Production : {$project->masspro_target}\n\n" .
+                "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n" .
+                "Terima kasih.";
 
-
-        // 3. SUSUN PESAN (Sesuai Request)
-
-        // Format A: Khusus PIC
-        $msgPIC = "[New Project For {$customerName}]\n\n" .
-            "Project       : {$project->model}\n" .
-            "No Part       : {$project->part_number}\n" .
-            "Nama Part     : {$project->part_name}\n" .
-            "Suffix        : {$project->suffix}\n\n" .
-            "Mohon isikan document yang dibutuhkan dan due date sesuai dengan schedule. Terima kasih.";
-
-        // Format B: Selain PIC (Leader, Spv, Mgmt)
-        $msgOthers = "[New Project For {$customerName}]\n\n" .
-            "Project       : {$project->model}\n" .
-            "No Part       : {$project->part_number}\n" .
-            "Nama Part     : {$project->part_name}\n" .
-            "Suffix        : {$project->suffix}\n\n" .
-            "Mohon diberitahukan kepada PIC Engineering untuk mengisi document yang dibutuhkan dan due date sesuai dengan schedule. Terima kasih.";
-
-
-        // 4. KIRIM NOTIFIKASI
-
-        // Kirim ke PIC
-        if (!empty($picNumbers)) {
-            FonnteService::send(implode(',', $picNumbers), $msgPIC);
-        }
-
-        // Kirim ke Others
-        if (!empty($otherTargets)) {
-            FonnteService::send(implode(',', $otherTargets), $msgOthers);
+            // 4. Tembak Fonnte! 🚀
+            FonnteService::send(implode(',', $targets), $msg);
         }
     }
 

@@ -2,9 +2,10 @@
 
 namespace App\Observers;
 
-use App\Models\User;
 use App\Models\ProjectDocument;
+use App\Models\User;
 use App\Services\FonnteService;
+use Carbon\Carbon;
 
 class ProjectDocumentObserver
 {
@@ -21,38 +22,42 @@ class ProjectDocumentObserver
      */
     public function updated(ProjectDocument $document)
     {
-        // Cek jika yang diupdate adalah due_date (dan tidak kosong)
+        // =========================================================
+        // 1. KONDISI: PIC INPUT DUE DATE (Semua doc udah ada due_date)
+        // =========================================================
+
+        // Cek apakah due_date baru aja di-update dan isinya nggak kosong
         if ($document->isDirty('due_date') && !empty($document->due_date)) {
 
             $projectId = $document->project_id;
 
-            // Cek apakah masih ada dokumen lain di project ini yang due_date-nya NULL?
+            // Hitung sisa dokumen di project ini yang due_date-nya MASIH KOSONG
             $pendingDocs = ProjectDocument::where('project_id', $projectId)
                 ->whereNull('due_date')
                 ->count();
 
-            // Jika pendingDocs == 0, berarti INI ADALAH DOKUMEN TERAKHIR yang diisi
+            // Kalau sisanya 0, berarti ini dokumen TERAKHIR yang di-input jadwalnya
             if ($pendingDocs == 0) {
-                // Ambil data project & customer buat pesan
+                // Load relasi project dan customer biar gampang manggil datanya
                 $project = $document->project;
                 $project->load('customer');
 
+                // Validasi data biar ga error (jaga-jaga bos)
                 if (!$project->customer || !$project->customer->department_id) return;
 
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
-                // Target: Leader di Department yang sama
+                // Cari Leader dari department yang sama
                 $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
 
+                // Kalau nomornya ada, eksekusi WA-nya!
                 if (!empty($leaders)) {
-                    $msg = "[New Project For {$customerName}]\n\n" .
-                        "Project       : {$project->model}\n" .
-                        "No Part       : {$project->part_number}\n" .
-                        "Nama Part     : {$project->part_name}\n" .
-                        "Activity      : Document Selection + Input Due Date\n" .
-                        "Status        : Waiting for Leader to Check\n\n" .
-                        "Mohon lakukan pengecekan document dan due date segera.\n" .
+                    $msg = "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                        "Target Mass Production : {$project->masspro_target}\n" .
+                        "Schedule sudah di-input.\n\n" .
+                        "Mohon segera di-*check* schedule yang telah dibuat.\n" .
                         "Terima kasih.";
 
                     FonnteService::send(implode(',', $leaders), $msg);
@@ -60,105 +65,127 @@ class ProjectDocumentObserver
             }
         }
 
-        // Pre-load data yang dibutuhkan (Project, Customer, DocumentType)
-        // Kita load sekalian biar ga query berkali-kali
-        $document->load(['project.customer', 'documentType']);
+        // =========================================================
+        // 2. KONDISI: PIC UPLOAD DOCUMENT (ON-GOING PROJECT)
+        // =========================================================
+        // Trigger: actual_date (atau file_name) baru aja keisi
+        if ($document->isDirty('actual_date') && !empty($document->actual_date)) {
 
-        $project = $document->project;
+            // Load relasi project, customer, dan documentType
+            $document->loadMissing(['project.customer', 'documentType']);
+            $project = $document->project;
 
-        // Validasi data dasar
-        if (!$project || !$project->customer || !$project->customer->department_id) return;
+            // Validasi data
+            if (!$project || !$project->customer || !$project->customer->department_id) return;
 
-        $deptId = $project->customer->department_id;
-        $customerName = $project->customer->name;
-        $docName = $document->documentType->name ?? $document->document_type_code; // Fallback ke code kalo name ga ada
+            $deptId = $project->customer->department_id;
+            $customerName = $project->customer->name;
 
+            // Ambil nama dokumen, kalau ga ada relasinya fallback ke code-nya
+            $docName = $document->documentType ? $document->documentType->name : $document->document_type_code;
 
-        // --- KONDISI 1: DOKUMEN DIUPLOAD (Created Date Terisi) ---
-        // Target: Leader
-        if ($document->isDirty('created_date') && !empty($document->created_date)) {
+            // Hitung Target Besok (actual_date + 1 hari)
+            // Formatnya jadi misal: 17 February 2026
+            $targetDate = Carbon::parse($document->actual_date)->addDay()->format('d F Y');
 
+            // Cari Leader
             $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
 
+            // Eksekusi WA ke Leader
             if (!empty($leaders)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" .
-                    "Doc Name      : {$docName}\n" .
-                    "Status        : Waiting for Leader to Check\n\n" .
-                    "Mohon lakukan pengecekan document segera.";
+                $msg = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Leader to Check\n\n" .
+                    "Mohon segera diperiksa.\n" .
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                    "Terima kasih.";
 
                 FonnteService::send(implode(',', $leaders), $msg);
             }
         }
 
-        // --- KONDISI 2: DOKUMEN DICEK (Checked Date Terisi) ---
-        // Target: Supervisor
+        // =========================================================
+        // 3. KONDISI: LEADER CHECK DOCUMENT (ON-GOING PROJECT)
+        // =========================================================
+        // Trigger: checked_date baru aja keisi
         if ($document->isDirty('checked_date') && !empty($document->checked_date)) {
 
+            // Pastikan relasi keload biar gak null pointer exception
+            $document->loadMissing(['project.customer', 'documentType']);
+            $project = $document->project;
+
+            // Validasi data aman
+            if (!$project || !$project->customer || !$project->customer->department_id) return;
+
+            $deptId = $project->customer->department_id;
+            $customerName = $project->customer->name;
+
+            // Ambil nama dokumen
+            $docName = $document->documentType ? $document->documentType->name : $document->document_type_code;
+
+            // Hitung Target Besok (checked_date + 1 hari)
+            $targetDate = Carbon::parse($document->checked_date)->addDay()->format('d F Y');
+
+            // Cari Supervisor dari dept yang sama
             $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
 
+            // Eksekusi WA ke Supervisor! 🚀
             if (!empty($supervisors)) {
-                $msg = "[New Project For {$customerName}]\n\n" .
-                    "Project       : {$project->model}\n" .
-                    "No Part       : {$project->part_number}\n" .
-                    "Nama Part     : {$project->part_name}\n" .
-                    "Activity      : Upload Document\n" . // Activity tetap Upload Document atau mau ganti Checking? (Sesuai request lo: Upload Document)
-                    "Doc Name      : {$docName}\n" .
-                    "Status        : Waiting for Supervisor to Approve\n\n" .
-                    "Mohon lakukan approval document segera.\n" .
+                $msg = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Supervisor to Approve\n\n" .
+                    "Mohon segera disetujui.\n" .
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
                     "Terima kasih.";
 
                 FonnteService::send(implode(',', $supervisors), $msg);
             }
         }
 
-        // --- KONDISI: SEMUA DOKUMEN SUDAH DI-APPROVE (Trigger Logic Ongoing) ---
-        // Trigger: approved_date terisi
+        // =========================================================
+        // 4. KONDISI: DOKUMEN DI-APPROVE (CEK APAKAH SEMUA SUDAH APPROVED?)
+        // =========================================================
+        // Trigger: approved_date baru aja keisi
         if ($document->isDirty('approved_date') && !empty($document->approved_date)) {
 
+            $projectId = $document->project_id;
+
             // Cek apakah masih ada dokumen lain di project ini yang BELUM di-approve?
-            $pendingDocs = ProjectDocument::where('project_id', $project->id)
+            $pendingDocs = ProjectDocument::where('project_id', $projectId)
                 ->whereNull('approved_date')
                 ->count();
 
-            // Jika pendingDocs == 0, berarti ini dokumen TERAKHIR yang di-approve
+            // Jika hitungannya 0, berarti ini adalah dokumen TERAKHIR yang di-approve! (BINGO)
             if ($pendingDocs == 0) {
 
-                // A. Kirim Notif ke LEADER
+                // Pastikan relasi ke-load biar datanya komplit
+                $document->loadMissing(['project.customer']);
+                $project = $document->project;
+
+                // Validasi anti-error
+                if (!$project || !$project->customer || !$project->customer->department_id) return;
+
+                $deptId = $project->customer->department_id;
+                $customerName = $project->customer->name;
+
+                // Hitung Target Besok (tanggal approve + 1 hari)
+                $targetDate = Carbon::parse($document->approved_date)->addDay()->format('d F Y');
+
+                // Cari Leader dari department yang sama
                 $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+
+                // Blast WA ke Leader! 🚀
                 if (!empty($leaders)) {
-                    $msgLeader = "[New Project For {$customerName}]\n\n" .
-                        "Project       : {$project->model}\n" .
-                        "No Part       : {$project->part_number}\n" .
-                        "Nama Part     : {$project->part_name}\n" .
-                        "Activity      : Approve All Doc Requirement\n" .
-                        "Status        : Waiting for Leader to Check\n\n" .
-                        "Mohon lakukan pengecekan semua document new project\n" .
+                    $msg = "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                        "Semua document sudah diupload sesuai schedule.\n\n" .
+                        "Mohon di-check agar bisa segera masspro.\n" .
+                        "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
                         "Terima kasih.";
 
-                    FonnteService::send(implode(',', $leaders), $msgLeader);
-                }
-
-                // B. Kirim Notif ke SUPERVISOR & MANAGEMENT
-                $spvs = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
-                $mgmts = User::getManagement()->pluck('whatsapp')->toArray();
-
-                $targetsB = array_unique(array_merge($spvs, $mgmts));
-
-                if (!empty($targetsB)) {
-                    $msgSpvMgmt = "[New Project For {$customerName}]\n\n" .
-                        "Project       : {$project->model}\n" .
-                        "No Part       : {$project->part_number}\n" .
-                        "Nama Part     : {$project->part_name}\n" .
-                        "Activity      : Approve All Doc Requirement\n" .
-                        "Status        : Waiting for Leader to Check\n\n" .
-                        "Mohon perintahkan Leader untuk lakukan pengecekan semua document new project.\n" .
-                        "Terima kasih.";
-
-                    FonnteService::send(implode(',', $targetsB), $msgSpvMgmt);
+                    FonnteService::send(implode(',', $leaders), $msg);
                 }
             }
         }
