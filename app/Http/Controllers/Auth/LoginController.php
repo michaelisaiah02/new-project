@@ -64,5 +64,6 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login');
+        // return redirect('https://192.168.8.6:9001/');
     }
 }
