@@ -23,7 +23,6 @@ class KPIController extends Controller
         if ($request->filled('part_number') && $request->filled('customer')) {
 
             $query = Project::query();
-            // ... (Logika filter Customer/Model/Part/Variant kamu yang sebelumnya ada disini) ...
             $query->where('customer_code', $request->customer);
             $query->where('model', $request->model);
             $query->where('part_number', $request->part_number);
