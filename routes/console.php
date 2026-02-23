@@ -2,15 +2,16 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schedule; // <--- JANGAN LUPA IMPORT INI
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Panggil signature yang ada di dalam file ProjectReminderCron.php
-// Terus set jamnya langsung di sini (method chaining).
-Schedule::command('notify:project-reminders')->dailyAt('06:00');
+// Kirim via Email tepat jam 00:00 (Tengah Malem)
+$schedule->command('notify:project-reminders email')->dailyAt('00:00');
+
+// Kirim via WA jam 06:00 (Pagi pas orang pada bangun)
+$schedule->command('notify:project-reminders wa')->dailyAt('06:00');
 
 // Kalau mau ngetes tiap menit (buat debugging):
 // Schedule::command('notify:project-reminders')->everyMinute();

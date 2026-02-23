@@ -14,25 +14,20 @@ class BroadcastService
      * @param  string  $msg
      * @param  string  $subject
      */
-    public static function send($users, $baseMsg, $subject = 'PT CAR - Project Update')
+    public static function send($users, $baseMsg, $subject = 'PT CAR - Project Notification', $channel = 'all')
     {
-        // Looping per user biar bisa disapa namanya!
         foreach ($users as $user) {
-
-            // 1. Bikin sapaan "Kepada Yth. [Nama User]"
             $greeting = "Kepada Yth. {$user->name},\n\n";
-
-            // 2. Gabungin sapaan sama pesan utama dari Observer/Cron
             $finalMsg = $greeting.$baseMsg;
 
-            // 3. Tembak WA (Pake Rem ABS)
-            if (! empty($user->whatsapp) && env('WA_NOTIFICATION_ENABLED', true)) {
+            // KONDISI 1: Tembak WA HANYA JIKA channel-nya 'all' atau 'wa'
+            if (in_array($channel, ['all', 'wa']) && ! empty($user->whatsapp) && env('WA_NOTIFICATION_ENABLED', true)) {
                 FonnteService::send($user->whatsapp, $baseMsg);
                 sleep(rand(1, 4));
             }
 
-            // 4. Tembak Email
-            if (! empty($user->email)) {
+            // KONDISI 2: Tembak Email HANYA JIKA channel-nya 'all' atau 'email'
+            if (in_array($channel, ['all', 'email']) && ! empty($user->email)) {
                 Mail::to($user->email)->send(new ProjectNotificationMail($finalMsg, $subject));
             }
         }

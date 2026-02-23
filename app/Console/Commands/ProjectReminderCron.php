@@ -17,7 +17,7 @@ class ProjectReminderCron extends Command
      *
      * @var string
      */
-    protected $signature = 'notify:project-reminders';
+    protected $signature = 'notify:project-reminders {channel}';
 
     /**
      * The console command description.
@@ -31,7 +31,8 @@ class ProjectReminderCron extends Command
      */
     public function handle()
     {
-        $this->info('Mulai ngecek jadwal...');
+        $channel = $this->argument('channel');
+        $this->info('Mulai ngecek jadwal...Target Channel: '.strtoupper($channel));
 
         // =========================================================
         // 1. REMINDER H+10: PROJECT BARU TAPI DUE DATE BELUM LENGKAP
@@ -68,7 +69,7 @@ class ProjectReminderCron extends Command
                     "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($leaders, $msg, "Reminder Project $project->model");
+                BroadcastService::send($leaders, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -108,7 +109,7 @@ class ProjectReminderCron extends Command
                     "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
+                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -148,7 +149,7 @@ class ProjectReminderCron extends Command
                     "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -186,7 +187,7 @@ class ProjectReminderCron extends Command
                     "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -232,7 +233,7 @@ class ProjectReminderCron extends Command
                     "Mohon segera diupload.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($pics, $msg, "Reminder Project $project->model");
+                BroadcastService::send($pics, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -280,7 +281,7 @@ class ProjectReminderCron extends Command
                     "Mohon diingatkan kepada PIC.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
+                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -323,7 +324,7 @@ class ProjectReminderCron extends Command
                     "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
+                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -365,7 +366,7 @@ class ProjectReminderCron extends Command
                     "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check.\n\n".
                     'Terima kasih.';
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -413,7 +414,7 @@ class ProjectReminderCron extends Command
                         "Mohon diberitahukan kepada leader untuk segera di-check agar bisa segera masspro.\n".
                         'Terima kasih.';
 
-                    BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
+                    BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
                 }
             }
         }
@@ -452,7 +453,7 @@ class ProjectReminderCron extends Command
                     "Mohon diberitahukan kepada supervisor untuk segera di-approve agar bisa segera masspro.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
@@ -490,7 +491,7 @@ class ProjectReminderCron extends Command
                     "Mohon segera di-approve by management agar bisa segera masspro.\n".
                     'Terima kasih.';
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
             }
         }
 
