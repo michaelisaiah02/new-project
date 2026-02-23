@@ -10,7 +10,6 @@ use App\Http\Controllers\Marketing\CustomerController;
 use App\Http\Controllers\Marketing\ProjectController;
 use App\Http\Controllers\Marketing\UserController;
 use App\Http\Controllers\MassproController;
-use App\Http\Middleware\CheckDepartmentAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -108,7 +107,7 @@ Route::middleware('auth')->group(function () {
         Route::get('{projectDocument}/view', 'document')->name('document');
         Route::get('/filter-options', 'getFilterOptions')->name('filterOptions');
         Route::get('/api/get-models', 'getModels')->name('api.models');
-        Route::get('/api/get-remarks',  'getRemarks')->name('api.remarks');
+        Route::get('/api/get-remarks', 'getRemarks')->name('api.remarks');
         Route::get('/api/get-parts', 'getParts')->name('api.parts');
         Route::get('/api/get-minor-changes', 'getMinorChanges')->name('api.minorChanges');
         Route::get('/api/get-suffixes', 'getSuffixes')->name('api.suffixes');

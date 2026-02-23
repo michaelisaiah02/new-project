@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\ProjectDocument;
 use App\Models\User;
-use App\Services\FonnteService;
+use App\Services\BroadcastService;
 use Carbon\Carbon;
 
 class ProjectDocumentObserver
@@ -27,7 +27,7 @@ class ProjectDocumentObserver
         // =========================================================
 
         // Cek apakah due_date baru aja di-update dan isinya nggak kosong
-        if ($document->isDirty('due_date') && !empty($document->due_date)) {
+        if ($document->isDirty('due_date') && ! empty($document->due_date)) {
 
             $projectId = $document->project_id;
 
@@ -43,24 +43,26 @@ class ProjectDocumentObserver
                 $project->load('customer');
 
                 // Validasi data biar ga error (jaga-jaga bos)
-                if (!$project->customer || !$project->customer->department_id) return;
+                if (! $project->customer || ! $project->customer->department_id) {
+                    return;
+                }
 
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
                 // Cari Leader dari department yang sama
-                $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+                $leaders = User::getLeader($deptId);
 
                 // Kalau nomornya ada, eksekusi WA-nya!
-                if (!empty($leaders)) {
-                    $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                        "Target Mass Production : {$project->masspro_target}\n" .
-                        "Schedule sudah di-input.\n\n" .
-                        "Mohon segera di-*check* schedule yang telah dibuat.\n" .
-                        "Terima kasih.";
+                if (! empty($leaders)) {
+                    $msg = "New Project For {$customerName} Project {$project->model}\n".
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                        "Target Mass Production : {$project->masspro_target}\n".
+                        "Schedule sudah di-input.\n\n".
+                        "Mohon segera di-*check* schedule yang telah dibuat.\n".
+                        'Terima kasih.';
 
-                    FonnteService::send(implode(',', $leaders), $msg);
+                    BroadcastService::send($leaders, $msg, "Notification Project $project->model");
                 }
             }
         }
@@ -69,14 +71,16 @@ class ProjectDocumentObserver
         // 2. KONDISI: PIC UPLOAD DOCUMENT (ON-GOING PROJECT)
         // =========================================================
         // Trigger: actual_date (atau file_name) baru aja keisi
-        if ($document->isDirty('actual_date') && !empty($document->actual_date)) {
+        if ($document->isDirty('actual_date') && ! empty($document->actual_date)) {
 
             // Load relasi project, customer, dan documentType
             $document->loadMissing(['project.customer', 'documentType']);
             $project = $document->project;
 
             // Validasi data
-            if (!$project || !$project->customer || !$project->customer->department_id) return;
+            if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                return;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
@@ -89,19 +93,19 @@ class ProjectDocumentObserver
             $targetDate = Carbon::parse($document->actual_date)->addDay()->format('d F Y');
 
             // Cari Leader
-            $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+            $leaders = User::getLeader($deptId);
 
             // Eksekusi WA ke Leader
-            if (!empty($leaders)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Status          : Waiting for Leader to Check\n\n" .
-                    "Mohon segera diperiksa.\n" .
-                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
-                    "Terima kasih.";
+            if (! empty($leaders)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Doc Name  : {$docName}\n".
+                    "Status          : Waiting for Leader to Check\n\n".
+                    "Mohon segera diperiksa.\n".
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $leaders), $msg);
+                BroadcastService::send($leaders, $msg, "Notification Project $project->model");
             }
         }
 
@@ -109,14 +113,16 @@ class ProjectDocumentObserver
         // 3. KONDISI: LEADER CHECK DOCUMENT (ON-GOING PROJECT)
         // =========================================================
         // Trigger: checked_date baru aja keisi
-        if ($document->isDirty('checked_date') && !empty($document->checked_date)) {
+        if ($document->isDirty('checked_date') && ! empty($document->checked_date)) {
 
             // Pastikan relasi keload biar gak null pointer exception
             $document->loadMissing(['project.customer', 'documentType']);
             $project = $document->project;
 
             // Validasi data aman
-            if (!$project || !$project->customer || !$project->customer->department_id) return;
+            if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                return;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
@@ -128,19 +134,19 @@ class ProjectDocumentObserver
             $targetDate = Carbon::parse($document->checked_date)->addDay()->format('d F Y');
 
             // Cari Supervisor dari dept yang sama
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            $supervisors = User::getSupervisor($deptId);
 
             // Eksekusi WA ke Supervisor! 🚀
-            if (!empty($supervisors)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Status          : Waiting for Supervisor to Approve\n\n" .
-                    "Mohon segera disetujui.\n" .
-                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
-                    "Terima kasih.";
+            if (! empty($supervisors)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Doc Name  : {$docName}\n".
+                    "Status          : Waiting for Supervisor to Approve\n\n".
+                    "Mohon segera disetujui.\n".
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $supervisors), $msg);
+                BroadcastService::send($supervisors, $msg, "Notification Project $project->model");
             }
         }
 
@@ -148,7 +154,7 @@ class ProjectDocumentObserver
         // 4. KONDISI: DOKUMEN DI-APPROVE (CEK APAKAH SEMUA SUDAH APPROVED?)
         // =========================================================
         // Trigger: approved_date baru aja keisi
-        if ($document->isDirty('approved_date') && !empty($document->approved_date)) {
+        if ($document->isDirty('approved_date') && ! empty($document->approved_date)) {
 
             $projectId = $document->project_id;
 
@@ -165,7 +171,9 @@ class ProjectDocumentObserver
                 $project = $document->project;
 
                 // Validasi anti-error
-                if (!$project || !$project->customer || !$project->customer->department_id) return;
+                if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                    return;
+                }
 
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
@@ -174,18 +182,18 @@ class ProjectDocumentObserver
                 $targetDate = Carbon::parse($document->approved_date)->addDay()->format('d F Y');
 
                 // Cari Leader dari department yang sama
-                $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+                $leaders = User::getLeader($deptId);
 
                 // Blast WA ke Leader! 🚀
-                if (!empty($leaders)) {
-                    $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                        "Semua document sudah diupload sesuai schedule.\n\n" .
-                        "Mohon di-check agar bisa segera masspro.\n" .
-                        "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
-                        "Terima kasih.";
+                if (! empty($leaders)) {
+                    $msg = "New Project For {$customerName} Project {$project->model}\n".
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                        "Semua document sudah diupload sesuai schedule.\n\n".
+                        "Mohon di-check agar bisa segera masspro.\n".
+                        "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
+                        'Terima kasih.';
 
-                    FonnteService::send(implode(',', $leaders), $msg);
+                    BroadcastService::send($leaders, $msg, "Notification Project $project->model");
                 }
             }
         }

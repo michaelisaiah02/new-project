@@ -181,7 +181,7 @@ class CustomerController extends Controller
 
         if ($currentDocs->isNotEmpty()) {
             $inList = $currentDocs
-                ->map(fn($c) => "'" . addslashes($c) . "'")
+                ->map(fn ($c) => "'".addslashes($c)."'")
                 ->implode(',');
 
             $availableDocuments->orderByRaw("

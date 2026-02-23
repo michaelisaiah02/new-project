@@ -4,9 +4,9 @@ namespace App\Helpers;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
-use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\ImageManager;
 
 class FileHelper
 {
@@ -53,7 +53,7 @@ class FileHelper
             try {
                 // 1. Setup Image Manager dengan driver Imagick
                 // Pastikan extension imagick sudah aktif di PHP server kamu
-                $manager = new ImageManager(new Driver());
+                $manager = new ImageManager(new Driver);
 
                 // 2. Baca file
                 $image = $manager->read($file->getRealPath());
@@ -62,8 +62,8 @@ class FileHelper
                 $encoded = $image->toPng();
 
                 // 4. Siapkan nama & path baru
-                $filename = pathinfo($file->hashName(), PATHINFO_FILENAME) . '.png';
-                $path = 'temp/drawings/' . $filename;
+                $filename = pathinfo($file->hashName(), PATHINFO_FILENAME).'.png';
+                $path = 'temp/drawings/'.$filename;
 
                 // 5. Simpan hasilnya
                 Storage::disk('public')->put($path, (string) $encoded);
@@ -71,7 +71,8 @@ class FileHelper
                 return $path;
             } catch (\Exception $e) {
                 // Fallback jika gagal convert, simpan file aslinya saja
-                Log::error('Gagal convert TIFF (V3): ' . $e->getMessage());
+                Log::error('Gagal convert TIFF (V3): '.$e->getMessage());
+
                 return $file->store('temp/drawings', 'public');
             }
         }

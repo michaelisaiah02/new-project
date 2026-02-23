@@ -10,7 +10,9 @@ class FonnteService
     public static function send($target, $message)
     {
         // Pastikan target valid dan bukan null
-        if (empty($target)) return;
+        if (empty($target)) {
+            return;
+        }
 
         try {
             $response = Http::withHeaders([
@@ -20,12 +22,12 @@ class FonnteService
                 'message' => $message,
             ]);
 
-            // Optional: Log kalo gagal 
+            // Optional: Log kalo gagal
             if ($response->failed()) {
-                Log::error('Fonnte Error: ' . $response->body());
+                Log::error('Fonnte Error: '.$response->body());
             }
         } catch (\Exception $e) {
-            Log::error('Fonnte Exception: ' . $e->getMessage());
+            Log::error('Fonnte Exception: '.$e->getMessage());
         }
     }
 }

@@ -120,10 +120,9 @@ class Project extends Model
 
         $documents = $this->documents;
         $now = now();
-        $allSubmitted = $documents->every(fn($doc) => $doc->file_name !== null);
+        $allSubmitted = $documents->every(fn ($doc) => $doc->file_name !== null);
         $anyDelay = $documents->contains(
-            fn($doc) =>
-            $doc->actual_date !== null &&
+            fn ($doc) => $doc->actual_date !== null &&
                 $doc->due_date !== null &&
                 $doc->actual_date->gt($doc->due_date) &&
                 $doc->approved_date === null
@@ -133,8 +132,7 @@ class Project extends Model
         }
         if ($allSubmitted) {
             $allDocumentsFinished = $documents->every(
-                fn($doc) =>
-                $doc->actual_date !== null &&
+                fn ($doc) => $doc->actual_date !== null &&
                     $doc->checked_date !== null &&
                     $doc->approved_date !== null &&
                     $this->remark === 'on going'
@@ -159,6 +157,7 @@ class Project extends Model
                 return 'Not Yet Approved Management';
             }
         }
+
         return 'On Going';
     }
 }

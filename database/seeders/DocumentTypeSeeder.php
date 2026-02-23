@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\DocumentType;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Seeder;
 
 class DocumentTypeSeeder extends Seeder
 {
@@ -16,7 +15,6 @@ class DocumentTypeSeeder extends Seeder
         // Menghapus 'Limit Sample Sheet' (LSS)
         DocumentType::where('code', 'LSS')->delete();
 
-
         // =========================================================================
         // TAHAP 2: MIGRASI KODE LAMA KE BARU (PENTING UNTUK PRODUCTION)
         // =========================================================================
@@ -24,22 +22,22 @@ class DocumentTypeSeeder extends Seeder
         // Format: 'KODE_LAMA' => 'KODE_BARU'
 
         $codeRenames = [
-            'ARD'     => 'ARD',      // Typo fix Aplication -> Application (Code sama)
-            'BAC'     => 'BACL',     // Berita Acara Crusher -> Berita Acara Crusher L1, L2
-            'CC1'     => 'CCS1',     // Capacity Check 1 -> Stage 1
-            'CC2'     => 'CCS2',     // Capacity Check 2 -> Stage 2
+            'ARD' => 'ARD',      // Typo fix Aplication -> Application (Code sama)
+            'BAC' => 'BACL',     // Berita Acara Crusher -> Berita Acara Crusher L1, L2
+            'CC1' => 'CCS1',     // Capacity Check 1 -> Stage 1
+            'CC2' => 'CCS2',     // Capacity Check 2 -> Stage 2
             'IKWIPFI' => 'IWPI',     // IK/WI Process Final Inspection -> IK/WI Process Inspection
-            'LSSR'    => 'LSSS',     // Limit Sample Sheet Request -> Submission
-            'OT'      => 'OTL',      // Other Test -> Other Test L1, L2
-            'PAFPL'   => 'PSPS',     // PAF Plan -> PAF Submission
-            'PFMEA'   => 'PFWS',     // PFMEA -> Process FMEA Work Sheet
-            'MNCA'    => 'RMNCA',    // Marking No Cavity Approval -> Registration...
-            'MNCR'    => 'RMNCS',    // Marking No Cavity Request -> Registration... Submission
+            'LSSR' => 'LSSS',     // Limit Sample Sheet Request -> Submission
+            'OT' => 'OTL',      // Other Test -> Other Test L1, L2
+            'PAFPL' => 'PSPS',     // PAF Plan -> PAF Submission
+            'PFMEA' => 'PFWS',     // PFMEA -> Process FMEA Work Sheet
+            'MNCA' => 'RMNCA',    // Marking No Cavity Approval -> Registration...
+            'MNCR' => 'RMNCS',    // Marking No Cavity Request -> Registration... Submission
         ];
 
         foreach ($codeRenames as $oldCode => $newCode) {
             // Hanya update jika kode lama ada dan kode baru belum ada
-            if (DocumentType::where('code', $oldCode)->exists() && !DocumentType::where('code', $newCode)->exists()) {
+            if (DocumentType::where('code', $oldCode)->exists() && ! DocumentType::where('code', $newCode)->exists()) {
                 DocumentType::where('code', $oldCode)->update(['code' => $newCode]);
             }
         }

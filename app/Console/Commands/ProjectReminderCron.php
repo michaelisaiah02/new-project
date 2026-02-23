@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Carbon\Carbon;
-use App\Models\User;
-use App\Models\Project;
 use App\Models\ApprovalStatus;
+use App\Models\Project;
 use App\Models\ProjectDocument;
-use App\Services\FonnteService;
+use App\Models\User;
+use App\Services\BroadcastService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class ProjectReminderCron extends Command
@@ -49,25 +49,26 @@ class ProjectReminderCron extends Command
 
         foreach ($projectsH10 as $project) {
             // Validasi dulu biar script ga nyusruk kalo data relasinya ilang
-            if (!$project->customer || !$project->customer->department_id) continue;
+            if (! $project->customer || ! $project->customer->department_id) {
+                continue;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
 
             // Target korban omelan: Leader
-            $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+            $leaders = User::getLeader($deptId);
 
-            if (!empty($leaders)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n\n" .
-                    "*BELUM DILAKUKAN FOLLOW UP*\n\n" .
-                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n" .
-                    "Terima kasih.";
+            if (! empty($leaders)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n\n".
+                    "*BELUM DILAKUKAN FOLLOW UP*\n\n".
+                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $leaders), $msg);
-                sleep(1);
+                BroadcastService::send($leaders, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -87,26 +88,27 @@ class ProjectReminderCron extends Command
             $project = $status->project;
 
             // Validasi data aman sejahtera
-            if (!$project || !$project->customer || !$project->customer->department_id) continue;
+            if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                continue;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
 
             // Target korban SP lisan: Supervisor
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            $supervisors = User::getSupervisor($deptId);
 
             // Kalau nomor WA dapet, langsung tembak! 🚀
-            if (!empty($supervisors)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-input.\n\n" .
-                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat.\n" .
-                    "Terima kasih.";
+            if (! empty($supervisors)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n".
+                    "Schedule sudah di-input.\n\n".
+                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $supervisors), $msg);
-                sleep(1);
+                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -126,26 +128,27 @@ class ProjectReminderCron extends Command
             $project = $status->project;
 
             // Validasi data biar script tetep waras
-            if (!$project || !$project->customer) continue;
+            if (! $project || ! $project->customer) {
+                continue;
+            }
 
             $customerName = $project->customer->name;
 
             // Target korban: Management (Bos Besar yang bakal nge-ping Supervisor)
             // Management biasanya global, jadi gak usah difilter pake $deptId
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalo dapet nomor WA Management, sikatttt! 🚀
-            if (!empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-checked.\n\n" .
-                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat.\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n".
+                    "Schedule sudah di-checked.\n\n".
+                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
-                sleep(1);
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -164,25 +167,26 @@ class ProjectReminderCron extends Command
             $project = $status->project;
 
             // Validasi data biar script tetep aman sentosa
-            if (!$project || !$project->customer) continue;
+            if (! $project || ! $project->customer) {
+                continue;
+            }
 
             $customerName = $project->customer->name;
 
             // Target korban: Management (Ngirim reminder ke diri mereka sendiri)
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalo WA-nya ada, let it fly! 🚀
-            if (!empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-approved.\n\n" .
-                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n".
+                    "Schedule sudah di-approved.\n\n".
+                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
-                sleep(1);
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -203,7 +207,9 @@ class ProjectReminderCron extends Command
             $project = $doc->project;
 
             // Validasi data biar script aman dan gak error
-            if (!$project || !$project->customer || !$project->customer->department_id) continue;
+            if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                continue;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
@@ -215,19 +221,18 @@ class ProjectReminderCron extends Command
             $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
 
             // Target korban pengingat halus: PIC
-            $pics = User::getPIC($deptId)->pluck('whatsapp')->toArray();
+            $pics = User::getPIC($deptId);
 
             // Kalo dapet nomor WA PIC-nya, lgsg gaskeun! 🚀
-            if (!empty($pics)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Due Date    : {$dueDateStr}\n\n" .
-                    "Mohon segera diupload.\n" .
-                    "Terima kasih.";
+            if (! empty($pics)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Doc Name  : {$docName}\n".
+                    "Due Date    : {$dueDateStr}\n\n".
+                    "Mohon segera diupload.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $pics), $msg);
-                sleep(1);
+                BroadcastService::send($pics, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -248,7 +253,9 @@ class ProjectReminderCron extends Command
             $project = $doc->project;
 
             // Validasi data anti-error
-            if (!$project || !$project->customer || !$project->customer->department_id) continue;
+            if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                continue;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
@@ -260,21 +267,20 @@ class ProjectReminderCron extends Command
             $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
 
             // Target penerima: LEADER
-            $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
+            $leaders = User::getLeader($deptId);
 
             // Kalau dapet nomor WA Leader, langsung bombardir! 🚀
-            if (!empty($leaders)) {
-                $msg = "*REMINDER*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Due Date    : {$dueDateStr}\n\n" .
-                    "*PALING LAMBAT BESOK HARUS UPLOAD*\n\n" .
-                    "Mohon diingatkan kepada PIC.\n" .
-                    "Terima kasih.";
+            if (! empty($leaders)) {
+                $msg = "*REMINDER*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Doc Name  : {$docName}\n".
+                    "Due Date    : {$dueDateStr}\n\n".
+                    "*PALING LAMBAT BESOK HARUS UPLOAD*\n\n".
+                    "Mohon diingatkan kepada PIC.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $leaders), $msg);
-                sleep(1);
+                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -294,7 +300,9 @@ class ProjectReminderCron extends Command
             $project = $doc->project;
 
             // Validasi data anti-error club
-            if (!$project || !$project->customer || !$project->customer->department_id) continue;
+            if (! $project || ! $project->customer || ! $project->customer->department_id) {
+                continue;
+            }
 
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
@@ -303,20 +311,19 @@ class ProjectReminderCron extends Command
             $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
 
             // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader)
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            $supervisors = User::getSupervisor($deptId);
 
             // Kalau dapet nomor WA Supervisor, langsung bombardir! 🚀
-            if (!empty($supervisors)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Status          : Waiting for Leader to Check\n\n" .
-                    "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload.\n" .
-                    "Terima kasih.";
+            if (! empty($supervisors)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Doc Name  : {$docName}\n".
+                    "Status          : Waiting for Leader to Check\n\n".
+                    "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $supervisors), $msg);
-                sleep(1);
+                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -336,7 +343,9 @@ class ProjectReminderCron extends Command
             $project = $doc->project;
 
             // Validasi anti-error (Management biasanya ga butuh $deptId, tp nama customer tetep butuh)
-            if (!$project || !$project->customer) continue;
+            if (! $project || ! $project->customer) {
+                continue;
+            }
 
             $customerName = $project->customer->name;
 
@@ -344,20 +353,19 @@ class ProjectReminderCron extends Command
             $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
 
             // Target korban eskalasi: MANAGEMENT (Ngadu ke Bos Besar)
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalau WA-nya dapet, langsung luncurkan rudalnya! 🚀
-            if (!empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Status          : Waiting for Supervisor to Approve\n\n" .
-                    "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check.\n\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Doc Name  : {$docName}\n".
+                    "Status          : Waiting for Supervisor to Approve\n\n".
+                    "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check.\n\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
-                sleep(1);
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -386,25 +394,26 @@ class ProjectReminderCron extends Command
             if (Carbon::parse($latestApproveDate)->toDateString() === $fiveDaysAgo) {
 
                 // Validasi anti-error club
-                if (!$project->customer || !$project->customer->department_id) continue;
+                if (! $project->customer || ! $project->customer->department_id) {
+                    continue;
+                }
 
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
                 // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader)
-                $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+                $supervisors = User::getSupervisor($deptId);
 
                 // Kalau WA-nya dapet, langsung gaskan! 🚀
-                if (!empty($supervisors)) {
-                    $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                        "New Project For {$customerName} Project {$project->model}\n" .
-                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                        "Semua document sudah diupload sesuai schedule.\n\n" .
-                        "Mohon diberitahukan kepada leader untuk segera di-check agar bisa segera masspro.\n" .
-                        "Terima kasih.";
+                if (! empty($supervisors)) {
+                    $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                        "New Project For {$customerName} Project {$project->model}\n".
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                        "Semua document sudah diupload sesuai schedule.\n\n".
+                        "Mohon diberitahukan kepada leader untuk segera di-check agar bisa segera masspro.\n".
+                        'Terima kasih.';
 
-                    FonnteService::send(implode(',', $supervisors), $msg);
-                    sleep(1);
+                    BroadcastService::send($supervisors, $msg, "Reminder Project $project->model");
                 }
             }
         }
@@ -425,24 +434,25 @@ class ProjectReminderCron extends Command
             $project = $status->project;
 
             // Validasi data anti-error (Management cuma butuh nama customer)
-            if (!$project || !$project->customer) continue;
+            if (! $project || ! $project->customer) {
+                continue;
+            }
 
             $customerName = $project->customer->name;
 
             // Target korban eskalasi: MANAGEMENT (Ngadu ke Bos Besar)
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalau WA-nya dapet, langsung luncurkan misilnya! 🚀
-            if (!empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                    "Semua document sudah di-check.\n\n" .
-                    "Mohon diberitahukan kepada supervisor untuk segera di-approve agar bisa segera masspro.\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                    "Semua document sudah di-check.\n\n".
+                    "Mohon diberitahukan kepada supervisor untuk segera di-approve agar bisa segera masspro.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
-                sleep(1);
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
             }
         }
 
@@ -462,24 +472,25 @@ class ProjectReminderCron extends Command
             $project = $status->project;
 
             // Validasi data anti-error
-            if (!$project || !$project->customer) continue;
+            if (! $project || ! $project->customer) {
+                continue;
+            }
 
             $customerName = $project->customer->name;
 
             // Target penerima: MANAGEMENT (Sistem auto-savage ngingetin Bos)
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalau WA-nya dapet, langsung luncurkan notifnya! 🚀
-            if (!empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                    "Semua document sudah di-approve oleh supervisor.\n\n" .
-                    "Mohon segera di-approve by management agar bisa segera masspro.\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
+                    "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                    "Semua document sudah di-approve oleh supervisor.\n\n".
+                    "Mohon segera di-approve by management agar bisa segera masspro.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
-                sleep(1);
+                BroadcastService::send($managements, $msg, "Reminder Project $project->model");
             }
         }
 

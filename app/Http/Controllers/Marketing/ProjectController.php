@@ -49,7 +49,7 @@ class ProjectController extends Controller
             // Jika input label tidak punya ekstensi, atau ekstensinya masih .tif
             // Kita paksa ubah labelnya menjadi .png jika itu file TIFF
             if (in_array($ext, ['tif', 'tiff'])) {
-                $label = pathinfo($label, PATHINFO_FILENAME) . '.png';
+                $label = pathinfo($label, PATHINFO_FILENAME).'.png';
             }
 
             // Hapus temp lama jika ada
@@ -90,7 +90,7 @@ class ProjectController extends Controller
                     'string',
                     'max:50',
                     Rule::unique('projects')->where(
-                        fn($q) => $q->where('suffix', $request->suffix)
+                        fn ($q) => $q->where('suffix', $request->suffix)
                             ->where('minor_change', $request->minor_change)
                     ),
                 ],

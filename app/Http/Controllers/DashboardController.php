@@ -57,12 +57,11 @@ class DashboardController extends Controller
         // APPLY SORTING CUSTOM
         if ($priorityRemark) {
             // Logic: Kalau remark == priority, kasih nilai 0 (paling atas), sisanya 1
-            $newProjectsQuery->orderByRaw("CASE WHEN remark = ? THEN 0 ELSE 1 END", [$priorityRemark]);
+            $newProjectsQuery->orderByRaw('CASE WHEN remark = ? THEN 0 ELSE 1 END', [$priorityRemark]);
         }
 
         // Default sort selanjutnya (misal berdasarkan tanggal atau remark abjad)
         $newProjects = $newProjectsQuery->orderBy('remark')->get();
-
 
         // ---------------------------------------------------------
         // 2. LOGIC ONGOING PROJECTS (Sort by Collection)
@@ -98,7 +97,7 @@ class DashboardController extends Controller
         // Sorting Collection via PHP
         $ongoingProjects = $ongoingProjectsRaw->sortBy(function ($project) use ($targetStatus) {
             // Kalau gak ada target status (user biasa), sort berdasarkan delay, kemudian Ongoing
-            if (!empty($targetStatus)) {
+            if (! empty($targetStatus)) {
                 // Cek dulu ada dokumen delay gak
                 $hasDelay = $project->documents->where('status', 'delay')->isNotEmpty();
 
@@ -113,6 +112,7 @@ class DashboardController extends Controller
                 // Prioritas 3: Sisanya
                 return 1;
             }
+
             // Kalau ada target status, yang sesuai di atas
             return $project->statusOngoing() === $targetStatus ? 0 : 1;
         });

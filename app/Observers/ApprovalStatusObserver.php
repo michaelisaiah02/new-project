@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\ApprovalStatus;
 use App\Models\User;
-use App\Services\FonnteService;
+use App\Services\BroadcastService;
 use Carbon\Carbon;
 
 class ApprovalStatusObserver
@@ -27,7 +27,7 @@ class ApprovalStatusObserver
         $project = $status->project;
 
         // Validasi anti-error club
-        if (!$project || !$project->customer || !$project->customer->department_id) {
+        if (! $project || ! $project->customer || ! $project->customer->department_id) {
             return;
         }
 
@@ -38,21 +38,21 @@ class ApprovalStatusObserver
         // KONDISI: LEADER SUDAH CHECK SCHEDULE
         // =========================================================
         // Cek apakah kolom checked_date baru aja berubah dan ada isinya
-        if ($status->isDirty('checked_date') && !empty($status->checked_date)) {
+        if ($status->isDirty('checked_date') && ! empty($status->checked_date)) {
 
             // Cari Supervisor dari department yang terkait
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            $supervisors = User::getSupervisor($deptId);
 
             // Kalau dapet nomor WA-nya, gaskan kirim!
-            if (!empty($supervisors)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-checked.\n\n" .
-                    "Mohon segera di-*approve* schedule yang telah dibuat.\n" .
-                    "Terima kasih.";
+            if (! empty($supervisors)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n".
+                    "Schedule sudah di-checked.\n\n".
+                    "Mohon segera di-*approve* schedule yang telah dibuat.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $supervisors), $msg);
+                BroadcastService::send($supervisors, $msg, "Notification Project $project->model");
             }
         }
 
@@ -60,21 +60,21 @@ class ApprovalStatusObserver
         // KONDISI: SUPERVISOR SUDAH APPROVE SCHEDULE
         // =========================================================
         // Cek apakah kolom approved_date baru aja berubah dan ada isinya
-        if ($status->isDirty('approved_date') && !empty($status->approved_date)) {
+        if ($status->isDirty('approved_date') && ! empty($status->approved_date)) {
 
             // Cari orang-orang Management (Gak perlu pake $deptId karena management biasanya global)
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalau dapet nomor WA-nya, gaskan kirim!
-            if (!empty($managements)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-approved.\n\n" .
-                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n".
+                    "Schedule sudah di-approved.\n\n".
+                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
+                BroadcastService::send($managements, $msg, "Notification Project $project->model");
             }
         }
 
@@ -82,25 +82,25 @@ class ApprovalStatusObserver
         // KONDISI: MANAGEMENT SUDAH APPROVE (RESMI ON-GOING PROJECT)
         // =========================================================
         // Cek apakah kolom management_approved_date baru aja berubah dan ada isinya
-        if ($status->isDirty('management_approved_date') && !empty($status->management_approved_date)) {
+        if ($status->isDirty('management_approved_date') && ! empty($status->management_approved_date)) {
 
             // Cari Leader dan Supervisor dari department yang terkait
-            $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            $leaders = User::getLeader($deptId);
+            $supervisors = User::getSupervisor($deptId);
 
             // Gabungin target (biar efisien sekali jalan)
-            $targets = array_unique(array_merge($leaders, $supervisors));
+            $targets = collect($leaders)->merge($supervisors)->unique('id');
 
             // Kalau ada nomor WA-nya, langsung blast!
-            if (!empty($targets)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "*SUDAH DIMULAI (ON-GOING PROJECT)*\n\n" .
-                    "Mohon dilakukan monitoring hingga masspro.\n" .
-                    "Terima kasih.";
+            if (! empty($targets)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
+                    "Target Mass Production : {$project->masspro_target}\n".
+                    "*SUDAH DIMULAI (ON-GOING PROJECT)*\n\n".
+                    "Mohon dilakukan monitoring hingga masspro.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $targets), $msg);
+                BroadcastService::send($targets, $msg, "Notification Project $project->model");
             }
         }
 
@@ -108,24 +108,24 @@ class ApprovalStatusObserver
         // KONDISI: LEADER SUDAH CHECK ON-GOING PROJECT (SEMUA DOC LENGKAP)
         // =========================================================
         // Cek apakah kolom ongoing_checked_date baru aja berubah dan ada isinya
-        if ($status->isDirty('ongoing_checked_date') && !empty($status->ongoing_checked_date)) {
+        if ($status->isDirty('ongoing_checked_date') && ! empty($status->ongoing_checked_date)) {
 
             // Hitung Target Besok (tanggal checked + 1 hari)
             $targetDate = Carbon::parse($status->ongoing_checked_date)->addDay()->format('d F Y');
 
             // Cari Supervisor dari department yang terkait
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
+            $supervisors = User::getSupervisor($deptId);
 
             // Kalau dapet nomor WA-nya, langsung blast!
-            if (!empty($supervisors)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                    "Semua document sudah di-check.\n\n" .
-                    "Mohon di-approve agar bisa segera masspro.\n" .
-                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
-                    "Terima kasih.";
+            if (! empty($supervisors)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                    "Semua document sudah di-check.\n\n".
+                    "Mohon di-approve agar bisa segera masspro.\n".
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $supervisors), $msg);
+                BroadcastService::send($supervisors, $msg, "Notification Project $project->model");
             }
         }
 
@@ -133,24 +133,24 @@ class ApprovalStatusObserver
         // KONDISI: SUPERVISOR SUDAH APPROVE ON-GOING PROJECT
         // =========================================================
         // Cek apakah kolom ongoing_approved_date baru aja berubah dan ada isinya
-        if ($status->isDirty('ongoing_approved_date') && !empty($status->ongoing_approved_date)) {
+        if ($status->isDirty('ongoing_approved_date') && ! empty($status->ongoing_approved_date)) {
 
             // Hitung Target Besok (tanggal approved + 1 hari)
             $targetDate = Carbon::parse($status->ongoing_approved_date)->addDay()->format('d F Y');
 
             // Cari user Management (Global, gak pake $deptId)
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $managements = User::getManagement();
 
             // Kalau dapet nomor WA-nya, langsung gaskan!
-            if (!empty($managements)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                    "Semua document sudah di-approve oleh supervisor.\n\n" .
-                    "Mohon di-approve by management agar bisa segera masspro.\n" .
-                    "Target besok, tgl {$targetDate} sudah dikerjakan.\n" .
-                    "Terima kasih.";
+            if (! empty($managements)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                    "Semua document sudah di-approve oleh supervisor.\n\n".
+                    "Mohon di-approve by management agar bisa segera masspro.\n".
+                    "Target besok, tgl {$targetDate} sudah dikerjakan.\n".
+                    'Terima kasih.';
 
-                FonnteService::send(implode(',', $managements), $msg);
+                BroadcastService::send($managements, $msg, "Notification Project $project->model");
             }
         }
 
@@ -158,26 +158,27 @@ class ApprovalStatusObserver
         // KONDISI: MANAGEMENT SUDAH APPROVE ON-GOING (FINAL PROJECT SELESAI)
         // =========================================================
         // Cek apakah kolom ongoing_management_approved_date baru aja berubah dan ada isinya
-        if ($status->isDirty('ongoing_management_approved_date') && !empty($status->ongoing_management_approved_date)) {
+        if ($status->isDirty('ongoing_management_approved_date') && ! empty($status->ongoing_management_approved_date)) {
 
             // Kumpulin SEMUA nomor WA dari segala penjuru kasta
-            $pics = User::getPIC($deptId)->pluck('whatsapp')->toArray();
-            $leaders = User::getLeader($deptId)->pluck('whatsapp')->toArray();
-            $supervisors = User::getSupervisor($deptId)->pluck('whatsapp')->toArray();
-            $managements = User::getManagement()->pluck('whatsapp')->toArray();
+            $pics = User::getPIC($deptId);
+            $leaders = User::getLeader($deptId);
+            $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
             // Gabungin semua jadi satu array dan pastiin gak ada nomor ganda
-            $allTargets = array_unique(array_merge($pics, $leaders, $supervisors, $managements));
+            $allTargets = collect($pics)->merge($leaders)->merge($supervisors)->merge($managements)
+                ->unique('id');
 
             // Kalau ada nomornya, ledakin notifnya! 💥
-            if (!empty($allTargets)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
-                    "SUDAH SELESAI.\n" .
-                    "MOHON DILAKUKAN MONITORING SELAMA 3 BULAN PERTAMA.\n\n" .
-                    "Terima kasih atas supportnya.";
+            if (! empty($allTargets)) {
+                $msg = "New Project For {$customerName} Project {$project->model}\n".
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
+                    "SUDAH SELESAI.\n".
+                    "MOHON DILAKUKAN MONITORING SELAMA 3 BULAN PERTAMA.\n\n".
+                    'Terima kasih atas supportnya.';
 
-                FonnteService::send(implode(',', $allTargets), $msg);
+                BroadcastService::send($allTargets, $msg, "Notification Project $project->model");
             }
         }
     }

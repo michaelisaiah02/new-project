@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use App\Models\Project;
 use App\Models\ApprovalStatus;
+use App\Models\Project;
 use App\Models\ProjectDocument;
-use App\Observers\ProjectObserver;
-use Illuminate\Support\ServiceProvider;
 use App\Observers\ApprovalStatusObserver;
 use App\Observers\ProjectDocumentObserver;
+use App\Observers\ProjectObserver;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

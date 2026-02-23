@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
 use App\Models\Customer;
-use Illuminate\Http\Request;
+use App\Models\Project;
 use App\Models\ProjectDocument;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class MassproController extends Controller
 {
@@ -20,22 +19,21 @@ class MassproController extends Controller
 
         $custQuery = Customer::orderBy('name');
 
-        if (!$hasGlobalAccess) {
+        if (! $hasGlobalAccess) {
             // Engineering X cuma bisa lihat customer milik Engineering X
             $custQuery->where('department_id', $user->department_id);
         }
         $customers = $custQuery->get();
 
-
         // --- B. CEK FILTER DARI USER ---
         $filters = $request->only(['customer', 'model', 'part_number', 'suffix', 'minor_change']);
         $hasFilter = collect($filters)->filter()->isNotEmpty();
 
-        if (!$hasFilter) {
+        if (! $hasFilter) {
             return view('masspro.index', [
                 'customers' => $customers, // Kirim list customer yang sudah difilter
                 'massproRecords' => collect(),
-                'autoFilled' => []
+                'autoFilled' => [],
             ]);
         }
 
@@ -70,11 +68,15 @@ class MassproController extends Controller
 
         // --- D. AUTO FILL LOGIC ---
         $autoFilled = [];
-        if ($request->filled('part_number') && (!$request->filled('customer') || !$request->filled('model'))) {
+        if ($request->filled('part_number') && (! $request->filled('customer') || ! $request->filled('model'))) {
             $parent = $massproRecords->first();
             if ($parent) {
-                if (!$request->filled('customer')) $autoFilled['customer'] = $parent->customer_code;
-                if (!$request->filled('model'))    $autoFilled['model'] = $parent->model;
+                if (! $request->filled('customer')) {
+                    $autoFilled['customer'] = $parent->customer_code;
+                }
+                if (! $request->filled('model')) {
+                    $autoFilled['model'] = $parent->model;
+                }
             }
         }
 
@@ -90,7 +92,7 @@ class MassproController extends Controller
         // Sesuaikan stringnya dengan database kamu (case-insensitive)
         $hasGlobalAccess = str_contains($deptName, 'management') || str_contains($deptName, 'marketing');
 
-        if (!$hasGlobalAccess) {
+        if (! $hasGlobalAccess) {
             // 2. Jika Engineering (atau lainnya), filter berdasarkan relasi Customer -> Department
             $query->whereHas('customer', function ($q) use ($user) {
                 $q->where('department_id', $user->department_id);
@@ -129,10 +131,18 @@ class MassproController extends Controller
 
         $this->applyDepartmentFilter($q); // << Pasang Filter
 
-        if ($request->filled('customer_code')) $q->where('customer_code', $request->customer_code);
-        if ($request->filled('part_number'))   $q->where('part_number', $request->part_number);
-        if ($request->filled('suffix'))        $q->where('suffix', $request->suffix);
-        if ($request->filled('minor_change'))  $q->where('minor_change', $request->minor_change);
+        if ($request->filled('customer_code')) {
+            $q->where('customer_code', $request->customer_code);
+        }
+        if ($request->filled('part_number')) {
+            $q->where('part_number', $request->part_number);
+        }
+        if ($request->filled('suffix')) {
+            $q->where('suffix', $request->suffix);
+        }
+        if ($request->filled('minor_change')) {
+            $q->where('minor_change', $request->minor_change);
+        }
         if ($request->filled('remark') && $request->remark != 'all') {
             $q->where('remark', $request->remark);
         }
@@ -146,10 +156,18 @@ class MassproController extends Controller
 
         $this->applyDepartmentFilter($q); // << Pasang Filter
 
-        if ($request->filled('customer_code')) $q->where('customer_code', $request->customer_code);
-        if ($request->filled('model'))         $q->where('model', $request->model);
-        if ($request->filled('suffix'))        $q->where('suffix', $request->suffix);
-        if ($request->filled('minor_change'))  $q->where('minor_change', $request->minor_change);
+        if ($request->filled('customer_code')) {
+            $q->where('customer_code', $request->customer_code);
+        }
+        if ($request->filled('model')) {
+            $q->where('model', $request->model);
+        }
+        if ($request->filled('suffix')) {
+            $q->where('suffix', $request->suffix);
+        }
+        if ($request->filled('minor_change')) {
+            $q->where('minor_change', $request->minor_change);
+        }
         if ($request->filled('remark') && $request->remark != 'all') {
             $q->where('remark', $request->remark);
         }
@@ -163,10 +181,18 @@ class MassproController extends Controller
 
         $this->applyDepartmentFilter($q); // << Pasang Filter
 
-        if ($request->filled('customer'))      $q->where('customer_code', $request->customer);
-        if ($request->filled('model'))         $q->where('model', $request->model);
-        if ($request->filled('part_number'))   $q->where('part_number', $request->part_number);
-        if ($request->filled('minor_change'))  $q->where('minor_change', $request->minor_change);
+        if ($request->filled('customer')) {
+            $q->where('customer_code', $request->customer);
+        }
+        if ($request->filled('model')) {
+            $q->where('model', $request->model);
+        }
+        if ($request->filled('part_number')) {
+            $q->where('part_number', $request->part_number);
+        }
+        if ($request->filled('minor_change')) {
+            $q->where('minor_change', $request->minor_change);
+        }
         if ($request->filled('remark') && $request->remark != 'all') {
             $q->where('remark', $request->remark);
         }
@@ -180,10 +206,18 @@ class MassproController extends Controller
 
         $this->applyDepartmentFilter($q); // << Pasang Filter
 
-        if ($request->filled('customer'))      $q->where('customer_code', $request->customer);
-        if ($request->filled('model'))         $q->where('model', $request->model);
-        if ($request->filled('part_number'))   $q->where('part_number', $request->part_number);
-        if ($request->filled('suffix'))        $q->where('suffix', $request->suffix);
+        if ($request->filled('customer')) {
+            $q->where('customer_code', $request->customer);
+        }
+        if ($request->filled('model')) {
+            $q->where('model', $request->model);
+        }
+        if ($request->filled('part_number')) {
+            $q->where('part_number', $request->part_number);
+        }
+        if ($request->filled('suffix')) {
+            $q->where('suffix', $request->suffix);
+        }
         if ($request->filled('remark') && $request->remark != 'all') {
             $q->where('remark', $request->remark);
         }
@@ -203,11 +237,21 @@ class MassproController extends Controller
 
         // 3. Cross-Filtering (Dengar input lain)
         // Remark harus peka terhadap perubahan Customer, Model, Part, Suffix, MC
-        if ($request->filled('customer'))      $q->where('customer_code', $request->customer);
-        if ($request->filled('model'))         $q->where('model', $request->model);
-        if ($request->filled('part_number'))   $q->where('part_number', $request->part_number);
-        if ($request->filled('suffix'))        $q->where('suffix', $request->suffix);
-        if ($request->filled('minor_change'))  $q->where('minor_change', $request->minor_change);
+        if ($request->filled('customer')) {
+            $q->where('customer_code', $request->customer);
+        }
+        if ($request->filled('model')) {
+            $q->where('model', $request->model);
+        }
+        if ($request->filled('part_number')) {
+            $q->where('part_number', $request->part_number);
+        }
+        if ($request->filled('suffix')) {
+            $q->where('suffix', $request->suffix);
+        }
+        if ($request->filled('minor_change')) {
+            $q->where('minor_change', $request->minor_change);
+        }
 
         // Return array string
         return response()->json($q->orderBy('remark')->pluck('remark'));

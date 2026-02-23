@@ -8,9 +8,8 @@ use App\Models\CustomerStage;
 use App\Models\Project;
 use App\Models\ProjectDocument;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use setasign\Fpdi\Fpdi;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 use function Symfony\Component\Clock\now;
 
@@ -252,29 +251,29 @@ class ProjectEngineerController extends Controller
             $project = Project::findOrFail($request->project_id);
 
             // 1. CEK FILE DRAWING 2D
-            if (!$project->drawing_2d) {
+            if (! $project->drawing_2d) {
                 return response()->json(['message' => 'File Drawing 2D belum diupload.'], 422);
             }
 
             // Konstruksi Path Lengkap (Sesuaikan dengan folder penyimpanan kamu)
-            $relativePath = $project->customer_code . '/' . $project->model . '/' . $project->part_number . '/' . $project->drawing_2d;
-            $fullPath = storage_path('app/public/' . $relativePath);
+            $relativePath = $project->customer_code.'/'.$project->model.'/'.$project->part_number.'/'.$project->drawing_2d;
+            $fullPath = storage_path('app/public/'.$relativePath);
 
-            if (!file_exists($fullPath)) {
-                return response()->json(['message' => 'File fisik tidak ditemukan.' . $relativePath . '/' . $fullPath], 404);
+            if (! file_exists($fullPath)) {
+                return response()->json(['message' => 'File fisik tidak ditemukan.'.$relativePath.'/'.$fullPath], 404);
             }
 
             $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
 
             // 2. GENERATE QR CODE TEMP
             // Kita generate QR polos high quality
-            $qrTempPath = sys_get_temp_dir() . '/qr_2d_' . uniqid() . '.png';
+            $qrTempPath = sys_get_temp_dir().'/qr_2d_'.uniqid().'.png';
 
             // Isi QR: Bisa disesuaikan sesuai kebutuhan
-            $qrContent = "Diupload oleh " . $project->creator->name . " - " . ($project->created_at ? $project->created_at->format('d-m-Y') : '-') . "\n"
-                . "Diperiksa oleh " . ($status->checked_by_name ?? '-') . " - " . ($status->checked_date ? (is_string($status->checked_date) ? \Carbon\Carbon::parse($status->checked_date)->format('d-m-Y') : $status->checked_date->format('d-m-Y')) : '-') . "\n"
-                . "Disetujui oleh " . ($status->approved_by_name ?? '-') . " - " . ($status->approved_date ? (is_string($status->approved_date) ? \Carbon\Carbon::parse($status->approved_date)->format('d-m-Y') : $status->approved_date->format('d-m-Y')) : '-') . "\n"
-                . "Disetujui Management oleh " . ($status->management_approved_by_name ?? '-') . " - " . ($status->management_approved_date ? (is_string($status->management_approved_date) ? \Carbon\Carbon::parse($status->management_approved_date)->format('d-m-Y') : $status->management_approved_date->format('d-m-Y')) : '-');
+            $qrContent = 'Diupload oleh '.$project->creator->name.' - '.($project->created_at ? $project->created_at->format('d-m-Y') : '-')."\n"
+                .'Diperiksa oleh '.($status->checked_by_name ?? '-').' - '.($status->checked_date ? (is_string($status->checked_date) ? \Carbon\Carbon::parse($status->checked_date)->format('d-m-Y') : $status->checked_date->format('d-m-Y')) : '-')."\n"
+                .'Disetujui oleh '.($status->approved_by_name ?? '-').' - '.($status->approved_date ? (is_string($status->approved_date) ? \Carbon\Carbon::parse($status->approved_date)->format('d-m-Y') : $status->approved_date->format('d-m-Y')) : '-')."\n"
+                .'Disetujui Management oleh '.($status->management_approved_by_name ?? '-').' - '.($status->management_approved_date ? (is_string($status->management_approved_date) ? \Carbon\Carbon::parse($status->management_approved_date)->format('d-m-Y') : $status->management_approved_date->format('d-m-Y')) : '-');
 
             QrCode::format('png')
                 ->size(500) // Gedein biar tajem pas di-resize
@@ -336,11 +335,16 @@ class ProjectEngineerController extends Controller
                 }
                 $pdf->Output('F', $fullPath);
             } catch (\Exception $e) {
-                if (file_exists($qrTempPath)) unlink($qrTempPath);
-                return response()->json(['message' => 'Gagal stamp: ' . $e->getMessage()], 500);
+                if (file_exists($qrTempPath)) {
+                    unlink($qrTempPath);
+                }
+
+                return response()->json(['message' => 'Gagal stamp: '.$e->getMessage()], 500);
             }
 
-            if (file_exists($qrTempPath)) unlink($qrTempPath);
+            if (file_exists($qrTempPath)) {
+                unlink($qrTempPath);
+            }
         }
 
         Project::findOrFail($request->project_id)

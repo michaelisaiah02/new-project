@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\Engineering;
 
-use Carbon\Carbon;
-use setasign\Fpdi\Fpdi;
 use App\Helpers\FileHelper;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\ProjectDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Process;
+use setasign\Fpdi\Fpdi;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ProjectDocumentController extends Controller
@@ -50,7 +49,7 @@ class ProjectDocumentController extends Controller
         // Jadi kalau dia gagal baca, kita cek alasan gagalnya apa.
 
         try {
-            $pdf = new Fpdi();
+            $pdf = new Fpdi;
             // Coba baca file temp upload langsung
             $pdf->setSourceFile($file->getPathname());
 
@@ -77,12 +76,12 @@ class ProjectDocumentController extends Controller
                 // KASUS 3: Error Lain (File Corrupt / Bukan PDF beneran)
                 // Opsional: Mau ditolak atau dilolosin terserah lo.
                 // Gue saranin tolak kalau errornya aneh-aneh.
-                \Illuminate\Support\Facades\Log::error("FPDI Check Error: " . $errorMsg);
+                \Illuminate\Support\Facades\Log::error('FPDI Check Error: '.$errorMsg);
+
                 return response()->json(['message' => 'File PDF corrupt atau tidak valid.'], 422);
             }
         }
         // --- END CEK PASSWORD ---
-
 
         // 2. LANJUT SIMPAN FILE (Logic Lama)
         $project = $projectDocument->project;
@@ -185,11 +184,11 @@ class ProjectDocumentController extends Controller
         }
 
         // Folder sesuai dengan format: Model/PartNumber/nama_file.pdf
-        $relativePath = $projectDocument->project->customer_code . '/' . $projectDocument->project->model . '/' . $projectDocument->project->part_number . '/' . $projectDocument->file_name;
-        $fullPath = storage_path('app/public/' . $relativePath);
+        $relativePath = $projectDocument->project->customer_code.'/'.$projectDocument->project->model.'/'.$projectDocument->project->part_number.'/'.$projectDocument->file_name;
+        $fullPath = storage_path('app/public/'.$relativePath);
 
         if (! file_exists($fullPath)) {
-            return response()->json(['message' => 'File PDF fisik tidak ditemukan di server.' . $fullPath], 404);
+            return response()->json(['message' => 'File PDF fisik tidak ditemukan di server.'.$fullPath], 404);
         }
 
         if (! $projectDocument->checked_by_id || ! $projectDocument->checked_date) {
@@ -228,7 +227,7 @@ class ProjectDocumentController extends Controller
         $qrPosition = $qrPosition ?? 'bottom_right';
 
         // 5. Generate QR Code Image (Temp)
-        $qrTempPath = sys_get_temp_dir() . '/qr_' . uniqid() . '.png';
+        $qrTempPath = sys_get_temp_dir().'/qr_'.uniqid().'.png';
 
         // Karena Imagick aktif, kita bisa pake format 'png' dengan aman
         QrCode::format('png')
@@ -253,13 +252,15 @@ class ProjectDocumentController extends Controller
                 $gsBin = 'C:\\Program Files\\gs\\gs10.06.0\\bin\\gswin64c.exe';
                 $tempDir = storage_path('app/temp_pdf');
 
-                if (!file_exists($tempDir)) mkdir($tempDir, 0777, true);
+                if (! file_exists($tempDir)) {
+                    mkdir($tempDir, 0777, true);
+                }
 
-                $repairedPath = $tempDir . '/repair_' . time() . '.pdf';
-                $fixedGsBin  = str_replace('/', '\\', $gsBin);
+                $repairedPath = $tempDir.'/repair_'.time().'.pdf';
+                $fixedGsBin = str_replace('/', '\\', $gsBin);
                 $fixedOutput = str_replace('/', '\\', $repairedPath);
-                $fixedInput  = str_replace('/', '\\', $fullPath);
-                $fixedTemp   = str_replace('/', '\\', $tempDir);
+                $fixedInput = str_replace('/', '\\', $fullPath);
+                $fixedTemp = str_replace('/', '\\', $tempDir);
 
                 $command = sprintf(
                     '"%s" -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sTMPDIR="%s" -sOutputFile="%s" "%s"',
@@ -269,10 +270,10 @@ class ProjectDocumentController extends Controller
                     $fixedInput
                 );
 
-                $output = shell_exec($command . ' 2>&1');
+                $output = shell_exec($command.' 2>&1');
 
-                if (!file_exists($repairedPath) || filesize($repairedPath) === 0) {
-                    throw new \Exception("Ghostscript Failed! Output CMD: " . $output);
+                if (! file_exists($repairedPath) || filesize($repairedPath) === 0) {
+                    throw new \Exception('Ghostscript Failed! Output CMD: '.$output);
                 }
 
                 $pageCount = $pdf->setSourceFile($repairedPath);
@@ -359,11 +360,15 @@ class ProjectDocumentController extends Controller
                 'approved_date' => null,
             ]);
 
-            return response()->json(['message' => 'Gagal memproses PDF: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Gagal memproses PDF: '.$e->getMessage()], 500);
         } finally {
             // CLEANUP
-            if (isset($qrTempPath) && file_exists($qrTempPath)) unlink($qrTempPath);
-            if (isset($tempRepairedFile) && file_exists($tempRepairedFile)) unlink($tempRepairedFile);
+            if (isset($qrTempPath) && file_exists($qrTempPath)) {
+                unlink($qrTempPath);
+            }
+            if (isset($tempRepairedFile) && file_exists($tempRepairedFile)) {
+                unlink($tempRepairedFile);
+            }
         }
 
         // 7. Cleanup
