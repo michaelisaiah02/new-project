@@ -31,7 +31,7 @@ class ProjectNotificationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Project Notification Mail',
+            subject: $this->subjectLine,
         );
     }
 
@@ -41,7 +41,7 @@ class ProjectNotificationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            text: 'emails.plain_text',
         );
     }
 

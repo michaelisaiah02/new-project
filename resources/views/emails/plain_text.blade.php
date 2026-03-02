@@ -1,0 +1,1 @@
+{!! $msgContent !!}
