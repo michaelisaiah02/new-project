@@ -290,7 +290,50 @@ class ProjectEngineerController extends Controller
 
                 // 1. Setup FPDI 'mm'
                 $pdf = new Fpdi('P', 'mm');
-                $pageCount = $pdf->setSourceFile($fullPath);
+                $tempRepairedFile = null;
+
+                // 1. COBA LOAD NORMAL (Bisa jadi PDF-nya emang udah versi 1.4)
+                try {
+                    $pageCount = $pdf->setSourceFile($fullPath);
+                } catch (\Exception $e) {
+                    // 2. KALAU GAGAL KARENA KOMPRESI, MASUK BENGKEL GHOSTSCRIPT! 🛠️
+
+                    // Pastikan path ini sesuai sama instalasi Ghostscript di laptop/server lo
+                    $gsBin = 'C:\\Program Files\\gs\\gs10.06.0\\bin\\gswin64c.exe';
+                    $tempDir = storage_path('app/temp_pdf');
+
+                    if (! file_exists($tempDir)) {
+                        mkdir($tempDir, 0777, true);
+                    }
+
+                    $repairedPath = $tempDir.'/repair_'.time().'_'.uniqid().'.pdf';
+
+                    // Normalisasi Path buat Windows
+                    $fixedGsBin = str_replace('/', '\\', $gsBin);
+                    $fixedOutput = str_replace('/', '\\', $repairedPath);
+                    $fixedInput = str_replace('/', '\\', $fullPath);
+                    $fixedTemp = str_replace('/', '\\', $tempDir);
+
+                    // Command sakti penurun versi ke 1.4
+                    $command = sprintf(
+                        '"%s" -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sTMPDIR="%s" -sOutputFile="%s" "%s"',
+                        $fixedGsBin,
+                        $fixedTemp,
+                        $fixedOutput,
+                        $fixedInput
+                    );
+
+                    $output = shell_exec($command.' 2>&1');
+
+                    // Cek apakah sukses direpair
+                    if (! file_exists($repairedPath) || filesize($repairedPath) === 0) {
+                        throw new \Exception('Ghostscript gagal repair PDF! Detail: '.$output);
+                    }
+
+                    // 3. LOAD ULANG PAKE FILE HASIL REPAIR (Udah versi 1.4, FPDI pasti senyum)
+                    $pageCount = $pdf->setSourceFile($repairedPath);
+                    $tempRepairedFile = $repairedPath; // Tandai biar dihapus nanti
+                }
 
                 for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                     $templateId = $pdf->importPage($pageNo);
@@ -338,12 +381,18 @@ class ProjectEngineerController extends Controller
                 if (file_exists($qrTempPath)) {
                     unlink($qrTempPath);
                 }
+                if ($tempRepairedFile && file_exists($tempRepairedFile)) {
+                    unlink($tempRepairedFile);
+                }
 
                 return response()->json(['message' => 'Gagal stamp: '.$e->getMessage()], 500);
             }
 
             if (file_exists($qrTempPath)) {
                 unlink($qrTempPath);
+            }
+            if ($tempRepairedFile && file_exists($tempRepairedFile)) {
+                unlink($tempRepairedFile);
             }
         }
 

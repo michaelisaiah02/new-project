@@ -1,5 +1,5 @@
 @extends('layouts.app-projects')
-@section('title', 'ON-GOING PROJECT')
+@section('title', 'MASS PRODUCTION')
 @section('customer', $projectDocument->project->customer->name)
 
 @section('styles')

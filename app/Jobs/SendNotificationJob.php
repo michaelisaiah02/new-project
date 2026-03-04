@@ -11,6 +11,7 @@ use App\Services\FonnteService;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ProjectNotificationMail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter; // 👈 Panggil dewa pembatasnya di sini
 
 class SendNotificationJob implements ShouldQueue
 {
@@ -21,7 +22,6 @@ class SendNotificationJob implements ShouldQueue
     public $subject;
     public $channel;
 
-    // Data dari BroadcastService bakal dilempar ke sini
     public function __construct($user, $baseMsg, $subject, $channel)
     {
         $this->user = $user;
@@ -32,31 +32,45 @@ class SendNotificationJob implements ShouldQueue
 
     public function handle(): void
     {
-        $greeting = "Kepada Yth. {$this->user->name},\n\n";
-        $finalMsg = $greeting . $this->baseMsg;
+        // JURUS RATE LIMITING: Maksimal 30 eksekusi per 1 Jam (3600 detik)
+        $executed = RateLimiter::attempt(
+            'notif-limiter-new-project', // Nama ID antreannya (bebas)
+            30, // Maksimal tembakan
+            function () {
+                // === KALAU KUOTA MASIH ADA, EKSEKUSI BLOK INI ===
+                $greeting = "Kepada Yth. {$this->user->name},\n\n";
+                $finalMsg = $greeting . $this->baseMsg;
 
-        // 1. Tembak WA (Pake Try-Catch biar aman)
-        if (in_array($this->channel, ['all', 'wa']) && !empty($this->user->whatsapp) && env('WA_NOTIFICATION_ENABLED', true)) {
-            try {
-                FonnteService::send($this->user->whatsapp, $this->baseMsg);
+                // 1. Tembak WA (Real-time sat-set!)
+                if (in_array($this->channel, ['all', 'wa']) && !empty($this->user->whatsapp) && env('WA_NOTIFICATION_ENABLED', true)) {
+                    try {
+                        FonnteService::send($this->user->whatsapp, $this->baseMsg);
+                        sleep(rand(5, 10));
+                    } catch (\Exception $e) {
+                        Log::error("WA Queue Error: " . $e->getMessage());
+                    }
+                }
 
-                // Rem ABS 3 Detik biar WA gak ke-banned
-                sleep(rand(3, 5));
-            } catch (\Exception $e) {
-                Log::error("WA Queue Error ke {$this->user->whatsapp}: " . $e->getMessage());
-            }
-        }
+                // 2. Tembak Email
+                if (in_array($this->channel, ['all', 'email']) && !empty($this->user->email)) {
+                    try {
+                        Mail::to($this->user->email)->send(new ProjectNotificationMail($finalMsg, $this->subject));
+                        sleep(10);
+                    } catch (\Exception $e) {
+                        Log::error("Email Queue Error: " . $e->getMessage());
+                    }
+                }
+            },
+            3600
+        );
 
-        // 2. Tembak Email (Pake Try-Catch biar gak bikin sistem crash)
-        if (in_array($this->channel, ['all', 'email']) && !empty($this->user->email)) {
-            try {
-                Mail::to($this->user->email)->send(new ProjectNotificationMail($finalMsg, $this->subject));
-
-                // Kasih jeda 5 detik antar email biar server Plesk gak teriak Spam 554 5.7.0!
-                sleep(rand(5, 7));
-            } catch (\Exception $e) {
-                Log::error("Email Queue Error ke {$this->user->email}: " . $e->getMessage());
-            }
+        // === KALAU KUOTA 30/JAM UDAH HABIS ===
+        if (! $executed) {
+            // Logikanya: "Wah, jatah jam ini abis nih. Gue balikin lagi deh ke antrean, tar cobain lagi 15 menit ke depan!"
+            // 900 detik = 15 Menit.
+            // Jadi sistem lo bakal otomatis nyoba ngirim sisanya secara berkala tanpa bikin error.
+            $this->release(900);
+            Log::warning("Rate limit reached for SendNotificationJob. Job released back to queue to retry after 15 minutes.");
         }
     }
 }
