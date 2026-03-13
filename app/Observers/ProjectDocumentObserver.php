@@ -23,7 +23,7 @@ class ProjectDocumentObserver
     public function updated(ProjectDocument $document)
     {
         // =========================================================
-        // 1. KONDISI: PIC INPUT DUE DATE (Semua doc udah ada due_date)
+        // 2. KONDISI: PIC INPUT DUE DATE (Semua doc udah ada due_date)
         // =========================================================
 
         // Cek apakah due_date baru aja di-update dan isinya nggak kosong
@@ -50,25 +50,52 @@ class ProjectDocumentObserver
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
-                // Cari Leader dari department yang sama
+                // Cari Leader dari department yang sama (Pastiin ini ngereturn Collection ya)
                 $leaders = User::getLeader($deptId);
+                $supervisors = User::getSupervisor($deptId);
+                $managements = User::getManagement();
 
-                // Kalau nomornya ada, eksekusi WA-nya!
-                if (! empty($leaders)) {
-                    $msg = "New Project For {$customerName} Project {$project->model}\n".
-                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                        "Target Mass Production : {$project->masspro_target}\n".
-                        "Schedule sudah di-input.\n\n".
-                        "Mohon segera di-*check* schedule yang telah dibuat.\n".
+                // Kalau targetnya dapet, langsung eksekusi!
+                if ($leaders->isNotEmpty()) { // Diganti ke isNotEmpty() biar lebih elegan a la Laravel
+
+                    // 1. PESAN WA (Format Original)
+                    $msgWa = "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                        "Target Mass Production : {$project->masspro_target}\n" .
+                        "Schedule sudah di-input.\n\n" .
+                        "Mohon segera di-*check* schedule yang telah dibuat.\n" .
                         'Terima kasih.';
 
-                    BroadcastService::send($leaders, $msg, "Notification Project $project->model");
+                    // 2. PESAN EMAIL (Format Baru Request Klien)
+                    $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                        "Target Mass Production : {$project->masspro_target}\n" .
+                        "Schedule sudah di-input.\n\n" .
+                        "Mohon segera di-*check* schedule yang telah dibuat di *aplikasi new project CAR*.\n" .
+                        "Terima kasih.";
+
+                    // 3. MAPPING TO & CC
+                    $targetTo = $leaders;
+
+                    // Kosongin dulu CC-nya karena di tahap ini lo gak nyebutin CC,
+                    // tapi kalau klien minta ada CC, lo tinggal isi query-nya di sini
+                    $targetCc = collect($supervisors)->merge($managements)->unique('id');
+
+                    // 4. EKSEKUSI BATCH JUTSU! 💥
+                    BroadcastService::sendBatch(
+                        $targetTo,
+                        $targetCc,
+                        $msgWa,
+                        $msgEmail,
+                        "Leader Terkait", // Sapaan Divisi: "Kepada Yth. Leader Terkait,"
+                        "Notification Project $project->model" // Subject Email
+                    );
                 }
             }
         }
 
         // =========================================================
-        // 2. KONDISI: PIC UPLOAD DOCUMENT (ON-GOING PROJECT)
+        // 6. KONDISI: PIC UPLOAD DOCUMENT (ON-GOING PROJECT)
         // =========================================================
         // Trigger: actual_date (atau file_name) baru aja keisi
         if ($document->isDirty('actual_date') && ! empty($document->actual_date)) {
@@ -89,28 +116,54 @@ class ProjectDocumentObserver
             $docName = $document->documentType ? $document->documentType->name : $document->document_type_code;
 
             // Hitung Target Besok (actual_date + 1 hari)
-            // Formatnya jadi misal: 17 February 2026
-            $targetDate = Carbon::parse($document->actual_date)->addDay()->format('d F Y');
+            // (Pakai translatedFormat biar lebih aman kalau mau format lokal)
+            $targetDate = Carbon::parse($document->actual_date)->addDay()->translatedFormat('d F Y');
 
-            // Cari Leader
+            // Cari Target (Leader, Supervisor, Management)
             $leaders = User::getLeader($deptId);
+            $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            // Eksekusi WA ke Leader
-            if (! empty($leaders)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Doc Name  : {$docName}\n".
-                    "Status          : Waiting for Leader to Check\n\n".
-                    "Mohon segera diperiksa.\n".
-                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
-                    'Terima kasih.';
+            // Eksekusi kalau minimal ada 1 target
+            if ($leaders->isNotEmpty() || $supervisors->isNotEmpty() || $managements->isNotEmpty()) {
 
-                BroadcastService::send($leaders, $msg, "Notification Project $project->model");
+                // 1. PESAN WA (Format Original)
+                $msgWa = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Leader to Check\n\n" .
+                    "Mohon segera diperiksa.\n" .
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Leader to Check\n\n" .
+                    "Mohon segera diperiksa di *aplikasi new project CAR*.\n" .
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $leaders;
+                // Jurus andalan: Gabungin Supervisor dan Management ke dalem CC
+                $targetCc = collect($supervisors)->merge($managements)->unique('id');
+
+                // 4. TEMBAK BATCH MASSAL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Leader, Supervisor, & Management Terkait", // Sapaan Divisi
+                    "Notification Project {$project->model} - {$docName}" // Subject Email
+                );
             }
         }
 
         // =========================================================
-        // 3. KONDISI: LEADER CHECK DOCUMENT (ON-GOING PROJECT)
+        // 7. KONDISI: LEADER CHECK DOCUMENT (ON-GOING PROJECT)
         // =========================================================
         // Trigger: checked_date baru aja keisi
         if ($document->isDirty('checked_date') && ! empty($document->checked_date)) {
@@ -131,27 +184,52 @@ class ProjectDocumentObserver
             $docName = $document->documentType ? $document->documentType->name : $document->document_type_code;
 
             // Hitung Target Besok (checked_date + 1 hari)
-            $targetDate = Carbon::parse($document->checked_date)->addDay()->format('d F Y');
+            // (Pakai translatedFormat biar lebih elegan)
+            $targetDate = Carbon::parse($document->checked_date)->addDay()->translatedFormat('d F Y');
 
-            // Cari Supervisor dari dept yang sama
+            // Cari Target (Supervisor dan Management)
             $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            // Eksekusi WA ke Supervisor! 🚀
-            if (! empty($supervisors)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Doc Name  : {$docName}\n".
-                    "Status          : Waiting for Supervisor to Approve\n\n".
-                    "Mohon segera disetujui.\n".
-                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
-                    'Terima kasih.';
+            // Eksekusi kalau minimal ada targetnya! 🚀
+            if ($supervisors->isNotEmpty() || $managements->isNotEmpty()) {
 
-                BroadcastService::send($supervisors, $msg, "Notification Project $project->model");
+                // 1. PESAN WA (Format Original)
+                $msgWa = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Supervisor to Approve\n\n" .
+                    "Mohon segera disetujui.\n" .
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Supervisor to Approve\n\n" .
+                    "Mohon segera disetujui di *aplikasi new project CAR*.\n" .
+                    "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $supervisors;
+                $targetCc = $managements; // Management masuk jalur tembusan
+
+                // 4. TEMBAK BATCH MASSAL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Supervisor & Management Terkait", // Sapaan Divisi
+                    "Notification Project {$project->model} - {$docName}" // Subject Email
+                );
             }
         }
 
         // =========================================================
-        // 4. KONDISI: DOKUMEN DI-APPROVE (CEK APAKAH SEMUA SUDAH APPROVED?)
+        // 8. KONDISI: DOKUMEN DI-APPROVE (CEK APAKAH SEMUA SUDAH APPROVED?)
         // =========================================================
         // Trigger: approved_date baru aja keisi
         if ($document->isDirty('approved_date') && ! empty($document->approved_date)) {
@@ -178,22 +256,47 @@ class ProjectDocumentObserver
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
-                // Hitung Target Besok (tanggal approve + 1 hari)
-                $targetDate = Carbon::parse($document->approved_date)->addDay()->format('d F Y');
+                // Hitung Target Besok (tanggal approve + 1 hari) pakai format elegan
+                $targetDate = Carbon::parse($document->approved_date)->addDay()->translatedFormat('d F Y');
 
-                // Cari Leader dari department yang sama
+                // Cari Target (Leader, Supervisor, Management)
                 $leaders = User::getLeader($deptId);
+                $supervisors = User::getSupervisor($deptId);
+                $managements = User::getManagement();
 
-                // Blast WA ke Leader! 🚀
-                if (! empty($leaders)) {
-                    $msg = "New Project For {$customerName} Project {$project->model}\n".
-                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
-                        "Semua document sudah diupload sesuai schedule.\n\n".
-                        "Mohon di-check agar bisa segera masspro.\n".
-                        "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n".
-                        'Terima kasih.';
+                // Blast BATCH MASSAL kalau ada targetnya! 🚀
+                if ($leaders->isNotEmpty() || $supervisors->isNotEmpty() || $managements->isNotEmpty()) {
 
-                    BroadcastService::send($leaders, $msg, "Notification Project $project->model");
+                    // 1. PESAN WA (Format Original)
+                    $msgWa = "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                        "Semua document sudah diupload sesuai schedule.\n\n" .
+                        "Mohon di-check agar bisa segera masspro.\n" .
+                        "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                        "Terima kasih.";
+
+                    // 2. PESAN EMAIL (Format Baru Request Klien)
+                    $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                        "Semua document sudah diupload sesuai schedule.\n\n" .
+                        "Mohon di-check di *aplikasi new project CAR*.\n" .
+                        "Target besok, tgl {$targetDate} harus sudah dikerjakan.\n" .
+                        "Terima kasih.";
+
+                    // 3. MAPPING TO & CC
+                    $targetTo = $leaders;
+                    // Gabungin Supervisor dan Management ke kursi VIP (CC)
+                    $targetCc = collect($supervisors)->merge($managements)->unique('id');
+
+                    // 4. TEMBAK BATCH MASSAL! 💥
+                    BroadcastService::sendBatch(
+                        $targetTo,
+                        $targetCc,
+                        $msgWa,
+                        $msgEmail,
+                        "Leader, Supervisor, & Management Terkait", // Sapaan Divisi
+                        "Notification Project {$project->model} - All Documents Approved" // Subject Email
+                    );
                 }
             }
         }

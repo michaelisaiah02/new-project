@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\BroadcastService;
+use Carbon\Carbon;
 
 class ProjectObserver
 {
@@ -13,36 +14,39 @@ class ProjectObserver
      */
     public function created(Project $project)
     {
-        // 1. Load relasi customer biar bisa dapet nama dan department_id-nya
+        // 1. Load data
         $project->load('customer');
+        $customerName = $project->customer ? $project->customer->name : '-';
+        $targetMasspro = Carbon::parse($project->target_masspro)->translatedFormat('d F Y');
 
-        // Jaga-jaga kalau datanya bolong (ga ada customer / department)
-        if (! $project->customer || ! $project->customer->department_id) {
-            return;
-        }
+        // 2. PESAN KHUSUS WA (Format lama yang lo pake sebelumnya)
+        $msgWa = "New Project For {$customerName} Project {$project->model}\n" .
+            "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+            "Target Mass Production : {$project->masspro_target}\n\n" .
+            "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n" .
+            'Terima kasih.';
 
-        $deptId = $project->customer->department_id;
-        $customerName = $project->customer->name;
+        // 3. PESAN KHUSUS EMAIL (Format baru dari klien)
+        $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
+            "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+            "Target Mass Production : {$targetMasspro}\n\n" .
+            "Mohon diberitahukan kepada PIC untuk segera membuat schedule new project di *aplikasi new project CAR*.\n" .
+            "Terima kasih.";
 
-        // 2. Kumpulin nomor WA target (Leader, Supervisor, Management)
-        $leaders = User::getLeader($deptId);
-        $supervisors = User::getSupervisor($deptId);
-        $managements = User::getManagement();
+        // 4. Ambil target TO dan CC
+        $targetTo = User::where('role', 'Leader')->get();
+        $targetCc = User::whereIn('role', ['Supervisor', 'Management', 'Engineering'])->get();
 
-        // Gabungin semua target jadi satu array, dan hilangkan duplikat pake array_unique
-        $targets = collect($leaders)->merge($supervisors)->merge($managements)
-            ->unique('id');
-
-        // 3. Susun Pesan sesuai format (Sat-set langsung mapping variabel)
-        if (! empty($targets)) {
-            $msg = "New Project For {$customerName} Project {$project->model}\n".
-                "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                "Target Mass Production : {$project->masspro_target}\n\n".
-                "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n".
-                'Terima kasih.';
-
-            // 4. Tembak Fonnte! 🚀
-            BroadcastService::send($targets, $msg, "Notification Project $project->model");
+        // 5. Eksekusi JUTSU DUAL-CORE! 💥
+        if ($targetTo->isNotEmpty() || $targetCc->isNotEmpty()) {
+            BroadcastService::sendBatch(
+                $targetTo,
+                $targetCc,
+                $msgWa,      // Masukin pesan WA
+                $msgEmail,   // Masukin pesan Email
+                "Leader & Management Terkait",
+                "New Project Notification: {$project->model}"
+            );
         }
     }
 

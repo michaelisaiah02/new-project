@@ -45,7 +45,8 @@ class SendNotificationJob implements ShouldQueue
                 if (in_array($this->channel, ['all', 'wa']) && !empty($this->user->whatsapp) && env('WA_NOTIFICATION_ENABLED', true)) {
                     try {
                         FonnteService::send($this->user->whatsapp, $this->baseMsg);
-                        sleep(rand(5, 10));
+
+                        sleep(rand(60, 120));
                     } catch (\Exception $e) {
                         Log::error("WA Queue Error: " . $e->getMessage());
                     }
@@ -66,11 +67,10 @@ class SendNotificationJob implements ShouldQueue
 
         // === KALAU KUOTA 30/JAM UDAH HABIS ===
         if (! $executed) {
-            // Logikanya: "Wah, jatah jam ini abis nih. Gue balikin lagi deh ke antrean, tar cobain lagi 15 menit ke depan!"
-            // 900 detik = 15 Menit.
+            // 600 detik = 10 Menit.
             // Jadi sistem lo bakal otomatis nyoba ngirim sisanya secara berkala tanpa bikin error.
-            $this->release(900);
-            Log::warning("Rate limit reached for SendNotificationJob. Job released back to queue to retry after 15 minutes.");
+            $this->release(600);
+            Log::warning("Rate limit reached for SendNotificationJob. Job released back to queue to retry after 10 minutes.");
         }
     }
 }

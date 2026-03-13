@@ -20,14 +20,16 @@ class FonnteService
             ])->post('https://api.fonnte.com/send', [
                 'target' => $target,
                 'message' => $message,
-            ]);
+            ])->throw();
+
+            Log::info("Fonnte Response: " . json_encode($response->json()));
 
             // Optional: Log kalo gagal
             if ($response->failed()) {
-                Log::error('Fonnte Error: '.$response->body());
+                Log::error('Fonnte Error: ' . $response->body());
             }
         } catch (\Exception $e) {
-            Log::error('Fonnte Exception: '.$e->getMessage());
+            Log::error('Fonnte Exception: ' . $e->getMessage());
         }
     }
 }
