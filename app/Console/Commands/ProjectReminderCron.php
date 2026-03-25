@@ -32,7 +32,7 @@ class ProjectReminderCron extends Command
     public function handle()
     {
         $channel = $this->argument('channel');
-        $this->info('Mulai ngecek jadwal...Target Channel: '.strtoupper($channel));
+        $this->info('Mulai ngecek jadwal...Target Channel: ' . strtoupper($channel));
 
         // =========================================================
         // 1. REMINDER H+10: PROJECT BARU TAPI DUE DATE BELUM LENGKAP
@@ -57,19 +57,47 @@ class ProjectReminderCron extends Command
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
 
-            // Target korban omelan: Leader
+            // Kumpulin Pasukan (Kasta per departemen)
             $leaders = User::getLeader($deptId);
+            $pics = User::getPIC($deptId); // Pastikan lo punya fungsi ini ya
+            $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            if (! empty($leaders)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Target Mass Production : {$project->masspro_target}\n\n".
-                    "*BELUM DILAKUKAN FOLLOW UP*\n\n".
-                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n".
-                    'Terima kasih.';
+            // Eksekusi kalau minimal ada Leader-nya
+            if ($leaders->isNotEmpty()) {
 
-                BroadcastService::send($leaders, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n\n" .
+                    "*BELUM DILAKUKAN FOLLOW UP*\n\n" .
+                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule document.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n\n" .
+                    "*BELUM DILAKUKAN FOLLOW UP*\n\n" .
+                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule new project di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $leaders;
+                // CC Selain Leader (Gabungin PIC, Supervisor, Management)
+                $targetCc = collect($pics)->merge($supervisors)->merge($managements)->unique('id');
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model}", // Subject Email
+                    $channel // 👈 Lempar parameter 'wa' atau 'email' dari Cron ke sini!
+                );
             }
         }
 
@@ -96,20 +124,44 @@ class ProjectReminderCron extends Command
             $deptId = $project->customer->department_id;
             $customerName = $project->customer->name;
 
-            // Target korban SP lisan: Supervisor
+            // Target korban SP lisan: Supervisor, Tembusan: Management
             $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            // Kalau nomor WA dapet, langsung tembak! 🚀
-            if (! empty($supervisors)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Target Mass Production : {$project->masspro_target}\n".
-                    "Schedule sudah di-input.\n\n".
-                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat.\n".
-                    'Terima kasih.';
+            // Kalau nomor target dapet, langsung tembak! 🚀
+            if ($supervisors->isNotEmpty() || $managements->isNotEmpty()) {
 
-                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-input.\n\n" .
+                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-input.\n\n" .
+                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $supervisors;
+                $targetCc = $managements; // Management masuk jalur VIP (CC)
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model}", // Subject Email
+                    $channel // 👈 Parameter dewa penyelamat dari limit
+                );
             }
         }
 
@@ -140,16 +192,39 @@ class ProjectReminderCron extends Command
             $managements = User::getManagement();
 
             // Kalo dapet nomor WA Management, sikatttt! 🚀
-            if (! empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Target Mass Production : {$project->masspro_target}\n".
-                    "Schedule sudah di-checked.\n\n".
-                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat.\n".
-                    'Terima kasih.';
+            if ($managements->isNotEmpty()) {
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-checked.\n\n" .
+                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-checked.\n\n" .
+                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $managements;
+                $targetCc = collect(); // Sesuai request: CC dikosongin aja!
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - Supervisor Approval Needed", // Subject Email
+                    $channel // 👈 Parameter ajaib yang misahin shift pagi (WA) & shift malem (Email)
+                );
             }
         }
 
@@ -174,20 +249,43 @@ class ProjectReminderCron extends Command
 
             $customerName = $project->customer->name;
 
-            // Target korban: Management (Ngirim reminder ke diri mereka sendiri)
+            // Target korban: Management (Ngirim reminder ke diri mereka sendiri wkwk)
             $managements = User::getManagement();
 
-            // Kalo WA-nya ada, let it fly! 🚀
-            if (! empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Target Mass Production : {$project->masspro_target}\n".
-                    "Schedule sudah di-approved.\n\n".
-                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n".
-                    'Terima kasih.';
+            // Kalo datanya dapet, let it fly! 🚀
+            if ($managements->isNotEmpty()) {
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-approved.\n\n" .
+                    "Mohon segera *disetujui* schedule yang telah dibuat, agar bisa dimulai new project ini.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Target Mass Production : {$project->masspro_target}\n" .
+                    "Schedule sudah di-approved.\n\n" .
+                    "Mohon segera *disetujui* schedule yang telah dibuat di *aplikasi new project CAR*, agar bisa dimulai new project ini.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $managements;
+                $targetCc = collect(); // Sesuai request: CC Kosongin aja bosku!
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - Management Approval Needed", // Subject Email
+                    $channel // 👈 Si pembawa pesan yang ngebagi jalur pagi & malem
+                );
             }
         }
 
@@ -218,22 +316,48 @@ class ProjectReminderCron extends Command
             // Ambil nama dokumen, jaga-jaga kalau relasinya kosong
             $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
 
-            // Format Due Date jadi lebih manusiawi dibaca (misal: 21 February 2026)
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
+            // Format Due Date jadi lebih manusiawi dibaca pake translatedFormat
+            $dueDateStr = Carbon::parse($doc->due_date)->translatedFormat('d F Y');
 
-            // Target korban pengingat halus: PIC
+            // Panggil semua kasta di departemen ini
             $pics = User::getPIC($deptId);
+            $leaders = User::getLeader($deptId);
+            $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            // Kalo dapet nomor WA PIC-nya, lgsg gaskeun! 🚀
-            if (! empty($pics)) {
-                $msg = "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Doc Name  : {$docName}\n".
-                    "Due Date    : {$dueDateStr}\n\n".
-                    "Mohon segera diupload.\n".
-                    'Terima kasih.';
+            // Kalo dapet datanya si PIC, lgsg gaskeun! 🚀
+            if ($pics->isNotEmpty()) {
 
-                BroadcastService::send($pics, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Due Date    : {$dueDateStr}\n\n" .
+                    "Mohon segera diupload.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Due Date    : {$dueDateStr}\n\n" .
+                    "Mohon segera diupload di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $pics; // TO khusus korban utama: PIC
+                // CC: Seluruh atasan (Leader, Supervisor, Management) di-merge
+                $targetCc = collect($leaders)->merge($supervisors)->merge($managements)->unique('id');
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - H-5 Due Date", // Subject Email
+                    $channel // Penjaga pintu tol pagi & malam
+                );
             }
         }
 
@@ -264,24 +388,50 @@ class ProjectReminderCron extends Command
             // Nama dokumen
             $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
 
-            // Format Due Date
-            $dueDateStr = Carbon::parse($doc->due_date)->format('d F Y');
+            // Format Due Date pake translatedFormat biar elegan
+            $dueDateStr = Carbon::parse($doc->due_date)->translatedFormat('d F Y');
 
-            // Target penerima: LEADER
+            // Panggil semua kasta!
             $leaders = User::getLeader($deptId);
+            $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            // Kalau dapet nomor WA Leader, langsung bombardir! 🚀
-            if (! empty($leaders)) {
-                $msg = "*REMINDER*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Doc Name  : {$docName}\n".
-                    "Due Date    : {$dueDateStr}\n\n".
-                    "*PALING LAMBAT BESOK HARUS UPLOAD*\n\n".
-                    "Mohon diingatkan kepada PIC.\n".
-                    'Terima kasih.';
+            // Kalau dapet Leader-nya, langsung bombardir (dan pastikan gak nyasar)! 🚀
+            if ($leaders->isNotEmpty()) {
 
-                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Due Date    : {$dueDateStr}\n\n" .
+                    "*PALING LAMBAT BESOK HARUS UPLOAD*\n\n" .
+                    "Mohon diingatkan kepada PIC.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Due Date    : {$dueDateStr}\n\n" .
+                    "*PALING LAMBAT BESOK HARUS UPLOAD DI APLIKASI NEW PROJECT CAR*\n\n" .
+                    "Mohon diingatkan kepada PIC.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $leaders; // TO Khusus Leader yang harus marahin PIC
+                $targetCc = collect($supervisors)->merge($managements)->unique('id'); // Tembusan ke atasan
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - H-1 Deadline Warning", // Subject Email
+                    $channel // Penjaga Pintu WA & Email
+                );
             }
         }
 
@@ -311,20 +461,44 @@ class ProjectReminderCron extends Command
             // Ambil nama dokumen
             $docName = $doc->documentType ? $doc->documentType->name : $doc->document_type_code;
 
-            // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader)
+            // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader), Tembusan: MANAGEMENT
             $supervisors = User::getSupervisor($deptId);
+            $managements = User::getManagement();
 
-            // Kalau dapet nomor WA Supervisor, langsung bombardir! 🚀
-            if (! empty($supervisors)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Doc Name  : {$docName}\n".
-                    "Status          : Waiting for Leader to Check\n\n".
-                    "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload.\n".
-                    'Terima kasih.';
+            // Kalau dapet nomor target, langsung bombardir! 🚀
+            if ($supervisors->isNotEmpty() || $managements->isNotEmpty()) {
 
-                BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Leader to Check\n\n" .
+                    "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Leader to Check\n\n" .
+                    "Mohon diberitahukan kepada leader untuk segera *CHECK* Document yang sudah di-upload di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $supervisors;
+                $targetCc = $managements; // Bos besar masuk CC biar ikut mantau
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - Document Check Needed", // Subject Email
+                    $channel // Penjaga gate yang misahin email sama WA
+                );
             }
         }
 
@@ -356,17 +530,40 @@ class ProjectReminderCron extends Command
             // Target korban eskalasi: MANAGEMENT (Ngadu ke Bos Besar)
             $managements = User::getManagement();
 
-            // Kalau WA-nya dapet, langsung luncurkan rudalnya! 🚀
-            if (! empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n".
-                    "Doc Name  : {$docName}\n".
-                    "Status          : Waiting for Supervisor to Approve\n\n".
-                    "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check.\n\n".
-                    'Terima kasih.';
+            // Kalau datanya dapet, langsung luncurkan rudalnya! 🚀
+            if ($managements->isNotEmpty()) {
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Supervisor to Approve\n\n" .
+                    "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check.\n\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
+                    "Doc Name  : {$docName}\n" .
+                    "Status          : Waiting for Supervisor to Approve\n\n" .
+                    "Mohon diberitahukan kepada Supervisor untuk segera *APPROVE* Document yang sudah di-check di *aplikasi new project CAR*.\n\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $managements;
+                $targetCc = collect(); // Sesuai request: CC kosongin aja biar eksklusif buat bos!
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - Supervisor Approval Needed", // Subject Email
+                    $channel // Penjaga palang pintu pagi & malem
+                );
             }
         }
 
@@ -402,19 +599,42 @@ class ProjectReminderCron extends Command
                 $deptId = $project->customer->department_id;
                 $customerName = $project->customer->name;
 
-                // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader)
+                // Target korban SP lisan: SUPERVISOR (buat ngingetin Leader), Tembusan: MANAGEMENT
                 $supervisors = User::getSupervisor($deptId);
+                $managements = User::getManagement();
 
-                // Kalau WA-nya dapet, langsung gaskan! 🚀
-                if (! empty($supervisors)) {
-                    $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                        "New Project For {$customerName} Project {$project->model}\n".
-                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
-                        "Semua document sudah diupload sesuai schedule.\n\n".
-                        "Mohon diberitahukan kepada leader untuk segera di-check agar bisa segera masspro.\n".
-                        'Terima kasih.';
+                // Kalau target dapet, langsung gaskan! 🚀
+                if ($supervisors->isNotEmpty() || $managements->isNotEmpty()) {
 
-                    BroadcastService::send($supervisors, $msg, "Reminder Project $project->model", $channel);
+                    // 1. PESAN WA (Format Original)
+                    $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                        "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                        "Semua document sudah diupload sesuai schedule.\n\n" .
+                        "Mohon diberitahukan kepada leader untuk segera di-check agar bisa segera masspro.\n" .
+                        "Terima kasih.";
+
+                    // 2. PESAN EMAIL (Format Baru Request Klien)
+                    $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                        "New Project For {$customerName} Project {$project->model}\n" .
+                        "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                        "Semua document sudah diupload sesuai schedule.\n\n" .
+                        "Mohon diberitahukan kepada leader untuk segera di-check di *aplikasi new project CAR*.\n" .
+                        "Terima kasih.";
+
+                    // 3. MAPPING TO & CC
+                    $targetTo = $supervisors;
+                    $targetCc = $managements; // Masukin Management ke jalur VIP (CC)
+
+                    // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                    BroadcastService::sendBatch(
+                        $targetTo,
+                        $targetCc,
+                        $msgWa,
+                        $msgEmail,
+                        "Reminder Project {$project->model} - Leader Check Needed", // Subject Email
+                        $channel // Parameter ajaib pengatur shift pengiriman
+                    );
                 }
             }
         }
@@ -444,16 +664,38 @@ class ProjectReminderCron extends Command
             // Target korban eskalasi: MANAGEMENT (Ngadu ke Bos Besar)
             $managements = User::getManagement();
 
-            // Kalau WA-nya dapet, langsung luncurkan misilnya! 🚀
-            if (! empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
-                    "Semua document sudah di-check.\n\n".
-                    "Mohon diberitahukan kepada supervisor untuk segera di-approve agar bisa segera masspro.\n".
-                    'Terima kasih.';
+            // Kalau datanya dapet, langsung luncurkan misilnya! 🚀
+            if ($managements->isNotEmpty()) {
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                    "Semua document sudah di-check.\n\n" .
+                    "Mohon diberitahukan kepada supervisor untuk segera di-approve agar bisa segera masspro.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                    "Semua document sudah di-check.\n\n" .
+                    "Mohon diberitahukan kepada supervisor untuk segera di-approve di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $managements;
+                $targetCc = collect(); // Sesuai request: CC dikosongin aja bosku!
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - Supervisor Approval Needed", // Subject Email
+                    $channel // Penjaga palang pintu WA & Email
+                );
             }
         }
 
@@ -482,16 +724,38 @@ class ProjectReminderCron extends Command
             // Target penerima: MANAGEMENT (Sistem auto-savage ngingetin Bos)
             $managements = User::getManagement();
 
-            // Kalau WA-nya dapet, langsung luncurkan notifnya! 🚀
-            if (! empty($managements)) {
-                $msg = "*REMINDER SUDAH LEWAT DUE DATE*\n".
-                    "New Project For {$customerName} Project {$project->model}\n".
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n".
-                    "Semua document sudah di-approve oleh supervisor.\n\n".
-                    "Mohon segera di-approve by management agar bisa segera masspro.\n".
-                    'Terima kasih.';
+            // Kalau datanya dapet, langsung luncurkan notif pamungkasnya! 🚀
+            if ($managements->isNotEmpty()) {
 
-                BroadcastService::send($managements, $msg, "Reminder Project $project->model", $channel);
+                // 1. PESAN WA (Format Original)
+                $msgWa = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                    "Semua document sudah di-approve oleh supervisor.\n\n" .
+                    "Mohon segera di-approve by management agar bisa segera masspro.\n" .
+                    "Terima kasih.";
+
+                // 2. PESAN EMAIL (Format Baru Request Klien)
+                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
+                    "New Project For {$customerName} Project {$project->model}\n" .
+                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n\n" .
+                    "Semua document sudah di-approve oleh supervisor.\n\n" .
+                    "Mohon segera di-approve by management di *aplikasi new project CAR*.\n" .
+                    "Terima kasih.";
+
+                // 3. MAPPING TO & CC
+                $targetTo = $managements;
+                $targetCc = collect(); // Sesuai request: CC dikosongin!
+
+                // 4. TEMBAK BATCH MASSAL DENGAN CHANNEL! 💥
+                BroadcastService::sendBatch(
+                    $targetTo,
+                    $targetCc,
+                    $msgWa,
+                    $msgEmail,
+                    "Reminder Project {$project->model} - Final Management Approval Needed", // Subject Email
+                    $channel // Penjaga gawang terakhir
+                );
             }
         }
 

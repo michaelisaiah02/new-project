@@ -33,9 +33,13 @@ class ProjectObserver
             "Mohon diberitahukan kepada PIC untuk segera membuat schedule new project di *aplikasi new project CAR*.\n" .
             "Terima kasih.";
 
+        $deptId = $project->customer->department_id;
+        $leaders = User::getLeader($deptId);
+        $supervisors = User::getSupervisor($deptId);
+        $managements = User::getManagement();
         // 4. Ambil target TO dan CC
-        $targetTo = User::where('role', 'Leader')->get();
-        $targetCc = User::whereIn('role', ['Supervisor', 'Management', 'Engineering'])->get();
+        $targetTo = $leaders;
+        $targetCc = collect($supervisors)->merge($managements)->unique('id');
 
         // 5. Eksekusi JUTSU DUAL-CORE! 💥
         if ($targetTo->isNotEmpty() || $targetCc->isNotEmpty()) {
@@ -44,7 +48,6 @@ class ProjectObserver
                 $targetCc,
                 $msgWa,      // Masukin pesan WA
                 $msgEmail,   // Masukin pesan Email
-                "Leader & Management Terkait",
                 "New Project Notification: {$project->model}"
             );
         }

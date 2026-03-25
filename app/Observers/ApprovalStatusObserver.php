@@ -74,7 +74,6 @@ class ApprovalStatusObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Supervisor Terkait", // Sapaan Divisi
                     "Notification Project $project->model" // Judul Email
                 );
             }
@@ -119,7 +118,6 @@ class ApprovalStatusObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Management Terkait", // Sapaan Divisi: "Kepada Yth. Management Terkait,"
                     "Notification Project $project->model" // Judul Email
                 );
             }
@@ -172,7 +170,6 @@ class ApprovalStatusObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Leader & Supervisor Terkait", // Sapaan Divisi: "Kepada Yth. Leader & Supervisor Terkait,"
                     "Notification Project $project->model" // Judul Email
                 );
             }
@@ -221,7 +218,6 @@ class ApprovalStatusObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Supervisor & Management Terkait", // Sapaan Divisi
                     "Notification Project {$project->model} - All Documents Checked" // Subject Email
                 );
             }
@@ -269,7 +265,6 @@ class ApprovalStatusObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Management Terkait", // Sapaan Divisi
                     "Notification Project {$project->model} - Supervisor Approved" // Subject Email
                 );
             }
@@ -319,7 +314,6 @@ class ApprovalStatusObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Seluruh Tim Terkait", // Sapaan Pukul Rata!
                     "Notification Project {$project->model} - FINAL DONE" // Subject Email
                 );
             }

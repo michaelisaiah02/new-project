@@ -87,7 +87,6 @@ class ProjectDocumentObserver
                         $targetCc,
                         $msgWa,
                         $msgEmail,
-                        "Leader Terkait", // Sapaan Divisi: "Kepada Yth. Leader Terkait,"
                         "Notification Project $project->model" // Subject Email
                     );
                 }
@@ -156,7 +155,6 @@ class ProjectDocumentObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Leader, Supervisor, & Management Terkait", // Sapaan Divisi
                     "Notification Project {$project->model} - {$docName}" // Subject Email
                 );
             }
@@ -222,7 +220,6 @@ class ProjectDocumentObserver
                     $targetCc,
                     $msgWa,
                     $msgEmail,
-                    "Supervisor & Management Terkait", // Sapaan Divisi
                     "Notification Project {$project->model} - {$docName}" // Subject Email
                 );
             }
@@ -294,7 +291,6 @@ class ProjectDocumentObserver
                         $targetCc,
                         $msgWa,
                         $msgEmail,
-                        "Leader, Supervisor, & Management Terkait", // Sapaan Divisi
                         "Notification Project {$project->model} - All Documents Approved" // Subject Email
                     );
                 }

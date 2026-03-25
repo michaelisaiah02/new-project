@@ -2,15 +2,16 @@
 
 namespace App\Jobs;
 
+use App\Mail\ProjectNotificationMail;
+use App\Services\FonnteService;
+use App\Services\WahaService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\FonnteService;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\ProjectNotificationMail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter; // 👈 Panggil dewa pembatasnya di sini
 
 class SendNotificationJob implements ShouldQueue
@@ -41,11 +42,13 @@ class SendNotificationJob implements ShouldQueue
                 $greeting = "Kepada Yth. {$this->user->name},\n\n";
                 $finalMsg = $greeting . $this->baseMsg;
 
-                // 1. Tembak WA (Real-time sat-set!)
+                // 1. Tembak WA (Real-time sat-set ala WAHA!)
                 if (in_array($this->channel, ['all', 'wa']) && !empty($this->user->whatsapp) && env('WA_NOTIFICATION_ENABLED', true)) {
                     try {
-                        FonnteService::send($this->user->whatsapp, $this->baseMsg);
+                        // Panggil WahaService yang udah kita bikin
+                        WahaService::send($this->user->whatsapp, $this->baseMsg);
 
+                        // Kasih jeda random 1 - 2 menit biar aman dari banhammer Meta 🛡️
                         sleep(rand(60, 120));
                     } catch (\Exception $e) {
                         Log::error("WA Queue Error: " . $e->getMessage());
