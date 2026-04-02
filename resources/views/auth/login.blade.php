@@ -43,7 +43,19 @@
                             <div class="row justify-content-center mx-auto px-2">
                                 <button type="submit"
                                     class="btn btn-primary text-light fw-bold text-center mb-2 mx-auto">Login</button>
-                                <p class="text-center fst-italic text-light small">Jika login gagal, hubungi (IT)</p>
+
+                                <div class="mt-4 text-center row">
+                                    <div class="col-auto">
+                                        <a href="https://192.168.8.6:9001/" class="btn btn-primary fw-bold shadow-lg">
+                                            <i class="bi bi-arrow-left-circle"></i> Back
+                                        </a>
+                                    </div>
+                                    <div class="col align-self-center">
+                                        <small class="text-white-50 fst-italic">
+                                            Jika gagal login, hubungi IT
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                     </div>
