@@ -50,8 +50,12 @@ class SendNotificationJob implements ShouldQueue
 
                         // Kasih jeda random 1 - 2 menit biar aman dari banhammer Meta 🛡️
                         sleep(rand(60, 120));
+                    } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                        // Spesifik jika server WAHA mati atau jaringan terputus
+                        Log::channel('waha')->error("Gagal kirim ke {$this->user->whatsapp}. Pesan: \"{$this->baseMsg}\" tidak terkirim. Detail: Koneksi Terputus/Timeout (Cek apakah Docker/Server WAHA jalan).");
                     } catch (\Exception $e) {
-                        Log::error("WA Queue Error: " . $e->getMessage());
+                        // Error umum lainnya (misal: nomor tidak valid, token salah, dll)
+                        Log::channel('waha')->error("Gagal kirim ke {$this->user->whatsapp}. Pesan: \"{$this->baseMsg}\" tidak terkirim. Detail Error: " . $e->getMessage());
                     }
                 }
 
