@@ -57,9 +57,7 @@ class ProjectNotificationMail extends Mailable
 
     public function build()
     {
-        // Pake text() biar formatnya ngikutin \n dari WA tanpa harus bikin file blade view lagi
         return $this->subject($this->subjectLine)
-            ->text('emails.plain_text')
-            ->with(['msgContent' => $this->msgContent]);
+            ->html($this->msgContent);
     }
 }
