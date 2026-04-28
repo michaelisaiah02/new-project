@@ -29,6 +29,48 @@ class ProjectReminderCron extends Command
     /**
      * Execute the console command.
      */
+
+    public function formatEmail($title, $customerName, $project, $extraContent)
+    {
+        return "
+        <div style='font-family: Arial, sans-serif; font-size:14px; color:#333;'>
+
+            <!-- LOGO -->
+            <div style='margin-bottom:15px;'>
+                <img src='" . asset('image/logo-pt.png') . "' alt='PT Logo' height='50'>
+            </div>
+
+            <!-- TITLE -->
+            <b style='color:#d9534f;'>⚠️ {$title}</b><br><br>
+
+            <!-- CONTENT -->
+            <b>Project Info</b><br>
+            Customer : {$customerName}<br>
+            Project  : {$project->model}<br><br>
+
+            <b>Detail Part</b><br>
+            {$project->part_number} - {$project->part_name} (Suffix {$project->suffix})<br><br>
+
+            <b>Target Mass Production</b><br>
+            {$project->masspro_target}<br><br>
+
+            {$extraContent}<br><br>
+
+            <!-- AKSES -->
+            Silakan akses sistem <b>New Project CAR</b> melalui browser internal.<br>
+            <small>(Gunakan bookmark resmi atau alamat internal perusahaan)</small><br><br>
+
+            <!-- FOOTER -->
+            <small>
+            Email ini dikirim otomatis oleh sistem internal PT Caturindo.<br>
+            Pastikan hanya mengakses sistem melalui sumber resmi perusahaan.
+            </small><br><br>
+
+            Terima kasih.
+        </div>
+        ";
+    }
+
     public function handle()
     {
         $channel = $this->argument('channel');
@@ -76,13 +118,13 @@ class ProjectReminderCron extends Command
                     "Terima kasih.";
 
                 // 2. PESAN EMAIL (Format Baru Request Klien)
-                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n\n" .
-                    "*BELUM DILAKUKAN FOLLOW UP*\n\n" .
-                    "Mohon diberitahukan kepada PIC untuk segera membuat schedule new project di *aplikasi new project CAR*.\n" .
-                    "Terima kasih.";
+                $msgEmail = $this->formatEmail(
+                    'REMINDER SUDAH LEWAT DUE DATE',
+                    $customerName,
+                    $project,
+                    "<b>BELUM DILAKUKAN FOLLOW UP</b><br>
+                    Mohon diberitahukan kepada PIC untuk segera membuat schedule document."
+                );
 
                 // 3. MAPPING TO & CC
                 $targetTo = $leaders;
@@ -141,13 +183,13 @@ class ProjectReminderCron extends Command
                     "Terima kasih.";
 
                 // 2. PESAN EMAIL (Format Baru Request Klien)
-                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-input.\n\n" .
-                    "Mohon diberitahukan kepada leader untuk segera *check* schedule yang telah dibuat di *aplikasi new project CAR*.\n" .
-                    "Terima kasih.";
+                $msgEmail = $this->formatEmail(
+                    'REMINDER SUDAH LEWAT DUE DATE',
+                    $customerName,
+                    $project,
+                    "Schedule sudah di-input.<br>
+                    Mohon diberitahukan kepada leader untuk segera <b>check</b> schedule yang telah dibuat di <b>aplikasi new project CAR</b>."
+                );
 
                 // 3. MAPPING TO & CC
                 $targetTo = $supervisors;
@@ -204,13 +246,13 @@ class ProjectReminderCron extends Command
                     "Terima kasih.";
 
                 // 2. PESAN EMAIL (Format Baru Request Klien)
-                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-checked.\n\n" .
-                    "Mohon diberitahukan kepada supervisor untuk segera *approve* schedule yang telah dibuat di *aplikasi new project CAR*.\n" .
-                    "Terima kasih.";
+                $msgEmail = $this->formatEmail(
+                    'REMINDER SUDAH LEWAT DUE DATE',
+                    $customerName,
+                    $project,
+                    "Schedule sudah di-checked.<br>
+                    Mohon diberitahukan kepada supervisor untuk segera <b>approve</b> schedule yang telah dibuat."
+                );
 
                 // 3. MAPPING TO & CC
                 $targetTo = $managements;
@@ -265,13 +307,13 @@ class ProjectReminderCron extends Command
                     "Terima kasih.";
 
                 // 2. PESAN EMAIL (Format Baru Request Klien)
-                $msgEmail = "*REMINDER SUDAH LEWAT DUE DATE*\n" .
-                    "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Target Mass Production : {$project->masspro_target}\n" .
-                    "Schedule sudah di-approved.\n\n" .
-                    "Mohon segera *disetujui* schedule yang telah dibuat di *aplikasi new project CAR*, agar bisa dimulai new project ini.\n" .
-                    "Terima kasih.";
+                $msgEmail = $this->formatEmail(
+                    'REMINDER SUDAH LEWAT DUE DATE',
+                    $customerName,
+                    $project,
+                    "Schedule sudah di-approved.<br>
+                    Mohon segera <b>disetujui</b> agar project bisa dimulai."
+                );
 
                 // 3. MAPPING TO & CC
                 $targetTo = $managements;
@@ -337,12 +379,21 @@ class ProjectReminderCron extends Command
                     "Terima kasih.";
 
                 // 2. PESAN EMAIL (Format Baru Request Klien)
-                $msgEmail = "New Project For {$customerName} Project {$project->model}\n" .
-                    "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
-                    "Doc Name  : {$docName}\n" .
-                    "Due Date    : {$dueDateStr}\n\n" .
-                    "Mohon segera diupload di *aplikasi new project CAR*.\n" .
-                    "Terima kasih.";
+                $msgEmail = "
+                <b>Reminder Upload Document</b><br><br>
+
+                Project : {$project->model}<br>
+                Customer : {$customerName}<br>
+                Document : {$docName}<br>
+                Due Date : {$dueDateStr}<br><br>
+
+                Mohon segera upload document di aplikasi.<br><br>
+
+                <a href='https://192.168.8.6:9001/'>Buka Aplikasi</a><br>
+                <small>(Internal Network Only)</small><br><br>
+
+                Terima kasih.
+                ";
 
                 // 3. MAPPING TO & CC
                 $targetTo = $pics; // TO khusus korban utama: PIC
@@ -415,7 +466,9 @@ class ProjectReminderCron extends Command
                     "{$project->part_number} - {$project->part_name} - Suffix {$project->suffix}\n" .
                     "Doc Name  : {$docName}\n" .
                     "Due Date    : {$dueDateStr}\n\n" .
-                    "*PALING LAMBAT BESOK HARUS UPLOAD DI APLIKASI NEW PROJECT CAR*\n\n" .
+                    "PALING LAMBAT BESOK HARUS UPLOAD DI APLIKASI NEW PROJECT CAR\n" .
+                    "Link: https://192.168.8.6:9001/\n" .
+                    "(hanya bisa dibuka di Internal Network Caturindo) \n\n" .
                     "Mohon diingatkan kepada PIC.\n" .
                     "Terima kasih.";
 
