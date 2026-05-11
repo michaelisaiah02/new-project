@@ -252,20 +252,30 @@
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center py-4">
-                    <p class="mb-1">Are you sure you want to cancel this project?</p>
-                    <h6 class="fw-bold text-danger">{{ $project->part_number }} - {{ $project->suffix }} -
-                        {{ $project->minor_change }}</h6>
-                    <p class="text-muted small mb-0">This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer justify-content-center bg-light border-0">
-                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
-                    <form action="{{ route('engineering.projects.cancel', ['project' => $project->id]) }}"
-                        method="post">
-                        @csrf
+
+                <form action="{{ route('engineering.projects.cancel', ['project' => $project->id]) }}" method="post">
+                    @csrf
+                    <div class="modal-body text-center py-4">
+                        <p class="mb-1">Are you sure you want to cancel this project?</p>
+                        <h6 class="fw-bold text-danger">{{ $project->part_number }} - {{ $project->suffix }} -
+                            {{ $project->minor_change }}</h6>
+                        <p class="text-muted small mb-4">This action cannot be undone.</p>
+
+                        <div class="px-4">
+                            <label for="cancel_password"
+                                class="form-label fw-bold text-dark text-start w-100">Verification Password</label>
+                            <input type="password" name="cancel_password" id="cancel_password"
+                                class="form-control border-danger border-2 text-center"
+                                placeholder="Enter password to confirm" required autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer justify-content-center bg-light border-0">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-danger px-4 fw-bold">Yes, Cancel Project</button>
-                    </form>
-                </div>
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
