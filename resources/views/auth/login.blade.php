@@ -28,8 +28,11 @@
                 <div
                     class="card bg-primary bg-opacity-50 shadow-sm border-0 rounded-4 position-absolute bottom-0 start-50 translate-middle">
                     <div class="card-body p-4">
-                        <form action="{{ route('login') }}" method="POST" id="loginForm">
+                        <form action="{{ route('login') }}" method="POST" id="loginForm" autocomplete="off">
                             @csrf
+                            <!-- Dummy anti-autofill -->
+                            <input type="text" name="fake_username" style="display:none">
+                            <input type="password" name="fake_password" style="display:none">
                             <div class="form-floating mb-3 mx-auto">
                                 <input type="text" class="form-control text-center bg-light" placeholder="Employee ID"
                                     id="id" name="id" value="{{ old('id') }}" required autofocus>
@@ -37,8 +40,13 @@
                             </div>
                             <div class="form-floating mb-3 mx-auto">
                                 <input type="password" class="form-control text-center bg-light" placeholder="Password"
-                                    id="password" name="password" required autocomplete="current-password">
+                                    id="password" name="password" required autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false">
                                 <label for="password">Password</label>
+                                <span class="position-absolute end-0 top-50 translate-middle-y me-3" 
+                                    id="togglePassword" 
+                                    style="cursor: pointer; z-index: 10;">
+                                    <i class="bi bi-eye-slash text-secondary" id="eyeIcon"></i>
+                                </span>
                             </div>
                             <div class="row justify-content-center mx-auto px-2">
                                 <button type="submit"
@@ -90,5 +98,19 @@
 
         // Cek setiap 1 menit
         setInterval(checkIdleTime, 60 * 1000);
+
+        const togglePassword = document.querySelector('#togglePassword');
+        const passwordInput = document.querySelector('#password');
+        const eyeIcon = document.querySelector('#eyeIcon');
+
+        togglePassword.addEventListener('click', function () {
+            // Toggle tipe input
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle icon mata
+            eyeIcon.classList.toggle('bi-eye');
+            eyeIcon.classList.toggle('bi-eye-slash');
+        });
     </script>
 @endsection
