@@ -33,6 +33,13 @@
             </div>
 
             <div class="col-12 col-md-5">
+                <a href="{{ route('engineering') }}"
+                    class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
+                    <span class="h2 fw-bold mb-0">ENGINEERINGS</span>
+                </a>
+            </div>
+
+            <div class="col-12 col-md-5">
                 <a href="{{ route('kpi.index') }}"
                     class="btn btn-primary w-100 py-3 rounded-4 border-4 border-light-subtle d-flex align-items-center justify-content-center shadow-sm h-100">
                     <span class="h2 fw-bold mb-0">KPI</span>

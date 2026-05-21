@@ -168,7 +168,7 @@
                                             value="{{ $pd->due_date?->toDateString() }}"
                                             class="form-control text-center due-date-input border-secondary fw-bold shadow-sm"
                                             min="{{ now()->toDateString() }}"
-                                            {{ auth()->user()->approved || auth()->user()->checked ? 'readonly' : '' }}>
+                                            {{ auth()->user()->approved || auth()->user()->checked || auth()->user()->department->type() ? 'readonly' : '' }}>
                                     </td>
                                 </tr>
                             @endforeach
@@ -267,7 +267,7 @@
                                 </button>
                             @endif
 
-                            @if (!$canCheck && !$canApprove && !$canApproveManagement)
+                            @if (!$canCheck && !$canApprove && !$canApproveManagement && auth()->user()->department->type() !== 'marketing')
                                 <button id="btnSave"
                                     class="btn btn-primary px-5 fw-bold border-3 border-primary-subtle shadow-lg"
                                     type="submit" disabled>

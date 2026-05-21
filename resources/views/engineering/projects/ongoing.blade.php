@@ -156,8 +156,8 @@
                                                 id="btn-upload-{{ $pd->id }}" title="Upload File">
                                                 <i class="bi bi-upload"></i>
                                             </button>
-                                            <input type="file" id="upload-{{ $pd->id }}" class="file-input-hidden"
-                                                accept="application/pdf">
+                                            <input type="file" id="upload-{{ $pd->id }}"
+                                                class="file-input-hidden document-upload" accept="application/pdf">
                                         @endif
                                     </div>
                                 </td>
@@ -289,8 +289,46 @@
     <script type="module">
         // Helper Toast (Kalau belum ada di app.js global)
         function showToast(type, message) {
-            // ... (Kode Toast lo yang lama udah oke, pertahankan)
-            // Gue skip tulis ulang biar hemat baris, pake yg lama aja.
+            const icons = {
+                success: 'bi-check-square-fill text-success',
+                error: 'bi-x-square-fill text-danger',
+                warning: 'bi-exclamation-triangle-fill text-warning'
+            };
+
+            const bg = {
+                success: 'text-bg-success',
+                error: 'text-bg-danger',
+                warning: 'text-bg-warning'
+            };
+
+            const toastId = `toast-${Date.now()}`;
+
+            const toastHtml = `
+                <div class="toast-container position-absolute top-50 end-0 translate-middle-y p-3">
+                    <div id="${toastId}" class="toast align-items-center ${bg[type]} border-0" role="alert">
+                    <div class="toast-header">
+                        <i class="bi ${icons[type]} me-1"></i>
+                        <strong class="me-auto">{{ config('app.name') }} - ${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+
+            const toastEl = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastEl, {
+                delay: 4000
+            });
+            toast.show();
+
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.closest('.toast-container').remove();
+            });
         }
 
         $(document).ready(function() {
@@ -304,7 +342,7 @@
             });
 
             // 3. Upload File Logic (AJAX)
-            $('input[type="file"]').on('change', function() {
+            $('input[type="file"].document-upload').on('change', function() {
                 const id = $(this).attr('id').replace('upload-', '');
                 const file = this.files[0];
                 if (!file) return;
@@ -332,7 +370,7 @@
                     error: function(xhr) {
                         $btn.html(originalHtml).prop('disabled', false); // Balikin tombol
                         let message = xhr.responseJSON?.message || 'Upload failed.';
-                        alert(message); // Pake alert atau showToast('error', message)
+                        showToast('error', message);
                     }
                 });
             });
@@ -373,7 +411,7 @@
                     })
                     .done(() => location.reload())
                     .fail(res => {
-                        alert(res.responseJSON.message);
+                        showToast('error', res.responseJSON.message);
                         $(this).prop('disabled', false).html(
                             '<i class="bi bi-check2-square me-1"></i> Check All');
                     });
@@ -389,7 +427,7 @@
                     })
                     .done(() => location.reload())
                     .fail(res => {
-                        alert(res.responseJSON.message);
+                        showToast('error', res.responseJSON.message);
                         $(this).prop('disabled', false).html(
                             '<i class="bi bi-check2-all me-1"></i> Approve All');
                     });

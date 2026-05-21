@@ -48,7 +48,7 @@ class DashboardController extends Controller
             ->whereIn('remark', ['new', 'not checked', 'not approved', 'not approved management', 'approved']);
 
         // Filter departemen kalau bukan management
-        if ($department !== 'management') {
+        if ($department !== 'management' && $department !== 'marketing') {
             $newProjectsQuery->whereHas('customer', function ($q) use ($user) {
                 $q->where('department_id', $user->department_id);
             });
@@ -73,7 +73,7 @@ class DashboardController extends Controller
         $ongoingQuery = Project::with(['customer', 'documents', 'approvalStatus'])
             ->where('remark', 'on going');
 
-        if ($department !== 'management') {
+        if ($department !== 'management' && $department !== 'marketing') {
             $ongoingQuery->whereHas('customer', function ($q) use ($user) {
                 $q->where('department_id', $user->department_id);
             });

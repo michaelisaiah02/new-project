@@ -91,6 +91,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/{project}/checked/ongoing', 'checkedOngoing')->name('checkedOngoing');
             Route::post('/{project}/approved/ongoing', 'approvedOngoing')->name('approvedOngoing');
             Route::post('/{project}/cancel', 'cancel')->name('cancel');
+            Route::post('/{project}/update-3d', 'update3d')->name('update3d');
         });
         Route::prefix('project-documents')->as('project-documents.')->controller(ProjectDocumentController::class)->group(function () {
             Route::get('/{projectDocument}/view', 'view')->name('view');

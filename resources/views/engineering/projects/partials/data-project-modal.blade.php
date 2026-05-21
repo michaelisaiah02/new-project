@@ -74,17 +74,36 @@
                                 class="btn btn-primary border-3 border-light-subtle grow view-file w-fit"
                                 {{ $project->drawing_2d ? '' : 'disabled' }}
                                 data-file="{{ $project->drawing_2d ? Storage::url($basePath . $project->drawing_2d) : '#' }}"
-                                data-title="View 2D - {{ $project->drawing_2d }}">
+                                data-title="View 2D - {{ $project->drawing_2d }}" data-type="2d">
                                 <i class="bi bi-file-earmark-image me-md-1"></i> View 2D
                             </button>
 
-                            <button type="button"
-                                class="btn btn-dark border-3 border-light-subtle grow view-file w-fit"
-                                {{ $project->drawing_3d ? '' : 'disabled' }}
-                                data-file="{{ $project->drawing_3d ? Storage::url($basePath . $project->drawing_3d) : '#' }}"
-                                data-title="View 3D - {{ $project->drawing_3d }}">
-                                <i class="bi bi-box me-md-1"></i> View 3D
-                            </button>
+                            @php
+                                $isMarketing = auth()->user()->department->type() === 'marketing';
+                            @endphp
+
+                            @if ($project->drawing_3d)
+                                <button type="button"
+                                    class="btn btn-dark border-3 border-light-subtle grow view-file w-fit"
+                                    data-file="{{ Storage::url($basePath . $project->drawing_3d) }}"
+                                    data-title="View 3D - {{ $project->drawing_3d }}" data-type="3d">
+                                    <i class="bi bi-box me-md-1"></i> View 3D
+                                </button>
+                            @else
+                                @if ($isMarketing)
+                                    <button type="button"
+                                        class="btn btn-warning border-3 border-light-subtle grow w-fit"
+                                        data-bs-toggle="modal" data-bs-target="#update3DModal">
+                                        <i class="bi bi-upload me-md-1"></i> Update 3D
+                                    </button>
+                                @else
+                                    <button type="button"
+                                        class="btn btn-dark border-3 border-light-subtle grow view-file w-fit"
+                                        data-type="3d" disabled>
+                                        <i class="bi bi-box me-md-1"></i> View 3D
+                                    </button>
+                                @endif
+                            @endif
                         </div>
                     </div>
 
@@ -235,6 +254,12 @@
         <div class="modal-content">
             <div class="modal-header bg-dark text-white py-2">
                 <h6 class="modal-title text-truncate" id="fileViewerTitle">File Viewer</h6>
+                @if ($isMarketing)
+                    <button type="button" class="btn btn-warning border-3 border-light-subtle grow w-fit mx-auto"
+                        id="btn3DModal" data-bs-toggle="modal" data-bs-target="#update3DModal">
+                        <i class="bi bi-upload me-md-1"></i> Update 3D
+                    </button>
+                @endif
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0 bg-secondary-subtle position-relative">
@@ -247,6 +272,66 @@
         </div>
     </div>
 </div>
+
+<!-- Update 3D Modal -->
+<div class="modal fade" id="update3DModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('engineering.projects.update3d', $project) }}" method="POST"
+                enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Drawing 3D - {{ $project->model }} - {{ $project->part_name }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select PDF (max 5MB)</label>
+                        <input type="file" id="upload-3d" name="drawing_3d" accept="application/pdf"
+                            class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama File Drawing 3D</label>
+                        <input type="text" id="drawing-label-3d" name="drawing_label_3d" class="form-control"
+                            readonly placeholder="Nama File Drawing 3D">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirmation Password</label>
+                        <input type="password" name="update_password" class="form-control" required
+                            placeholder="Enter confirmation password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const fileInput = document.getElementById('upload-3d');
+        const labelInput = document.getElementById('drawing-label-3d');
+
+        if (!fileInput || !labelInput) {
+            return;
+        }
+
+        fileInput.addEventListener('change', function() {
+            if (!fileInput.files.length) {
+                labelInput.value = '';
+                return;
+            }
+
+            const extension = fileInput.files[0].name.split('.').pop();
+            labelInput.value =
+                `Dwg3D-{{ $project->part_number }}-{{ $project->suffix }}-{{ $project->minor_change }}.${extension}`;
+        });
+    })();
+</script>
 
 <script type="module">
     // Inisialisasi Modal
@@ -261,6 +346,13 @@
 
             const file = btn.dataset.file;
             const title = btn.dataset.title;
+            const type = btn.dataset.type;
+
+            if (type === '3d') {
+                $('#btn3DModal').show();
+            } else {
+                $('#btn3DModal').hide();
+            }
 
             // Validasi file
             if (!file || file === '#' || file === '') {

@@ -64,9 +64,9 @@
         /* 4. Scrollable Container */
         /* Area stage bakal punya scroll sendiri */
         .stages-scroll-area {
-            height: calc(100vh - 400px);
+            height: calc(100vh - 320px);
             /* Kalkulasi biar pas sisa layar */
-            min-height: 400px;
+            min-height: 300px;
             overflow-y: auto;
             border: 1px solid #dee2e6;
             background-color: #fff;

@@ -120,9 +120,9 @@ class Project extends Model
 
         $documents = $this->documents;
         $now = now();
-        $allSubmitted = $documents->every(fn ($doc) => $doc->file_name !== null);
+        $allSubmitted = $documents->every(fn($doc) => $doc->file_name !== null);
         $anyDelay = $documents->contains(
-            fn ($doc) => $doc->actual_date !== null &&
+            fn($doc) => $doc->actual_date !== null &&
                 $doc->due_date !== null &&
                 $doc->actual_date->gt($doc->due_date) &&
                 $doc->approved_date === null
@@ -132,7 +132,7 @@ class Project extends Model
         }
         if ($allSubmitted) {
             $allDocumentsFinished = $documents->every(
-                fn ($doc) => $doc->actual_date !== null &&
+                fn($doc) => $doc->actual_date !== null &&
                     $doc->checked_date !== null &&
                     $doc->approved_date !== null &&
                     $this->remark === 'on going'
@@ -159,5 +159,61 @@ class Project extends Model
         }
 
         return 'On Going';
+    }
+
+    public function progress(): array
+    {
+        $documents = $this->documents;
+
+        $data = [
+            'total' => $documents->count(),
+            'delay' => 0,
+            'unchecked' => 0,
+            'unapproved' => 0,
+            'finish' => 0,
+        ];
+
+        // Ambil tanggal hari ini (di-reset ke jam 00:00)
+        $today = now()->startOfDay();
+
+        foreach ($documents as $doc) {
+
+            // --- 1. LOGIC DETEKSI DELAY YANG BENAR ---
+            $isDelay = false;
+            if ($doc->due_date) {
+                $dueDate = \Carbon\Carbon::parse($doc->due_date)->startOfDay();
+
+                if ($doc->actual_date) {
+                    // Kasus A: Udah upload, tapi telat
+                    $actualDate = \Carbon\Carbon::parse($doc->actual_date)->startOfDay();
+                    if ($actualDate->gt($dueDate)) {
+                        $isDelay = true;
+                    }
+                } else {
+                    // Kasus B: Belum upload, dan hari ini udah lewat due date
+                    if ($today->gt($dueDate)) {
+                        $isDelay = true;
+                    }
+                }
+            }
+
+            // Kalau masuk kategori delay dan belum di-approve, tambah angkanya
+            if ($isDelay && !$doc->approved_date) {
+                $data['delay']++;
+            }
+
+            // --- 2. LOGIC DETEKSI PROGRESS PIPELINE ---
+            if ($doc->file_name) {
+                if ($doc->checked_date && $doc->approved_date) {
+                    $data['finish']++;
+                } elseif (!$doc->checked_date) {
+                    $data['unchecked']++;
+                } elseif ($doc->checked_date && !$doc->approved_date) {
+                    $data['unapproved']++;
+                }
+            }
+        }
+
+        return $data;
     }
 }

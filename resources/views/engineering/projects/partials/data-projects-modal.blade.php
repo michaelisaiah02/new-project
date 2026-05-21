@@ -78,12 +78,30 @@
                                 <i class="bi bi-file-earmark-image me-md-1"></i> View 2D
                             </button>
 
-                            <button type="button" class="btn btn-primary border-3 border-light-subtle grow view-file"
-                                {{ $project->drawing_3d ? '' : 'disabled' }}
-                                data-file="{{ $project->drawing_3d ? Storage::url($basePath . $project->drawing_3d) : '#' }}"
-                                data-title="View 3D - {{ $project->drawing_3d }}">
-                                <i class="bi bi-box me-md-1"></i> View 3D
-                            </button>
+                            @php
+                                $isMarketing = auth()->user()->department->type() === 'marketing';
+                            @endphp
+
+                            @if ($project->drawing_3d)
+                                <button type="button"
+                                    class="btn btn-primary border-3 border-light-subtle grow view-file"
+                                    data-file="{{ Storage::url($basePath . $project->drawing_3d) }}"
+                                    data-title="View 3D - {{ $project->drawing_3d }}">
+                                    <i class="bi bi-box me-md-1"></i> View 3D
+                                </button>
+                            @else
+                                @if ($isMarketing)
+                                    <button type="button" class="btn btn-warning border-3 border-light-subtle grow"
+                                        data-bs-toggle="modal" data-bs-target="#update3DModal{{ $project->id }}">
+                                        <i class="bi bi-upload me-md-1"></i> Update 3D
+                                    </button>
+                                @else
+                                    <button type="button"
+                                        class="btn btn-primary border-3 border-light-subtle grow view-file" disabled>
+                                        <i class="bi bi-box me-md-1"></i> View 3D
+                                    </button>
+                                @endif
+                            @endif
                         </div>
                     </div>
 
@@ -225,6 +243,46 @@
                 <button type="button" class="btn btn-secondary px-4 shadow-sm"
                     data-bs-dismiss="modal">Close</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update 3D Modal -->
+<div class="modal fade" id="update3DModal{{ $project->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('engineering.projects.update3d', $project) }}" method="POST"
+                enctype="multipart/form-data" class="form-update-3d">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Drawing 3D - {{ $project->model }} - {{ $project->part_name }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select PDF (max 5MB)</label>
+                        <input type="file" id="upload-3d-{{ $project->id }}" name="drawing_3d"
+                            accept="application/pdf" class="form-control file-upload-3d" required
+                            data-part="{{ $project->part_number }}" data-suffix="{{ $project->suffix }}"
+                            data-mc="{{ $project->minor_change }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama File Drawing 3D</label>
+                        <input type="text" id="drawing-label-3d-{{ $project->id }}" name="drawing_label_3d"
+                            class="form-control target-label-3d" readonly placeholder="Nama File Drawing 3D">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirmation Password</label>
+                        <input type="password" name="update_password" class="form-control" required
+                            placeholder="Enter confirmation password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-submit-3d">Upload</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

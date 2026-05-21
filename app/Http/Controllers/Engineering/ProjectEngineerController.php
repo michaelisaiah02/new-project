@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Engineering;
 
+use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalStatus;
 use App\Models\CustomerStage;
@@ -9,6 +10,7 @@ use App\Models\Project;
 use App\Models\ProjectDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -18,7 +20,7 @@ class ProjectEngineerController extends Controller
 {
     public function new(Project $project)
     {
-        if (auth()->user()->approved || auth()->user()->checked) {
+        if (auth()->user()->approved || auth()->user()->checked || auth()->user()->department->type() === 'marketing') {
             if (! $project->approvalStatus) {
                 if (auth()->user()->approved) {
                     return redirect()->back()->with('error', 'Belum bisa approve karena proyek belum di-setup.');
@@ -483,7 +485,7 @@ class ProjectEngineerController extends Controller
         ]);
 
         // 2. Tentukan lokasi file password
-        $path = storage_path('app/cancel_password.txt');
+        $path = storage_path('app/password.txt');
 
         // 3. Ambil password dari file, fallback ke 'admin123' kalo file ga ketemu
         $correctPassword = File::exists($path) ? trim(File::get($path)) : 'admin123';
@@ -501,5 +503,48 @@ class ProjectEngineerController extends Controller
         return redirect()
             ->route('engineering')
             ->with('success', 'Project berhasil di-cancel.');
+    }
+
+    public function update3d(Request $request, Project $project)
+    {
+        $request->validate([
+            'drawing_3d' => 'nullable|file|max:5120',
+            'drawing_label_3d' => 'nullable|string|max:100',
+            'update_password' => 'required',
+        ]);
+
+        // 2. Verifikasi Password
+        $path = storage_path('app/password.txt');
+        $correctPassword = File::exists($path) ? trim(File::get($path)) : 'admin123';
+
+        if ($request->update_password !== $correctPassword) {
+            return back()->with('error', 'Verifikasi gagal! Password salah.');
+        }
+
+        // 3. Proses Upload
+        if ($request->hasFile('drawing_3d')) {
+            $file = $request->file('drawing_3d');
+            $filename = $request->input('drawing_label_3d')
+                ?: ('drawing_3d_' . time() . '.' . $file->getClientOriginalExtension());
+
+            try {
+                $savedFilename = FileHelper::storeDrawingFile(
+                    $file,
+                    $project->customer_code ?? $project->customer->code, // Sesuaikan properti relasinya
+                    $project->model,
+                    $project->part_number,
+                    $filename
+                );
+
+                // Simpan HANYA nama filenya ke database sesuai return dari helper
+                $project->update([
+                    'drawing_3d' => $savedFilename,
+                ]);
+            } catch (\Exception $e) {
+                return back()->with('error', 'Gagal upload file: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Drawing 3D berhasil diupdate.');
     }
 }
