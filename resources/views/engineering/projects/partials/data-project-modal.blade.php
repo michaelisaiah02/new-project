@@ -254,7 +254,7 @@
         <div class="modal-content">
             <div class="modal-header bg-dark text-white py-2">
                 <h6 class="modal-title text-truncate" id="fileViewerTitle">File Viewer</h6>
-                @if ($isMarketing)
+                @if ($isMarketing && !$project->drawing_3d)
                     <button type="button" class="btn btn-warning border-3 border-light-subtle grow w-fit mx-auto"
                         id="btn3DModal" data-bs-toggle="modal" data-bs-target="#update3DModal">
                         <i class="bi bi-upload me-md-1"></i> Update 3D

@@ -178,32 +178,20 @@ class Project extends Model
 
         foreach ($documents as $doc) {
 
-            // --- 1. LOGIC DETEKSI DELAY YANG BENAR ---
-            $isDelay = false;
-            if ($doc->due_date) {
+            // --- 1. LOGIC DELAY BARU (KHUSUS BELUM UPLOAD & LEWAT DEADLINE) ---
+            // Cek: Apakah belum ada file/actual date DAN due date-nya ada?
+            if (!$doc->actual_date && $doc->due_date) {
                 $dueDate = \Carbon\Carbon::parse($doc->due_date)->startOfDay();
 
-                if ($doc->actual_date) {
-                    // Kasus A: Udah upload, tapi telat
-                    $actualDate = \Carbon\Carbon::parse($doc->actual_date)->startOfDay();
-                    if ($actualDate->gt($dueDate)) {
-                        $isDelay = true;
-                    }
-                } else {
-                    // Kasus B: Belum upload, dan hari ini udah lewat due date
-                    if ($today->gt($dueDate)) {
-                        $isDelay = true;
-                    }
+                // Kalau hari ini udah ngelewatin due date, baru dihitung delay
+                if ($today->gt($dueDate)) {
+                    $data['delay']++;
                 }
             }
 
-            // Kalau masuk kategori delay dan belum di-approve, tambah angkanya
-            if ($isDelay && !$doc->approved_date) {
-                $data['delay']++;
-            }
-
-            // --- 2. LOGIC DETEKSI PROGRESS PIPELINE ---
-            if ($doc->file_name) {
+            // --- 2. LOGIC PIPELINE (JIKA SUDAH DI-UPLOAD) ---
+            // Kalau udah ada file/actual date, delay GA BAKAL DIHITUNG LAGI
+            if ($doc->actual_date || $doc->file_name) {
                 if ($doc->checked_date && $doc->approved_date) {
                     $data['finish']++;
                 } elseif (!$doc->checked_date) {

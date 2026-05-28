@@ -168,7 +168,7 @@
                                             value="{{ $pd->due_date?->toDateString() }}"
                                             class="form-control text-center due-date-input border-secondary fw-bold shadow-sm"
                                             min="{{ now()->toDateString() }}"
-                                            {{ auth()->user()->approved || auth()->user()->checked || auth()->user()->department->type() ? 'readonly' : '' }}>
+                                            {{ auth()->user()->approved || auth()->user()->checked || auth()->user()->department->type() === 'marketing' ? 'readonly' : '' }}>
                                     </td>
                                 </tr>
                             @endforeach
