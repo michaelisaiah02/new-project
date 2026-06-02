@@ -107,7 +107,7 @@
                                         </td>
                                         <td style="width: 10%" class="align-middle">
                                             {{ $ongoingProject->created_at->format('d-m-Y') }}</td>
-                                        <td class="align-middle m-0 py-0" style="width: 25%;">
+                                        <td class="align-middle m-0 py-0" style="width: 20%;">
                                             @php
                                                 $prog = $ongoingProject->progress();
                                                 $percent =
@@ -122,6 +122,8 @@
                                                         <i class="bi bi-file-earmark-text me-1"></i>{{ $prog['total'] }}
                                                         Documents
                                                     </span>
+                                                    <span class="text-primary fw-bold lh-sm"
+                                                        style="font-size: 0.8rem;">{{ $ongoingProject->statusOngoing() }}</span>
                                                     <span class="text-primary fw-bolder fs-6 lh-1">{{ $percent }}%</span>
                                                 </div>
 
