@@ -21,9 +21,10 @@
                         <tbody>
                             @forelse ($newProjects as $newProject)
                                 <tr class="">
-                                    <td style="width: 4%" class="text-center" scope="row">{{ $loop->iteration }}</td>
-                                    <td style="width: 11%">{{ $newProject->customer_code }}</td>
-                                    <td style="width: 10%">{{ $newProject->model }}</td>
+                                    <td style="width: 3%" class="text-center align-middle" scope="row">
+                                        {{ $loop->iteration }}</td>
+                                    <td style="width: 12%" class="align-middle">{{ $newProject->customer_code }}</td>
+                                    <td style="width: 10%" class="align-middle">{{ $newProject->model }}</td>
                                     <td class="d-flex align-items-center justify-content-between">
                                         <a href="{{ route('engineering.projects.new', ['project' => $newProject->id]) }}">
                                             {{ $newProject->part_number }} - {{ $newProject->part_name }} -
@@ -35,8 +36,9 @@
                                             Show Detail
                                         </button>
                                     </td>
-                                    <td style="width: 10%">{{ $newProject->created_at->format('d-m-Y') }}</td>
-                                    <td style="width: 15%">
+                                    <td style="width: 10%" class="align-middle">
+                                        {{ $newProject->created_at->format('d-m-Y') }}</td>
+                                    <td style="width: 15%" class="align-middle">
                                         @switch($newProject->remark)
                                             @case('new')
                                                 New
@@ -76,21 +78,22 @@
                     <div class="table-responsive overflow-y-auto" style="max-height: 200px;">
                         <table class="table table-sm table-bordered table-hover m-0 text-nowrap">
                             <thead class="table-secondary sticky-top">
-                                <tr>
-                                    <th scope="col" class="text-center">NO</th>
-                                    <th scope="col">Costumer</th>
+                                <tr class="text-center">
+                                    <th scope="col">NO</th>
+                                    <th scope="col">Customer</th>
                                     <th scope="col">Model</th>
-                                    <th scope="col">Part</th>
+                                    <th scope="col" class="text-start">Part</th>
                                     <th scope="col">Date</th>
+                                    <th scope="col">Remark</th>
                                     <th scope="col">Progress</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($ongoingProjects as $ongoingProject)
                                     <tr>
-                                        <td style="width: 4%" class="text-center align-middle" scope="row">
+                                        <td style="width: 3%" class="text-center align-middle" scope="row">
                                             {{ $loop->iteration }}</td>
-                                        <td style="width: 11%" class="align-middle">{{ $ongoingProject->customer_code }}</td>
+                                        <td style="width: 12%" class="align-middle">{{ $ongoingProject->customer_code }}</td>
                                         <td style="width: 10%" class="align-middle">{{ $ongoingProject->model }}</td>
                                         <td class="d-flex align-items-center justify-content-between align-self-center align-middle"
                                             style="padding: 0.6rem 0.5rem;">
@@ -107,6 +110,8 @@
                                         </td>
                                         <td style="width: 10%" class="align-middle">
                                             {{ $ongoingProject->created_at->format('d-m-Y') }}</td>
+                                        <td style="width: 10%" class="align-middle">
+                                            {{ $ongoingProject->statusOngoing() }}</td>
                                         <td class="align-middle m-0 py-0" style="width: 20%;">
                                             @php
                                                 $prog = $ongoingProject->progress();
@@ -122,8 +127,6 @@
                                                         <i class="bi bi-file-earmark-text me-1"></i>{{ $prog['total'] }}
                                                         Documents
                                                     </span>
-                                                    <span class="text-primary fw-bold lh-sm"
-                                                        style="font-size: 0.8rem;">{{ $ongoingProject->statusOngoing() }}</span>
                                                     <span class="text-primary fw-bolder fs-6 lh-1">{{ $percent }}%</span>
                                                 </div>
 
