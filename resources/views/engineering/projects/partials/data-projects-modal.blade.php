@@ -261,11 +261,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Select PDF (max 5MB)</label>
+                        <label class="form-label">Select File (max 5MB)</label>
                         <input type="file" id="upload-3d-{{ $project->id }}" name="drawing_3d"
-                            accept="application/pdf" class="form-control file-upload-3d" required
-                            data-part="{{ $project->part_number }}" data-suffix="{{ $project->suffix }}"
-                            data-mc="{{ $project->minor_change }}">
+                            class="form-control file-upload-3d" required data-part="{{ $project->part_number }}"
+                            data-suffix="{{ $project->suffix }}" data-mc="{{ $project->minor_change }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nama File Drawing 3D</label>

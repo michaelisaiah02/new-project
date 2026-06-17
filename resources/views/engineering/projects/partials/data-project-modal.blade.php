@@ -287,9 +287,8 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Select PDF (max 5MB)</label>
-                        <input type="file" id="upload-3d" name="drawing_3d" accept="application/pdf"
-                            class="form-control" required>
+                        <label class="form-label">Select File (max 5MB)</label>
+                        <input type="file" id="upload-3d" name="drawing_3d" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nama File Drawing 3D</label>
