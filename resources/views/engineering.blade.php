@@ -282,38 +282,37 @@
                         // IMAGE
                         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
                             container.innerHTML = `
-                <img src="${file}" class="img-fluid" style="max-height:100%;" />
-                `
+                            <img src="${file}" class="img-fluid" style="max-height:100%;" />
+                            `
                         }
-
                         // PDF
                         else if (ext === 'pdf') {
                             container.innerHTML = `
-                <iframe src="${file}" style="width:100%; height:100%; border:none;"></iframe>
-            `
+                            <iframe src="${file}" style="width:100%; height:100%; border:none;"></iframe>
+                            `
                         }
 
                         // 3D FILE
                         else if (['stp', 'step', 'iges', 'igs', 'stl'].includes(ext)) {
                             container.innerHTML = `
-                        <div class="text-center">
-                            <i class="bi bi-cube fs-1 mb-3"></i>
-                            <p class="fw-bold">3D File Detected</p>
-                            <a href="${file}" class="btn btn-primary" target="_blank">
-                                Download & Open in 3D Viewer
-                    </a>
-                </div>
-                `
+                            <div class="text-center">
+                                <i class="bi bi-cube fs-1 mb-3"></i>
+                                <p class="fw-bold">3D File Detected</p>
+                                <a href="${file}" class="btn btn-primary" download target="_blank">
+                                    Download & Open in 3D Viewer
+                                </a>
+                            </div>
+                            `
                         }
 
                         // UNKNOWN
                         else {
                             container.innerHTML = `
-                <div class="text-center text-danger">
-                    <p>File format not supported for preview</p>
-                    <a href="${file}" class="btn btn-secondary">Download</a>
-                    </div>
-            `
+                            <div class="text-center text-danger">
+                                <p>File format not supported for preview</p>
+                                <a href="${file}" class="btn btn-secondary" download target="_blank">Download</a>
+                            </div>
+                            `
                         }
 
                         viewerModal.show()

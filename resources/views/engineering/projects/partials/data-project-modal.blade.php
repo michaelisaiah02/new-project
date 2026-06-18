@@ -387,7 +387,7 @@
                             <i class="bi bi-box-seam fs-1 text-primary mb-3 d-block"></i>
                             <h5 class="fw-bold mb-2">3D File Detected (${ext.toUpperCase()})</h5>
                             <p class="text-muted mb-4">Browser cannot preview 3D files natively.</p>
-                            <a href="${file}" class="btn btn-primary px-4 rounded-pill" target="_blank">
+                            <a href="${file}" class="btn btn-primary px-4 rounded-pill" download target="_blank">
                                 <i class="bi bi-download me-2"></i> Download & Open externally
                             </a>
                         </div>
@@ -400,7 +400,7 @@
                             <i class="bi bi-file-earmark-x fs-1 text-danger mb-3 d-block"></i>
                             <h5 class="fw-bold mb-2">Format Not Supported</h5>
                             <p class="text-muted mb-4">Cannot preview .${ext} files.</p>
-                            <a href="${file}" class="btn btn-secondary px-4 rounded-pill">Download File</a>
+                            <a href="${file}" class="btn btn-secondary px-4 rounded-pill" download target="_blank">Download File</a>
                         </div>
                     `;
                 }
