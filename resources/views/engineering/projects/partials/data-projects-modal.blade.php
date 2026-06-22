@@ -261,7 +261,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Select File (max 5MB)</label>
+                        <label class="form-label">Select File (max 150MB)</label>
                         <input type="file" id="upload-3d-{{ $project->id }}" name="drawing_3d"
                             class="form-control file-upload-3d" required data-part="{{ $project->part_number }}"
                             data-suffix="{{ $project->suffix }}" data-mc="{{ $project->minor_change }}">

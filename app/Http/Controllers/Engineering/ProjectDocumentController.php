@@ -25,7 +25,7 @@ class ProjectDocumentController extends Controller
         $validator = validator(
             $request->all(),
             [
-                'file' => 'required|file|mimes:pdf|max:5120',
+                'file' => 'required|file|mimes:pdf|max:154112',
             ],
             [
                 'file.required' => 'File wajib diunggah.',

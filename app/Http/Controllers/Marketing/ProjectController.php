@@ -102,7 +102,7 @@ class ProjectController extends Controller
                 'drawing_label_2d' => 'required|string|max:100',
 
                 // 🔥 FILE 3D TIDAK REQUIRED LAGI
-                'drawing_3d' => 'nullable|file|max:5120',
+                'drawing_3d' => 'nullable|file|max:154112',
                 'drawing_label_3d' => 'nullable|string|max:100',
 
                 'qty' => 'required|integer|min:1',
@@ -119,7 +119,7 @@ class ProjectController extends Controller
             [
                 'part_number.unique' => 'Part number dengan suffix dan minor change yang sama sudah ada.',
                 'drawing_2d.max' => 'Ukuran File Drawing 2D maksimal 5MB.',
-                'drawing_3d.max' => 'Ukuran File Drawing 3D maksimal 5MB.',
+                'drawing_3d.max' => 'Ukuran File Drawing 3D maksimal 150MB.',
             ]
         );
 

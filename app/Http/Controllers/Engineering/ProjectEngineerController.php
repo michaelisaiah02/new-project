@@ -508,7 +508,7 @@ class ProjectEngineerController extends Controller
     public function update3d(Request $request, Project $project)
     {
         $request->validate([
-            'drawing_3d' => 'nullable|file|max:5120',
+            'drawing_3d' => 'nullable|file|max:154112',
             'drawing_label_3d' => 'nullable|string|max:100',
             'update_password' => 'required',
         ]);
